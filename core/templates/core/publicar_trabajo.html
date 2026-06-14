@@ -1,0 +1,85 @@
+{% extends 'core/base.html' %}
+{% block title %}{% if editar %}Editar{% else %}Publicar{% endif %} trabajo – Chambazo{% endblock %}
+{% block body %}
+<nav class="ch-navbar">
+  <a href="{% url 'panel_contratista' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
+  <span class="fw-bold">{% if editar %}Editar trabajo{% else %}Publicar nuevo trabajo{% endif %}</span>
+</nav>
+<div class="page-wrap">
+  {% if messages %}{% for m in messages %}<div class="alert alert-success py-2 small">{{ m }}</div>{% endfor %}{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="ch-card p-4 mb-3">
+      <h6 class="fw-bold mb-3">¿Qué necesitas?</h6>
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Título del trabajo *</label>
+          {{ form.titulo }}
+          {% if form.titulo.errors %}<div class="text-danger small">{{ form.titulo.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Categoría *</label>
+          {{ form.categoria }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Presupuesto (USD) *</label>
+          {{ form.presupuesto }}
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Descripción del trabajo *</label>
+          {{ form.descripcion }}
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Requisitos mínimos</label>
+          {{ form.requisitos }}
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Beneficios adicionales</label>
+          {{ form.beneficios }}
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Ubicación del trabajo *</label>
+          {{ form.ubicacion }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-semibold">Estado de la vacante</label>
+          {{ form.estado_vacante }}
+        </div>
+      </div>
+    </div>
+
+    <div class="ch-card p-4 mb-3">
+      <h6 class="fw-bold mb-3">Habilidades requeridas</h6>
+      <div>
+        {% for val, label in form.habilidades_req.field.choices %}
+        <label class="skill-chip-label {% if val in form.habilidades_req.value %}active{% endif %}" id="pchip-{{ val }}">
+          <input type="checkbox" name="habilidades_req" value="{{ val }}"
+            {% if val in form.habilidades_req.value %}checked{% endif %}
+            onchange="document.getElementById('pchip-{{ val }}').classList.toggle('active', this.checked)">
+          {{ label }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="ch-card p-3 mb-3" style="border:1.5px solid #fecaca;background:#fff5f5;">
+      <div class="form-check">
+        {{ form.es_urgente }}
+        <label class="form-check-label fw-bold" for="{{ form.es_urgente.id_for_label }}" style="color:var(--ch-red);">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i> ¿Es urgente?
+        </label>
+        <div class="text-muted small mt-1" style="color:var(--ch-red) !important;opacity:.7;">Tu publicación aparecerá destacada y con mayor visibilidad</div>
+      </div>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger py-2 small">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-ch-yellow w-100 fw-bold" style="font-size:15px;">
+      <i class="bi bi-megaphone-fill me-1"></i>
+      {% if editar %}Guardar cambios{% else %}Publicar trabajo{% endif %}
+    </button>
+  </form>
+</div>
+{% endblock %}

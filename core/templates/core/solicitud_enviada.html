@@ -1,0 +1,25 @@
+{% extends 'core/base.html' %}
+{% block title %}¡Solicitud Enviada! – Chambazo{% endblock %}
+{% block body %}
+<div class="success-wrap">
+  <div class="success-card">
+    <div class="success-icon"><i class="bi bi-check-circle-fill"></i></div>
+    <h2 class="fw-bold mb-2">¡Solicitud Enviada!</h2>
+    <p class="text-muted mb-4">Tu postulación fue enviada exitosamente. El empleador revisará tu perfil y te contactará pronto.</p>
+    <div class="p-3 rounded mb-4 text-start" style="background:var(--ch-green-light);">
+      <div class="d-flex align-items-center gap-2 fw-bold mb-1">
+        <i class="bi bi-briefcase-fill text-green"></i> {{ trabajo.titulo }}
+      </div>
+      <div class="text-muted small">{{ trabajo.contratista.profile.nombre_display }}</div>
+      <div class="text-muted small mt-1">
+        <i class="bi bi-calendar3 me-1"></i> Aplicaste el {{ solicitud.creado|date:"d/m/Y" }} a las {{ solicitud.creado|time:"g:i A" }}
+      </div>
+      {% if solicitud.rapida %}
+      <span class="badge bg-warning text-dark mt-1"><i class="bi bi-lightning-fill"></i> Aplicación rápida</span>
+      {% endif %}
+    </div>
+    <a href="{% url 'mis_solicitudes' %}" class="btn btn-ch-green w-100 fw-bold mb-2">Ver mis solicitudes</a>
+    <a href="{% url 'home_trabajador' %}" class="btn btn-outline-success w-100 fw-bold">Buscar más trabajos</a>
+  </div>
+</div>
+{% endblock %}

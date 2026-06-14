@@ -1,0 +1,57 @@
+{% extends 'core/base.html' %}
+{% block title %}Crear cuenta – Último paso{% endblock %}
+{% block body %}
+<div class="auth-bg">
+  <div class="auth-card" style="max-width:480px;">
+    <div class="logo-circle {% if rol == 'contratista' %}bg-yellow{% endif %}"><i class="bi bi-briefcase-fill"></i></div>
+    <h1 class="auth-title">Crear cuenta</h1>
+    <p class="auth-sub">Únete a Chambazo en minutos</p>
+    <div class="step-dots mt-3">
+      <div class="step-dot {% if rol == 'trabajador' %}active-g{% else %}active-y{% endif %}"></div>
+      <div class="step-dot {% if rol == 'trabajador' %}active-g{% else %}active-y{% endif %}"></div>
+      <div class="step-dot {% if rol == 'trabajador' %}active-g{% else %}active-y{% endif %}"></div>
+    </div>
+    <form method="post" id="s3form">
+      {% csrf_token %}
+      {% if rol == 'trabajador' %}
+      <h6 class="fw-bold mb-1">¿Qué sabes hacer?</h6>
+      <p class="text-muted small mb-3">Selecciona tus habilidades para que te encuentren más fácilmente</p>
+      <div id="skillsWrap">
+        {% for val, label in skills %}
+        <label class="skill-chip-label" id="chip-{{ val }}">
+          <input type="checkbox" name="habilidades" value="{{ val }}" onchange="upChip('{{ val }}')"> {{ label }}
+        </label>
+        {% endfor %}
+      </div>
+      <p class="text-muted small mt-2 mb-3" id="skillCount">0 habilidades seleccionadas</p>
+      {% else %}
+      <h6 class="fw-bold mb-2">Sobre tu empresa</h6>
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Descripción</label>
+        <textarea name="descripcion" class="form-control" rows="4" placeholder="Cuéntanos sobre tu empresa, qué tipo de trabajos sueles necesitar..."></textarea>
+      </div>
+      {% endif %}
+      <div class="form-check p-3 rounded mb-3" style="background:var(--ch-green-light);border:1px solid var(--ch-green);">
+        <input class="form-check-input" type="checkbox" name="terminos" id="terminos" required>
+        <label class="form-check-label small" for="terminos">
+          Acepto los <a href="#" class="text-green fw-bold">Términos y Condiciones</a> y la <a href="#" class="text-green fw-bold">Política de Privacidad</a>
+        </label>
+      </div>
+      {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors.0 }}</div>{% endif %}
+      <div class="d-grid gap-2 d-flex">
+        <a href="{% url 'registro_step2' %}" class="btn btn-outline-secondary flex-fill">Atrás</a>
+        <button type="submit" class="btn {% if rol == 'trabajador' %}btn-ch-green{% else %}btn-ch-yellow{% endif %} flex-fill fw-bold">Crear cuenta</button>
+      </div>
+    </form>
+    <p class="text-center text-muted small mt-3">¿Ya tienes cuenta? <a href="{% url 'login' %}" class="text-green fw-bold">Iniciar sesión</a></p>
+  </div>
+</div>
+<script>
+function upChip(val) {
+  const inp = document.querySelector(`input[value="${val}"]`);
+  document.getElementById('chip-' + val).classList.toggle('active', inp.checked);
+  const n = document.querySelectorAll('#skillsWrap input:checked').length;
+  document.getElementById('skillCount').textContent = n + ' habilidad' + (n !== 1 ? 'es' : '') + ' seleccionada' + (n !== 1 ? 's' : '');
+}
+</script>
+{% endblock %}

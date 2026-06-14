@@ -1,0 +1,72 @@
+{% extends 'core/base.html' %}
+{% block title %}Crear cuenta – Chambazo{% endblock %}
+{% block body %}
+<div class="auth-bg">
+  <div class="auth-card">
+    <div class="logo-circle"><i class="bi bi-briefcase-fill"></i></div>
+    <h1 class="auth-title">Crear cuenta</h1>
+    <p class="auth-sub">Únete a Chambazo en minutos</p>
+    <div class="step-dots mt-3">
+      <div class="step-dot active-g" id="sd1"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+    </div>
+    <h6 class="fw-bold mb-3">¿Cómo usarás Chambazo?</h6>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="rol" id="rolField" value="">
+      <div class="role-option-card" id="opt-t" onclick="selRol('trabajador')">
+        <div style="width:40px;height:40px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="icon-t">
+          <i class="bi bi-person-fill" style="color:#94a3b8;font-size:18px;"></i>
+        </div>
+        <div>
+          <div class="fw-bold" style="font-size:14px;">Busco trabajo</div>
+          <div class="text-muted" style="font-size:12px;">Encontrar oportunidades laborales</div>
+        </div>
+        <i class="bi bi-check-circle-fill ms-auto text-green d-none" id="chk-t"></i>
+      </div>
+      <div class="role-option-card" id="opt-c" onclick="selRol('contratista')">
+        <div style="width:40px;height:40px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="icon-c">
+          <i class="bi bi-building" style="color:#94a3b8;font-size:18px;"></i>
+        </div>
+        <div>
+          <div class="fw-bold" style="font-size:14px;">Necesito contratar</div>
+          <div class="text-muted" style="font-size:12px;">Publicar trabajos y encontrar profesionales</div>
+        </div>
+        <i class="bi bi-check-circle-fill ms-auto d-none" id="chk-c" style="color:var(--ch-yellow);"></i>
+      </div>
+      <button type="submit" class="btn btn-ch-green w-100 fw-bold mt-2" id="btn-cont" disabled style="opacity:.5;">Continuar</button>
+    </form>
+    <p class="text-center text-muted small mt-3">¿Ya tienes cuenta? <a href="{% url 'login' %}" class="text-green fw-bold">Iniciar sesión</a></p>
+  </div>
+</div>
+<script>
+let sel = '';
+function selRol(r) {
+  sel = r;
+  document.getElementById('rolField').value = r;
+  ['t','c'].forEach(x => {
+    document.getElementById('opt-'+x).classList.remove('sel-g','sel-y');
+    document.getElementById('chk-'+x).classList.add('d-none');
+    document.getElementById('icon-'+x).style.background = '#e9ecef';
+  });
+  if (r === 'trabajador') {
+    document.getElementById('opt-t').classList.add('sel-g');
+    document.getElementById('chk-t').classList.remove('d-none');
+    document.getElementById('icon-t').style.background = 'var(--ch-green)';
+    document.getElementById('icon-t').querySelector('i').style.color = 'white';
+    document.getElementById('sd1').className = 'step-dot active-g';
+    document.getElementById('btn-cont').className = 'btn btn-ch-green w-100 fw-bold mt-2';
+  } else {
+    document.getElementById('opt-c').classList.add('sel-y');
+    document.getElementById('chk-c').classList.remove('d-none');
+    document.getElementById('icon-c').style.background = 'var(--ch-yellow)';
+    document.getElementById('icon-c').querySelector('i').style.color = 'white';
+    document.getElementById('sd1').className = 'step-dot active-y';
+    document.getElementById('btn-cont').className = 'btn btn-ch-yellow w-100 fw-bold mt-2';
+  }
+  document.getElementById('btn-cont').disabled = false;
+  document.getElementById('btn-cont').style.opacity = '1';
+}
+</script>
+{% endblock %}

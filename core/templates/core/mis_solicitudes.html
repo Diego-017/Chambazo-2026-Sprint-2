@@ -1,0 +1,71 @@
+{% extends 'core/base.html' %}
+{% block title %}Mis Solicitudes – Chambazo{% endblock %}
+{% block body %}
+<nav class="ch-navbar">
+  <div class="brand-icon"><i class="bi bi-briefcase-fill text-white"></i></div>
+  <span class="brand-name ms-2">Mis Solicitudes</span>
+  <a href="{% url 'notificaciones' %}" class="notif-btn ms-auto">
+    <i class="bi bi-bell-fill"></i>
+    {% if notif_count > 0 %}<span class="notif-badge">{{ notif_count }}</span>{% endif %}
+  </a>
+</nav>
+<div class="page-wrap">
+  <p class="text-muted small mb-3">Seguimiento en tiempo real de tus postulaciones</p>
+  {% for sol in solicitudes %}
+  <div class="ch-card p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <div>
+        <div class="fw-bold" style="font-size:15px;">{{ sol.trabajo.titulo }}</div>
+        <div class="text-green small">{{ sol.trabajo.contratista.profile.nombre_display }}</div>
+      </div>
+      <span class="badge bg-{{ sol.get_estado_color }}">{{ sol.get_estado_display }}</span>
+    </div>
+    {% if sol.rapida %}<span class="badge bg-warning text-dark mb-2"><i class="bi bi-lightning-fill"></i> Rápida</span>{% endif %}
+    <div class="timeline mt-3">
+      <!-- Enviada -->
+      <div class="tl-item">
+        <div class="tl-dot done"><i class="bi bi-check-lg"></i></div>
+        <div class="tl-title">Solicitud recibida</div>
+        <div class="tl-date">{{ sol.creado|date:"d/m/Y" }} – {{ sol.creado|time:"g:i A" }}</div>
+        <div class="tl-desc">Tu solicitud fue enviada exitosamente</div>
+      </div>
+      <!-- En revisión -->
+      <div class="tl-item">
+        <div class="tl-dot {% if sol.estado != 'pendiente' %}processing{% endif %}"><i class="bi bi-clock{% if sol.estado == 'pendiente' %}{% else %}-fill{% endif %}"></i></div>
+        <div class="tl-title">En revisión técnica</div>
+        <div class="tl-desc">El empleador está revisando tu perfil</div>
+        {% if sol.estado != 'pendiente' %}<div class="tl-desc text-primary small">⟳ Procesando…</div>{% endif %}
+      </div>
+      <!-- Decisión -->
+      <div class="tl-item">
+        <div class="tl-dot {% if sol.estado == 'contratado' or sol.estado == 'aceptado' %}done{% elif sol.estado == 'rechazado' %}rejected{% endif %}">
+          <i class="bi bi-{% if sol.estado == 'contratado' or sol.estado == 'aceptado' %}check-lg{% elif sol.estado == 'rechazado' %}x-lg{% else %}person{% endif %}"></i>
+        </div>
+        <div class="tl-title">Decisión final</div>
+        <div class="tl-desc">
+          {% if sol.estado == 'contratado' %}¡Felicidades! Fuiste contratado
+          {% elif sol.estado == 'aceptado' %}¡Tu solicitud fue aceptada!
+          {% elif sol.estado == 'rechazado' %}No fue seleccionado en esta ocasión
+          {% else %}En espera de decisión{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="mt-2 pt-2 border-top">
+      <a href="{% url 'trabajo_detalle' sol.trabajo.pk %}" class="btn btn-sm btn-outline-success">Ver oferta</a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-briefcase fs-1 d-block mb-2"></i>
+    <p>Aún no has aplicado a ningún trabajo.</p>
+    <a href="{% url 'home_trabajador' %}" class="btn btn-ch-green btn-sm">Buscar trabajos</a>
+  </div>
+  {% endfor %}
+</div>
+<nav class="bottom-nav">
+  <a href="{% url 'home_trabajador' %}"><i class="bi bi-search"></i><span>Buscar</span></a>
+  <a href="{% url 'mis_solicitudes' %}" class="active"><i class="bi bi-briefcase-fill"></i><span>Solicitudes</span></a>
+  <a href="{% url 'notificaciones' %}"><i class="bi bi-bell"></i><span>Notif.</span></a>
+  <a href="{% url 'perfil_trabajador' %}"><i class="bi bi-person-fill"></i><span>Perfil</span></a>
+</nav>
+{% endblock %}

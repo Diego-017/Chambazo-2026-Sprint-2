@@ -1,0 +1,39 @@
+{% extends 'core/base.html' %}
+{% block title %}Chambazo – Iniciar Sesión{% endblock %}
+{% block body %}
+<div class="auth-bg">
+  <div class="auth-card">
+    <div class="logo-circle"><i class="bi bi-briefcase-fill"></i></div>
+    <h1 class="auth-title">Chambazo</h1>
+    <p class="auth-sub">Encuentra trabajo rápido y cerca de ti</p>
+    {% if error %}<div class="alert alert-danger mt-3 py-2 small">{{ error }}</div>{% endif %}
+    {% if messages %}{% for m in messages %}<div class="alert alert-info mt-3 py-2 small">{{ m }}</div>{% endfor %}{% endif %}
+    <form method="post" class="mt-4" id="loginForm">
+      {% csrf_token %}
+      <input type="hidden" name="rol_login" id="rolInput" value="trabajador">
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Correo electrónico</label>
+        <input type="email" name="email" class="form-control" placeholder="tu@email.com" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Contraseña</label>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+        <div class="text-end mt-1">
+          <a href="{% url 'recuperar_password' %}" class="small text-green">¿Olvidaste tu contraseña?</a>
+        </div>
+      </div>
+      <p class="text-center text-muted small mb-2">Iniciar sesión como:</p>
+      <div class="role-btn-wrap">
+        <button type="submit" class="role-btn role-btn-w" onclick="document.getElementById('rolInput').value='trabajador'">
+          <i class="bi bi-person-fill fs-5"></i>Trabajador
+        </button>
+        <button type="submit" class="role-btn role-btn-c" onclick="document.getElementById('rolInput').value='contratista'">
+          <i class="bi bi-building fs-5"></i>Contratista
+        </button>
+      </div>
+    </form>
+    <hr class="my-3">
+    <a href="{% url 'registro_step1' %}" class="btn btn-outline-success w-100 fw-bold">Crear cuenta nueva</a>
+  </div>
+</div>
+{% endblock %}

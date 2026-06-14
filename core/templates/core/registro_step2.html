@@ -1,0 +1,33 @@
+{% extends 'core/base.html' %}
+{% block title %}Crear cuenta – Información{% endblock %}
+{% block body %}
+<div class="auth-bg">
+  <div class="auth-card" style="max-width:480px;">
+    <div class="logo-circle {% if rol == 'contratista' %}bg-yellow{% endif %}"><i class="bi bi-briefcase-fill"></i></div>
+    <h1 class="auth-title">Crear cuenta</h1>
+    <p class="auth-sub">Únete a Chambazo en minutos</p>
+    <div class="step-dots mt-3">
+      <div class="step-dot {% if rol == 'trabajador' %}active-g{% else %}active-y{% endif %}"></div>
+      <div class="step-dot {% if rol == 'trabajador' %}active-g{% else %}active-y{% endif %}"></div>
+      <div class="step-dot"></div>
+    </div>
+    <h6 class="fw-bold mb-3">Información básica</h6>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors.0 }}</div>{% endif %}
+      <div class="d-grid gap-2 d-flex mt-3">
+        <a href="{% url 'registro_step1' %}" class="btn btn-outline-secondary flex-fill">Atrás</a>
+        <button type="submit" class="btn {% if rol == 'trabajador' %}btn-ch-green{% else %}btn-ch-yellow{% endif %} flex-fill fw-bold">Continuar</button>
+      </div>
+    </form>
+    <p class="text-center text-muted small mt-3">¿Ya tienes cuenta? <a href="{% url 'login' %}" class="text-green fw-bold">Iniciar sesión</a></p>
+  </div>
+</div>
+{% endblock %}

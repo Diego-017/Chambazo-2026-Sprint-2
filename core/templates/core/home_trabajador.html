@@ -1,0 +1,159 @@
+{% extends 'core/base.html' %}
+{% block title %}Chambazo – Oportunidades{% endblock %}
+{% block body %}
+<!-- Navbar -->
+<nav class="ch-navbar">
+  <a href="{% url 'home_trabajador' %}" class="brand">
+    <div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+    <span class="brand-name">Chambazo</span>
+  </a>
+  <div class="ms-auto d-flex align-items-center gap-2">
+    <a href="{% url 'notificaciones' %}" class="notif-btn">
+      <i class="bi bi-bell-fill"></i>
+      {% if notif_count > 0 %}<span class="notif-badge">{{ notif_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'perfil_trabajador' %}" class="avatar-btn">
+      {% if request.user.profile.foto %}<img src="{{ request.user.profile.foto.url }}" alt="">
+      {% else %}<i class="bi bi-person-fill"></i>{% endif %}
+    </a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <!-- Banner asistente -->
+  <div class="banner-assistant">
+    <div class="flex-shrink-0" style="width:40px;height:40px;background:rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+      <i class="bi bi-robot text-white fs-5"></i>
+    </div>
+    <div class="text-white flex-grow-1">
+      <div class="fw-bold" style="font-size:14px;">¿Necesitas ayuda para empezar?</div>
+      <div style="font-size:12px;opacity:.85;">Nuestro asistente te guiará paso a paso</div>
+    </div>
+    <a href="{% url 'asistente' %}" class="btn btn-sm fw-bold" style="background:white;color:var(--ch-green);white-space:nowrap;">Hablar ahora</a>
+  </div>
+
+  <!-- Banner urgente -->
+  <a href="{% url 'trabajos_urgentes' %}" class="banner-urgente">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <span>¡URGENTE! Necesito ayuda ahora</span>
+    <i class="bi bi-chevron-right ms-auto"></i>
+  </a>
+
+  <!-- Búsqueda y filtros -->
+  <div class="search-card">
+    <div class="fw-bold mb-2" style="font-size:15px;">¿Qué sabes hacer?</div>
+    <form method="get" id="searchForm">
+      <div class="input-group mb-2">
+        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" name="q" value="{{ form.q.value|default:'' }}" class="form-control border-start-0 ps-0" placeholder="Buscar trabajos...">
+        <button type="submit" class="btn btn-ch-green">Buscar</button>
+      </div>
+      <!-- Filtros rápidos por categoría -->
+      <div class="d-flex flex-wrap gap-1 mb-2">
+        <a href="{% url 'home_trabajador' %}" class="filter-pill {% if not request.GET.categoria %}active{% endif %}">Todos</a>
+        {% for val, label in skills %}
+        <a href="?categoria={{ val }}" class="filter-pill {% if request.GET.categoria == val %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </div>
+      <!-- Filtros avanzados colapsables -->
+      <div class="d-flex justify-content-end">
+        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosAdv">
+          <i class="bi bi-sliders"></i> Filtros avanzados
+        </button>
+      </div>
+      <div class="collapse mt-2" id="filtrosAdv">
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Zona / Ciudad</label>
+            {{ form.ubicacion }}
+          </div>
+          <div class="col-3">
+            <label class="form-label small fw-semibold">Precio mín.</label>
+            {{ form.precio_min }}
+          </div>
+          <div class="col-3">
+            <label class="form-label small fw-semibold">Precio máx.</label>
+            {{ form.precio_max }}
+          </div>
+          <div class="col-12">
+            <div class="form-check">
+              {{ form.solo_disponibles }}
+              <label class="form-check-label small" for="{{ form.solo_disponibles.id_for_label }}">Solo vacantes disponibles</label>
+            </div>
+          </div>
+          <div class="col-12"><button type="submit" class="btn btn-ch-green btn-sm w-100">Aplicar filtros</button></div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row mb-4">
+    <div class="stat-box"><div class="stat-num text-green">{{ stats.trabajos_hoy }}</div><div class="stat-label">Trabajos hoy</div></div>
+    <div class="stat-box"><div class="stat-num text-green">{{ stats.total_trabajadores }}+</div><div class="stat-label">Trabajadores</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--ch-yellow);">{{ stats.calificacion|floatformat:1 }}★</div><div class="stat-label">Calificación</div></div>
+  </div>
+
+  <!-- Listado -->
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="fw-bold" style="font-size:15px;">Oportunidades cercanas</span>
+    <span class="text-muted small">{{ trabajos|length }} disponibles</span>
+  </div>
+
+  {% for trabajo in trabajos %}
+  <div class="job-card">
+    <div class="d-flex justify-content-between align-items-start mb-1">
+      <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="job-title-link">{{ trabajo.titulo }}</a>
+      <div class="d-flex gap-1 flex-shrink-0 ms-2">
+        {% if trabajo.es_urgente %}<span class="badge-urgente">Urgente</span>{% endif %}
+        <span class="badge-{{ trabajo.estado_vacante }}">{{ trabajo.get_estado_vacante_display }}</span>
+      </div>
+    </div>
+    <div class="text-green fw-semibold small mb-1">{{ trabajo.contratista.profile.nombre_display }}</div>
+    <div class="d-flex flex-wrap gap-3 mb-2">
+      <span class="text-muted small"><i class="bi bi-geo-alt-fill text-green"></i> {{ trabajo.ubicacion }}</span>
+      <span class="text-muted small"><i class="bi bi-clock text-green"></i> {{ trabajo.tiempo_relativo }}</span>
+      <span class="text-muted small"><i class="bi bi-eye text-green"></i> {{ trabajo.vistas }} vistas</span>
+    </div>
+    <div class="mb-2">
+      {% for skill in trabajo.habilidades_req %}
+      <span class="skill-tag">{{ skill|capfirst }}</span>
+      {% empty %}
+      <span class="skill-tag">{{ trabajo.get_categoria_display }}</span>
+      {% endfor %}
+    </div>
+    <div class="d-flex justify-content-between align-items-center">
+      <span class="job-price">${{ trabajo.presupuesto }}</span>
+      <div class="d-flex gap-2">
+        {% if trabajo.estado_vacante != 'ocupada' %}
+        <a href="{% url 'aplicar_rapido' trabajo.pk %}" class="btn-apply" style="font-size:12px;padding:7px 14px;">⚡ Rápido</a>
+        {% endif %}
+        <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="btn-apply">Ver detalles</a>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-search fs-1 d-block mb-2"></i>
+    <p>No se encontraron trabajos con esos filtros.</p>
+    <a href="{% url 'home_trabajador' %}" class="btn btn-ch-green btn-sm">Limpiar filtros</a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <a href="{% url 'home_trabajador' %}" class="active">
+    <i class="bi bi-search"></i><span>Buscar</span>
+  </a>
+  <a href="{% url 'mis_solicitudes' %}">
+    <i class="bi bi-briefcase"></i><span>Solicitudes</span>
+  </a>
+  <a href="{% url 'notificaciones' %}">
+    <i class="bi bi-bell{% if notif_count > 0 %}-fill text-green{% endif %}"></i><span>Notif.</span>
+  </a>
+  <a href="{% url 'perfil_trabajador' %}">
+    <i class="bi bi-person-fill"></i><span>Perfil</span>
+  </a>
+</nav>
+{% endblock %}

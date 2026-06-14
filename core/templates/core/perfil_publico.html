@@ -1,0 +1,86 @@
+{% extends 'core/base.html' %}
+{% block title %}Perfil – {{ perfil_user.get_full_name }}{% endblock %}
+{% block body %}
+<nav class="ch-navbar">
+  <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
+  <span class="fw-bold">Perfil del trabajador</span>
+</nav>
+<div class="page-wrap">
+  <div class="ch-card p-4 mb-3">
+    <div class="d-flex align-items-start gap-3 mb-3">
+      <div class="avatar-xl">
+        {% if profile.foto %}<img src="{{ profile.foto.url }}" alt="">
+        {% else %}<i class="bi bi-person-fill"></i>{% endif %}
+      </div>
+      <div class="flex-grow-1">
+        <h2 class="fw-bold mb-0" style="font-size:18px;">{{ perfil_user.get_full_name }}</h2>
+        <div class="text-muted small">{{ profile.ubicacion }}</div>
+        <div class="d-flex gap-1 mt-1">
+          <span class="text-warning fw-bold small">★ {{ profile.calificacion|floatformat:1 }}</span>
+          <span class="text-muted small">({{ profile.total_trabajos }} trabajos)</span>
+        </div>
+      </div>
+      {% if profile.verificado %}
+      <div class="verified-badge"><i class="bi bi-patch-check-fill"></i> Verificado</div>
+      {% endif %}
+    </div>
+    <div class="mb-3">
+      {% for h in profile.habilidades %}<span class="skill-tag">{{ h|capfirst }}</span>{% endfor %}
+    </div>
+    {% if profile.descripcion %}
+    <p class="text-muted small mb-0">{{ profile.descripcion }}</p>
+    {% endif %}
+  </div>
+
+  {% if galeria %}
+  <div class="ch-card p-4 mb-3">
+    <h6 class="fw-bold mb-2">Galería de trabajos</h6>
+    <div class="gallery-grid">
+      {% for item in galeria %}
+      <div class="gallery-item">
+        {% if item.imagen %}<img src="{{ item.imagen.url }}" alt="">{% endif %}
+        <div class="gallery-caption">{{ item.titulo }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="ch-card p-4 mb-3">
+    <div class="d-flex justify-content-between mb-3">
+      <h6 class="fw-bold mb-0">Reseñas ({{ resenas.count }})</h6>
+      {% if puedo_calificar %}
+      <button class="btn btn-sm btn-ch-green" data-bs-toggle="collapse" data-bs-target="#formResena">
+        <i class="bi bi-star-fill me-1"></i> Calificar
+      </button>
+      {% endif %}
+    </div>
+    {% if puedo_calificar %}
+    <div class="collapse mb-3" id="formResena">
+      <form method="post" class="p-3 rounded" style="background:#f8fafc;">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-ch-green btn-sm fw-bold w-100">Enviar reseña</button>
+      </form>
+    </div>
+    {% endif %}
+    {% for r in resenas %}
+    <div class="border-bottom pb-2 mb-2">
+      <div class="d-flex justify-content-between">
+        <span class="fw-semibold small">{{ r.autor.get_full_name }}</span>
+        <span class="text-warning small">{% for i in "12345" %}{% if forloop.counter <= r.calificacion %}★{% endif %}{% endfor %}</span>
+      </div>
+      <div class="text-muted" style="font-size:11px;">{{ r.creado|date:"d/m/Y" }}</div>
+      <div class="text-muted small">{{ r.comentario }}</div>
+    </div>
+    {% empty %}
+    <p class="text-muted small">Sin reseñas todavía.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

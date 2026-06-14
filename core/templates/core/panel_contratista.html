@@ -1,0 +1,70 @@
+{% extends 'core/base.html' %}
+{% block title %}Panel Contratista – Chambazo{% endblock %}
+{% block body %}
+<nav class="ch-navbar">
+  <div class="brand">
+    <div class="brand-icon yellow"><i class="bi bi-building"></i></div>
+    <div class="ms-2">
+      <div class="fw-bold" style="font-size:14px;line-height:1.2;">Panel Contratista</div>
+      <div class="text-muted" style="font-size:11px;">Gestiona tus publicaciones</div>
+    </div>
+  </div>
+  <div class="ms-auto d-flex gap-2 align-items-center">
+    <a href="{% url 'notificaciones' %}" class="notif-btn">
+      <i class="bi bi-bell-fill"></i>
+      {% if notif_count > 0 %}<span class="notif-badge">{{ notif_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'perfil_contratista' %}" class="avatar-btn">
+      {% if request.user.profile.foto %}<img src="{{ request.user.profile.foto.url %}" alt="">
+      {% else %}<i class="bi bi-person-fill"></i>{% endif %}
+    </a>
+  </div>
+</nav>
+<div class="page-wrap">
+  <!-- Stats -->
+  <div class="stats-row mb-3">
+    <div class="stat-box"><div class="stat-num" style="color:var(--ch-yellow);">{{ stats.activas }}</div><div class="stat-label">Activas</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--ch-yellow);">{{ stats.candidatos }}</div><div class="stat-label">Candidatos</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--ch-yellow);">{{ stats.reputacion|floatformat:1 }}★</div><div class="stat-label">Reputación</div></div>
+  </div>
+
+  <a href="{% url 'publicar_trabajo' %}" class="btn btn-ch-yellow w-100 fw-bold mb-4" style="font-size:15px;">
+    <i class="bi bi-plus-circle-fill me-1"></i> Publicar nuevo trabajo
+  </a>
+
+  <h6 class="fw-bold mb-2">Mis publicaciones</h6>
+
+  {% if messages %}{% for m in messages %}<div class="alert alert-success py-2 small">{{ m }}</div>{% endfor %}{% endif %}
+
+  {% for trabajo in trabajos %}
+  <div class="pub-card">
+    <div class="d-flex justify-content-between align-items-start mb-1">
+      <span class="fw-bold" style="font-size:15px;">{{ trabajo.titulo }}</span>
+      <div class="d-flex gap-1">
+        <span class="badge-{{ trabajo.estado_vacante }}">{{ trabajo.get_estado_vacante_display }}</span>
+        {% if trabajo.activo %}<span class="badge bg-success">Activa</span>{% else %}<span class="badge bg-secondary">Inactiva</span>{% endif %}
+      </div>
+    </div>
+    <div class="text-muted small mb-2">{{ trabajo.tiempo_relativo }}</div>
+    <div class="d-flex gap-3 small mb-2">
+      <span><i class="bi bi-people-fill text-muted me-1"></i>{{ trabajo.candidatos_count }} candidatos</span>
+      <span class="fw-bold text-green">${{ trabajo.presupuesto }}</span>
+      <span class="text-muted"><i class="bi bi-eye me-1"></i>{{ trabajo.vistas }}</span>
+    </div>
+    <div class="pub-actions">
+      <a href="{% url 'candidatos' trabajo.pk %}" class="btn btn-ch-yellow fw-bold" style="font-size:13px;">
+        <i class="bi bi-people-fill me-1"></i> Candidatos ({{ trabajo.candidatos_count }})
+      </a>
+      <a href="{% url 'editar_trabajo' trabajo.pk %}" class="btn btn-outline-secondary fw-bold" style="font-size:13px;">
+        <i class="bi bi-pencil-fill me-1"></i> Editar
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-megaphone fs-1 d-block mb-2"></i>
+    <p>Aún no has publicado trabajos.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

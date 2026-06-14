@@ -1,0 +1,143 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ trabajo.titulo }} – Chambazo{% endblock %}
+{% block body %}
+<nav class="ch-navbar">
+  <a href="{% url 'home_trabajador' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
+  <span class="fw-bold" style="font-size:15px;">Detalle de oferta</span>
+  <a href="{% url 'notificaciones' %}" class="notif-btn ms-auto">
+    <i class="bi bi-bell-fill"></i>
+    {% if notif_count > 0 %}<span class="notif-badge">{{ notif_count }}</span>{% endif %}
+  </a>
+</nav>
+
+<div class="page-wrap">
+  <div class="ch-card p-4 mb-3">
+    <!-- Cabecera -->
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <h1 class="fw-bold mb-0" style="font-size:20px;">{{ trabajo.titulo }}</h1>
+      <div class="d-flex flex-column align-items-end gap-1">
+        {% if trabajo.es_urgente %}<span class="badge-urgente">URGENTE</span>{% endif %}
+        <span class="badge-{{ trabajo.estado_vacante }}">{{ trabajo.get_estado_vacante_display }}</span>
+      </div>
+    </div>
+    <div class="text-green fw-semibold mb-3">{{ trabajo.contratista.profile.nombre_display }}</div>
+
+    <!-- Meta -->
+    <div class="d-flex flex-wrap gap-3 mb-3 pb-3 border-bottom detail-meta">
+      <span><i class="bi bi-geo-alt-fill text-green"></i> {{ trabajo.ubicacion }}</span>
+      <span><i class="bi bi-clock text-green"></i> {{ trabajo.tiempo_relativo }}</span>
+      <span><i class="bi bi-eye text-green"></i> {{ trabajo.vistas }} vistas</span>
+      <span><i class="bi bi-star-fill text-warning"></i> {{ trabajo.contratista.profile.calificacion|floatformat:1 }} / 5.0</span>
+    </div>
+
+    <!-- Descripción -->
+    <div class="detail-section">
+      <h6>Descripción</h6>
+      <p class="text-muted small">{{ trabajo.descripcion }}</p>
+    </div>
+
+    {% if trabajo.requisitos %}
+    <div class="detail-section">
+      <h6>Requisitos</h6>
+      <p class="text-muted small">{{ trabajo.requisitos }}</p>
+    </div>
+    {% endif %}
+
+    {% if trabajo.beneficios %}
+    <div class="detail-section">
+      <h6>Beneficios</h6>
+      <p class="text-muted small">{{ trabajo.beneficios }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Habilidades -->
+    <div class="detail-section">
+      <h6>Habilidades requeridas</h6>
+      {% for skill in trabajo.habilidades_req %}
+      <span class="skill-tag">{{ skill|capfirst }}</span>
+      {% empty %}
+      <span class="skill-tag">{{ trabajo.get_categoria_display }}</span>
+      {% endfor %}
+    </div>
+
+    <!-- Mapa placeholder -->
+    <div class="detail-section">
+      <h6><i class="bi bi-geo-alt-fill text-green"></i> Ubicación del trabajo</h6>
+      <div class="map-mock">
+        <i class="bi bi-pin-map-fill fs-2"></i>
+        <span class="fw-semibold">{{ trabajo.ubicacion }}</span>
+        <span class="small">Mapa interactivo</span>
+      </div>
+    </div>
+
+    <!-- Precio -->
+    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+      <div>
+        <div class="text-muted small">Pago estimado</div>
+        <div class="job-price">${{ trabajo.presupuesto }}</div>
+      </div>
+      <div class="text-muted small">{{ trabajo.tiempo_relativo }}</div>
+    </div>
+  </div>
+
+  <!-- Sección de reseñas -->
+  {% if resenas %}
+  <div class="ch-card p-4 mb-3">
+    <h6 class="fw-bold mb-3">Reseñas del contratista</h6>
+    {% for r in resenas %}
+    <div class="border-bottom pb-2 mb-2">
+      <div class="d-flex justify-content-between">
+        <span class="fw-semibold small">{{ r.autor.get_full_name }}</span>
+        <span class="text-warning small">{% for i in "12345" %}{% if forloop.counter <= r.calificacion %}★{% endif %}{% endfor %}</span>
+      </div>
+      <div class="text-muted small">{{ r.comentario }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Aplicación -->
+  <div class="ch-card p-4">
+    {% if trabajo.estado_vacante == 'ocupada' %}
+    <div class="text-center py-2">
+      <i class="bi bi-x-circle-fill text-danger fs-2 d-block mb-2"></i>
+      <p class="fw-bold">Esta vacante ya está ocupada</p>
+    </div>
+    {% elif ya_aplico %}
+    <h6 class="fw-bold mb-1">Tu postulación</h6>
+    <p class="text-muted small mb-3">Ya aplicaste a esta vacante.</p>
+    {% if mi_solicitud %}
+    <div class="p-3 rounded mb-3" style="background:#f0f9ff;">
+      <span class="fw-semibold small">Estado: </span>
+      <span class="badge bg-{{ mi_solicitud.get_estado_color }} text-white">{{ mi_solicitud.get_estado_display }}</span>
+    </div>
+    {% endif %}
+    <a href="{% url 'mis_solicitudes' %}" class="btn btn-ch-green w-100 fw-bold">Ver mis solicitudes</a>
+    {% else %}
+    <h6 class="fw-bold mb-1">Aplicación rápida</h6>
+    <p class="text-muted small mb-3">Tu perfil ya está completo. Elige cómo aplicar:</p>
+    <a href="{% url 'aplicar_trabajo' trabajo.pk %}" class="btn btn-ch-green w-100 fw-bold mb-2">
+      <i class="bi bi-send-fill"></i> Postularme con mensaje
+    </a>
+    <a href="{% url 'aplicar_rapido' trabajo.pk %}" class="btn btn-outline-success w-100 fw-bold mb-3">
+      <i class="bi bi-lightning-fill"></i> Aplicación rápida (sin mensaje)
+    </a>
+    <div class="row g-2">
+      <div class="col-6">
+        <a href="tel:+503" class="btn btn-outline-secondary w-100"><i class="bi bi-telephone-fill"></i> Llamar</a>
+      </div>
+      <div class="col-6">
+        <a href="https://wa.me/503" class="btn btn-outline-success w-100"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="{% url 'home_trabajador' %}"><i class="bi bi-search"></i><span>Buscar</span></a>
+  <a href="{% url 'mis_solicitudes' %}"><i class="bi bi-briefcase"></i><span>Solicitudes</span></a>
+  <a href="{% url 'notificaciones' %}"><i class="bi bi-bell"></i><span>Notif.</span></a>
+  <a href="{% url 'perfil_trabajador' %}"><i class="bi bi-person-fill"></i><span>Perfil</span></a>
+</nav>
+{% endblock %}

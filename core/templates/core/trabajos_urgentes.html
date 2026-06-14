@@ -1,0 +1,44 @@
+{% extends 'core/base.html' %}
+{% block title %}Trabajos Urgentes – Chambazo{% endblock %}
+{% block body %}
+<nav class="ch-navbar">
+  <a href="{% url 'home_trabajador' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
+  <span class="fw-bold">Trabajos Urgentes</span>
+</nav>
+<div class="page-wrap">
+  <div class="p-3 rounded mb-3" style="background:#fff5f5;border:1px solid #fecaca;">
+    <h5 class="fw-bold text-danger mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Trabajos Urgentes</h5>
+    <p class="text-muted small mb-0">{{ trabajos.count }} trabajos urgentes disponibles cerca de ti. ¡Responde rápido para ganar más!</p>
+  </div>
+  {% for trabajo in trabajos %}
+  <div class="job-card" style="border-left:4px solid var(--ch-red);">
+    <div class="d-flex justify-content-between align-items-start mb-1">
+      <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="job-title-link">{{ trabajo.titulo }}</a>
+      <span class="badge-urgente">URGENTE</span>
+    </div>
+    <div class="text-green fw-semibold small mb-1">{{ trabajo.contratista.profile.nombre_display }}</div>
+    <div class="d-flex gap-3 text-muted small mb-2">
+      <span><i class="bi bi-geo-alt-fill text-green"></i> {{ trabajo.ubicacion }}</span>
+      <span style="color:var(--ch-red);"><i class="bi bi-clock-fill"></i> {{ trabajo.tiempo_relativo }}</span>
+    </div>
+    <p class="text-muted small mb-2">{{ trabajo.descripcion|truncatewords:20 }}</p>
+    <div class="mb-2">
+      {% for skill in trabajo.habilidades_req %}
+      <span class="skill-tag">{{ skill|capfirst }}</span>
+      {% endfor %}
+    </div>
+    <div class="d-flex justify-content-between align-items-center">
+      <span class="job-price">${{ trabajo.presupuesto }}</span>
+      <a href="{% url 'aplicar_rapido' trabajo.pk %}" class="btn-apply" style="background:var(--ch-red);">
+        <i class="bi bi-lightning-fill"></i> Aplicar ahora
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-2"></i>
+    <p>No hay trabajos urgentes en este momento.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

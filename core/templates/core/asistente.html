@@ -1,0 +1,77 @@
+{% extends 'core/base.html' %}
+{% block title %}Asistente Chambazo{% endblock %}
+{% block body %}
+<div class="chat-page">
+  <div class="ch-navbar" style="position:relative;">
+    <a href="{% url 'home' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
+    <div class="brand-icon" style="width:36px;height:36px;font-size:16px;"><i class="bi bi-robot"></i></div>
+    <div class="ms-2">
+      <div class="fw-bold" style="font-size:14px;">Asistente Chambazo</div>
+      <div style="font-size:11px;color:var(--ch-green);">● En línea</div>
+    </div>
+  </div>
+
+  <div class="chat-messages" id="chatMessages">
+    <div class="msg-bot d-flex flex-column gap-1">
+      <div class="bubble">¡Hola! 👋 Soy el asistente de Chambazo. ¿En qué puedo ayudarte hoy?</div>
+      <div class="bubble">¿Estás buscando trabajo o necesitas contratar a alguien?</div>
+      <div class="d-flex flex-wrap gap-2 mt-1">
+        <button class="qr-btn" onclick="sendQ('Busco trabajo')">Busco trabajo</button>
+        <button class="qr-btn" onclick="sendQ('Quiero contratar')">Quiero contratar</button>
+        <button class="qr-btn" onclick="sendQ('Tengo un problema')">Tengo un problema</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:12px 16px;background:white;border-top:1px solid #e9ecef;display:flex;gap:10px;align-items:center;">
+    <input type="text" id="chatInput" class="form-control" placeholder="Escribe tu mensaje..."
+           onkeydown="if(event.key==='Enter')sendMsg()">
+    <button class="btn btn-ch-green" style="border-radius:50%;width:44px;height:44px;padding:0;flex-shrink:0;" onclick="sendMsg()">
+      <i class="bi bi-send-fill"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+const respuestas = {
+  'busco trabajo': ['¡Perfecto! Puedes explorar las oportunidades en la pantalla principal.', '¿En qué área te especializas? Así puedo sugerirte vacantes que coincidan con tus habilidades.'],
+  'quiero contratar': ['Como contratista puedes publicar tus necesidades y encontrar trabajadores calificados.', '¿Qué tipo de trabajo necesitas? Puedo ayudarte a redactar la publicación.'],
+  'tengo un problema': ['Lamento escuchar eso. ¿Puedes describir el problema?', 'Estoy aquí para ayudarte. ¿Es un problema técnico o relacionado con una postulación?'],
+  'electricidad': ['Hay varios electricistas disponibles en tu zona con calificaciones excelentes. Mira la sección principal.', '¿Cuándo necesitas el servicio? ¿Es urgente?'],
+  'plomeria': ['Tenemos plomeros verificados cerca de ti.', '¿Es una emergencia o puedes esperar? Hay trabajos urgentes disponibles.'],
+  'urgente': ['Para trabajos urgentes toca el banner rojo en la pantalla principal.', '¡Respondemos rápido! Los trabajos urgentes tienen mayor visibilidad.'],
+  'default': ['Entendido. Déjame ayudarte. ¿Hay algo más específico?', 'Puedo ayudarte con búsqueda de trabajo, postulaciones o publicar vacantes.']
+};
+
+function addMsg(text, type) {
+  const chat = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `msg-${type} d-flex ${type === 'user' ? 'justify-content-end' : ''}`;
+  div.innerHTML = `<div class="bubble">${text}</div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function sendQ(text) {
+  addMsg(text, 'user');
+  respond(text.toLowerCase());
+}
+
+function sendMsg() {
+  const inp = document.getElementById('chatInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  addMsg(text, 'user');
+  inp.value = '';
+  respond(text.toLowerCase());
+}
+
+function respond(text) {
+  setTimeout(() => {
+    const key = Object.keys(respuestas).find(k => k !== 'default' && text.includes(k));
+    const resps = respuestas[key || 'default'];
+    resps.forEach((r, i) => setTimeout(() => addMsg(r, 'bot'), i * 600));
+  }, 400);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'core/base.html' %}
+{% block title %}Notificaciones – Chambazo{% endblock %}
+{% block body %}
+<nav class="ch-navbar">
+  <a href="{% url 'home' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
+  <span class="fw-bold">Notificaciones</span>
+</nav>
+<div class="page-wrap">
+  {% if notifs %}
+  <div class="ch-card overflow-hidden">
+    {% for n in notifs %}
+    <div class="notif-item {% if not n.leida %}unread{% endif %}">
+      <div class="flex-shrink-0 mt-1">
+        {% if not n.leida %}<div class="notif-dot"></div>{% else %}<div style="width:10px;"></div>{% endif %}
+      </div>
+      <div class="flex-grow-1">
+        <div class="d-flex justify-content-between">
+          <span class="fw-semibold small">{{ n.titulo }}</span>
+          <span class="text-muted" style="font-size:11px;">{{ n.creado|date:"d/m G:i" }}</span>
+        </div>
+        <div class="text-muted small">{{ n.mensaje }}</div>
+        {% if n.url %}
+        <a href="{{ n.url }}" class="small text-green fw-semibold">Ver detalles →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>
+    <p>No tienes notificaciones.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
