@@ -1,5 +1,5 @@
 <<<<<<< HEAD
-# Chambazo-2026-V2
+# Chambazo-2026-V2 Julio 2026
 =======
 # 🟢 Chambazo — Django + Python | Sprint 1 Completo
 
