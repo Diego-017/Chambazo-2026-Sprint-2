@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Chambazo-2026-Version 2 Julio 2026
 =======
 # 🟢 Chambazo — Django + Python | Sprint 1 Completo
@@ -68,3 +69,6 @@ python manage.py runserver
 - Trabajos urgentes con banner y sección dedicada
 - Asistente de chat inteligente
 >>>>>>> e69eda2 (Subiendo proyecto)
+=======
+# Chambazo-2026-Sprint-2
+>>>>>>> ae07cfb6b5152a7932c0e1b35a0e48d53844aeac
