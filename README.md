@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-# Chambazo-2026-Version 2 Sprint 2 Julio 2026
-=======
-# 🟢 Chambazo — Django + Python | Sprint 2 Completo
+
+# Chambazo-2026-Version 2 Sprint 20 Julio - 16 Agosto 2026
 
 ## Historias de Usuario implementadas (15 HUs del Sprint 1)
 
@@ -86,8 +83,6 @@ Empleador	(usuario) constructora_sv	demo123
 Admin	admin	admin123
 Qué cambió en esta vuelta
 
-Diseño 100% igual al PDF de Figma:
-
 Layout de dashboard con sidebar oscuro (navy) — ya no es mobile con bottom-nav
 Sidebar verde para trabajador, amarillo/dorado para empleador ("Chambazo Pro")
 Login y registro en pantalla dividida (panel oscuro + formulario)
@@ -114,9 +109,3 @@ Estadísticas para empleador con gráficas de vistas vs aplicaciones y por categ
 Buscar trabajadores — el empleador puede invitar directamente a candidatos
 Chat en tiempo real entre trabajador y empleador tras ser aceptado
 Propuesta de tarifa personalizada al aplicar a un trabajo
-
-  
->>>>>>> e69eda2 (Subiendo proyecto)
-=======
-# Chambazo-2026-Sprint-2
->>>>>>> ae07cfb6b5152a7932c0e1b35a0e48d53844aeac
