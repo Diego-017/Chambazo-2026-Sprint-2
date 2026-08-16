@@ -1,40 +1,44 @@
 {% extends 'core/base.html' %}
-{% block title %}Aplicar – {{ trabajo.titulo }}{% endblock %}
+{% block title %}Aplicar — {{ trabajo.titulo }}{% endblock %}
 {% block body %}
-<nav class="ch-navbar">
-  <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
-  <span class="fw-bold">Postularme</span>
-</nav>
-<div class="page-wrap">
-  <div class="ch-card p-4 mb-3">
-    <h5 class="fw-bold mb-1">{{ trabajo.titulo }}</h5>
-    <div class="text-green fw-semibold small mb-2">{{ trabajo.contratista.profile.nombre_display }}</div>
-    <div class="d-flex gap-3 text-muted small mb-3">
-      <span><i class="bi bi-geo-alt-fill text-green"></i> {{ trabajo.ubicacion }}</span>
-      <span class="job-price" style="font-size:16px;">${{ trabajo.presupuesto }}</span>
+{% include 'core/_sidebar_trabajador.html' %}
+
+<div class="page-hd"><div><h1>Postularme</h1><p>{{ trabajo.titulo }}</p></div>
+  <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div style="max-width:560px;">
+  <div class="card mb-16"><div class="card-body">
+    <div class="flex-bc mb-12">
+      <div><div class="fw-800 t-h2">{{ trabajo.titulo }}</div><div class="t-sm t-muted">{{ trabajo.contratista.profile.nombre_display }}</div></div>
+      <div class="job-row-price">${{ trabajo.presupuesto }}</div>
     </div>
-  </div>
-  <div class="ch-card p-4">
-    <h6 class="fw-bold mb-3">Escribe tu mensaje de presentación</h6>
+    {% if match_score > 0 %}
+    <div style="background:var(--green-light);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:10px;">
+      <i class="bi bi-bullseye t-green" style="font-size:18px;"></i>
+      <div><div class="fw-700 t-green t-sm">{{ match_score }}% de compatibilidad</div><div class="t-xxs t-mid">Tu perfil encaja con este trabajo</div></div>
+    </div>
+    {% endif %}
+  </div></div>
+
+  <div class="card"><div class="card-body">
     <form method="post">
       {% csrf_token %}
-      {% for field in form %}
-      <div class="mb-3">
-        <label class="form-label fw-semibold small">{{ field.label }}</label>
-        {{ field }}
-        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+      <div class="form-group">
+        <label class="form-label">Propone tu tarifa (opcional)</label>
+        <div class="input-icon-wrap">
+          <i class="bi bi-currency-dollar"></i>
+          <input type="number" name="tarifa_propuesta" step="0.01" class="form-control" placeholder="{{ trabajo.presupuesto }}">
+        </div>
       </div>
-      {% endfor %}
-      <div class="p-3 rounded mb-3" style="background:var(--ch-green-light);">
-        <p class="mb-0 small"><i class="bi bi-info-circle-fill text-green me-1"></i>Tu perfil completo será enviado al contratista automáticamente.</p>
+      <div class="form-group">
+        <label class="form-label">Mensaje al empleador (opcional)</label>
+        <textarea name="mensaje" class="form-control" rows="5" placeholder="Cuéntale por qué eres el candidato ideal..."></textarea>
       </div>
-      <button type="submit" class="btn btn-ch-green w-100 fw-bold">
-        <i class="bi bi-send-fill me-1"></i> Enviar postulación
-      </button>
-      <a href="{% url 'aplicar_rapido' trabajo.pk %}" class="btn btn-outline-secondary w-100 mt-2 fw-bold">
-        <i class="bi bi-lightning-fill me-1"></i> Aplicación rápida (sin mensaje)
-      </a>
+      <button type="submit" class="btn btn-g btn-full btn-lg"><i class="bi bi-send"></i> Enviar solicitud</button>
     </form>
-  </div>
+  </div></div>
 </div>
+
+{% include 'core/_sidebar_close.html' %}
 {% endblock %}

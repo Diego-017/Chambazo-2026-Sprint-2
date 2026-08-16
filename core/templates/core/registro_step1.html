@@ -1,72 +1,57 @@
 {% extends 'core/base.html' %}
-{% block title %}Crear cuenta – Chambazo{% endblock %}
+{% block title %}Crear cuenta{% endblock %}
 {% block body %}
-<div class="auth-bg">
-  <div class="auth-card">
-    <div class="logo-circle"><i class="bi bi-briefcase-fill"></i></div>
-    <h1 class="auth-title">Crear cuenta</h1>
-    <p class="auth-sub">Únete a Chambazo en minutos</p>
-    <div class="step-dots mt-3">
-      <div class="step-dot active-g" id="sd1"></div>
-      <div class="step-dot"></div>
-      <div class="step-dot"></div>
+<div class="wizard-shell">
+  <div class="wizard-card">
+    <aside class="wizard-side">
+      <div class="wizard-side-logo">
+        <div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <span>Chambazo</span>
+      </div>
+      <div class="wizard-step current"><div class="wizard-step-num">1</div> Tipo de cuenta</div>
+      <div class="wizard-step"><div class="wizard-step-num">2</div> Información</div>
+      <div class="wizard-step"><div class="wizard-step-num">3</div> Detalles</div>
+      <div class="wizard-side-footer">¿Ya tienes cuenta?<br><a href="{% url 'login' %}">Iniciar sesión</a></div>
+    </aside>
+    <div class="wizard-main">
+      <h2>¿Cómo usarás Chambazo?</h2>
+      <p class="sub">Elige el tipo de cuenta que mejor se adapte a ti</p>
+      <form method="post" style="flex:1;display:flex;flex-direction:column;">
+        {% csrf_token %}
+        <input type="hidden" name="rol" id="rolInput" value="trabajador">
+        <div class="role-option sel-g" data-rol="trabajador" onclick="selectRol('trabajador')">
+          <div class="icon">🔨</div>
+          <div>
+            <div class="title">Soy trabajador</div>
+            <div class="desc">Busco oportunidades de trabajo cerca de mí</div>
+          </div>
+          <div class="check"><i class="bi bi-check-circle-fill t-green"></i></div>
+        </div>
+        <div class="role-option" data-rol="contratista" onclick="selectRol('contratista')">
+          <div class="icon">🏢</div>
+          <div>
+            <div class="title">Soy empleador</div>
+            <div class="desc">Necesito contratar trabajadores calificados</div>
+          </div>
+          <div class="check" style="display:none;"><i class="bi bi-check-circle-fill" style="color:var(--yellow-dark);"></i></div>
+        </div>
+        <div style="margin-top:auto;padding-top:16px;">
+          <button type="submit" class="btn btn-g btn-full btn-lg">Continuar <i class="bi bi-arrow-right"></i></button>
+        </div>
+      </form>
     </div>
-    <h6 class="fw-bold mb-3">¿Cómo usarás Chambazo?</h6>
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="rol" id="rolField" value="">
-      <div class="role-option-card" id="opt-t" onclick="selRol('trabajador')">
-        <div style="width:40px;height:40px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="icon-t">
-          <i class="bi bi-person-fill" style="color:#94a3b8;font-size:18px;"></i>
-        </div>
-        <div>
-          <div class="fw-bold" style="font-size:14px;">Busco trabajo</div>
-          <div class="text-muted" style="font-size:12px;">Encontrar oportunidades laborales</div>
-        </div>
-        <i class="bi bi-check-circle-fill ms-auto text-green d-none" id="chk-t"></i>
-      </div>
-      <div class="role-option-card" id="opt-c" onclick="selRol('contratista')">
-        <div style="width:40px;height:40px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="icon-c">
-          <i class="bi bi-building" style="color:#94a3b8;font-size:18px;"></i>
-        </div>
-        <div>
-          <div class="fw-bold" style="font-size:14px;">Necesito contratar</div>
-          <div class="text-muted" style="font-size:12px;">Publicar trabajos y encontrar profesionales</div>
-        </div>
-        <i class="bi bi-check-circle-fill ms-auto d-none" id="chk-c" style="color:var(--ch-yellow);"></i>
-      </div>
-      <button type="submit" class="btn btn-ch-green w-100 fw-bold mt-2" id="btn-cont" disabled style="opacity:.5;">Continuar</button>
-    </form>
-    <p class="text-center text-muted small mt-3">¿Ya tienes cuenta? <a href="{% url 'login' %}" class="text-green fw-bold">Iniciar sesión</a></p>
   </div>
 </div>
 <script>
-let sel = '';
-function selRol(r) {
-  sel = r;
-  document.getElementById('rolField').value = r;
-  ['t','c'].forEach(x => {
-    document.getElementById('opt-'+x).classList.remove('sel-g','sel-y');
-    document.getElementById('chk-'+x).classList.add('d-none');
-    document.getElementById('icon-'+x).style.background = '#e9ecef';
+function selectRol(rol){
+  document.querySelectorAll('.role-option').forEach(el=>{
+    el.classList.remove('sel-g','sel-y');
+    el.querySelector('.check').style.display='none';
   });
-  if (r === 'trabajador') {
-    document.getElementById('opt-t').classList.add('sel-g');
-    document.getElementById('chk-t').classList.remove('d-none');
-    document.getElementById('icon-t').style.background = 'var(--ch-green)';
-    document.getElementById('icon-t').querySelector('i').style.color = 'white';
-    document.getElementById('sd1').className = 'step-dot active-g';
-    document.getElementById('btn-cont').className = 'btn btn-ch-green w-100 fw-bold mt-2';
-  } else {
-    document.getElementById('opt-c').classList.add('sel-y');
-    document.getElementById('chk-c').classList.remove('d-none');
-    document.getElementById('icon-c').style.background = 'var(--ch-yellow)';
-    document.getElementById('icon-c').querySelector('i').style.color = 'white';
-    document.getElementById('sd1').className = 'step-dot active-y';
-    document.getElementById('btn-cont').className = 'btn btn-ch-yellow w-100 fw-bold mt-2';
-  }
-  document.getElementById('btn-cont').disabled = false;
-  document.getElementById('btn-cont').style.opacity = '1';
+  const sel = document.querySelector(`[data-rol="${rol}"]`);
+  sel.classList.add(rol==='trabajador'?'sel-g':'sel-y');
+  sel.querySelector('.check').style.display='block';
+  document.getElementById('rolInput').value = rol;
 }
 </script>
 {% endblock %}

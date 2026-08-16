@@ -1,143 +1,126 @@
 {% extends 'core/base.html' %}
-{% block title %}{{ trabajo.titulo }} – Chambazo{% endblock %}
+{% block title %}{{ trabajo.titulo }}{% endblock %}
+{% block extra_head %}
+<script>function initMap(){window._mapReady=true;}</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_KEY }}&callback=initMap" async defer></script>
+{% endblock %}
 {% block body %}
-<nav class="ch-navbar">
-  <a href="{% url 'home_trabajador' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
-  <span class="fw-bold" style="font-size:15px;">Detalle de oferta</span>
-  <a href="{% url 'notificaciones' %}" class="notif-btn ms-auto">
-    <i class="bi bi-bell-fill"></i>
-    {% if notif_count > 0 %}<span class="notif-badge">{{ notif_count }}</span>{% endif %}
-  </a>
-</nav>
+{% if request.user.profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
 
-<div class="page-wrap">
-  <div class="ch-card p-4 mb-3">
-    <!-- Cabecera -->
-    <div class="d-flex justify-content-between align-items-start mb-2">
-      <h1 class="fw-bold mb-0" style="font-size:20px;">{{ trabajo.titulo }}</h1>
-      <div class="d-flex flex-column align-items-end gap-1">
-        {% if trabajo.es_urgente %}<span class="badge-urgente">URGENTE</span>{% endif %}
-        <span class="badge-{{ trabajo.estado_vacante }}">{{ trabajo.get_estado_vacante_display }}</span>
-      </div>
+<div class="page-hd">
+  <div>
+    <div class="flex-c gap-8 mb-4">
+      <h1 style="font-size:20px;">{{ trabajo.titulo }}</h1>
+      {% if trabajo.contratista.profile.verificado %}<i class="bi bi-patch-check-fill t-green"></i>{% endif %}
+      {% if trabajo.es_urgente %}<span class="pill pill-red-lt"><i class="bi bi-fire"></i> Urgente</span>{% endif %}
     </div>
-    <div class="text-green fw-semibold mb-3">{{ trabajo.contratista.profile.nombre_display }}</div>
-
-    <!-- Meta -->
-    <div class="d-flex flex-wrap gap-3 mb-3 pb-3 border-bottom detail-meta">
-      <span><i class="bi bi-geo-alt-fill text-green"></i> {{ trabajo.ubicacion }}</span>
-      <span><i class="bi bi-clock text-green"></i> {{ trabajo.tiempo_relativo }}</span>
-      <span><i class="bi bi-eye text-green"></i> {{ trabajo.vistas }} vistas</span>
-      <span><i class="bi bi-star-fill text-warning"></i> {{ trabajo.contratista.profile.calificacion|floatformat:1 }} / 5.0</span>
-    </div>
-
-    <!-- Descripción -->
-    <div class="detail-section">
-      <h6>Descripción</h6>
-      <p class="text-muted small">{{ trabajo.descripcion }}</p>
-    </div>
-
-    {% if trabajo.requisitos %}
-    <div class="detail-section">
-      <h6>Requisitos</h6>
-      <p class="text-muted small">{{ trabajo.requisitos }}</p>
-    </div>
-    {% endif %}
-
-    {% if trabajo.beneficios %}
-    <div class="detail-section">
-      <h6>Beneficios</h6>
-      <p class="text-muted small">{{ trabajo.beneficios }}</p>
-    </div>
-    {% endif %}
-
-    <!-- Habilidades -->
-    <div class="detail-section">
-      <h6>Habilidades requeridas</h6>
-      {% for skill in trabajo.habilidades_req %}
-      <span class="skill-tag">{{ skill|capfirst }}</span>
-      {% empty %}
-      <span class="skill-tag">{{ trabajo.get_categoria_display }}</span>
-      {% endfor %}
-    </div>
-
-    <!-- Mapa placeholder -->
-    <div class="detail-section">
-      <h6><i class="bi bi-geo-alt-fill text-green"></i> Ubicación del trabajo</h6>
-      <div class="map-mock">
-        <i class="bi bi-pin-map-fill fs-2"></i>
-        <span class="fw-semibold">{{ trabajo.ubicacion }}</span>
-        <span class="small">Mapa interactivo</span>
-      </div>
-    </div>
-
-    <!-- Precio -->
-    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-      <div>
-        <div class="text-muted small">Pago estimado</div>
-        <div class="job-price">${{ trabajo.presupuesto }}</div>
-      </div>
-      <div class="text-muted small">{{ trabajo.tiempo_relativo }}</div>
-    </div>
+    <p><i class="bi bi-geo-alt"></i> {{ trabajo.ubicacion }} · <span class="stars" style="font-size:12px;">★</span> {{ trabajo.contratista.profile.calificacion|default:"4.5" }} · <i class="bi bi-people"></i> {{ trabajo.candidatos_count }} postulantes · {{ trabajo.tiempo_relativo }}</p>
   </div>
-
-  <!-- Sección de reseñas -->
-  {% if resenas %}
-  <div class="ch-card p-4 mb-3">
-    <h6 class="fw-bold mb-3">Reseñas del contratista</h6>
-    {% for r in resenas %}
-    <div class="border-bottom pb-2 mb-2">
-      <div class="d-flex justify-content-between">
-        <span class="fw-semibold small">{{ r.autor.get_full_name }}</span>
-        <span class="text-warning small">{% for i in "12345" %}{% if forloop.counter <= r.calificacion %}★{% endif %}{% endfor %}</span>
-      </div>
-      <div class="text-muted small">{{ r.comentario }}</div>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  <!-- Aplicación -->
-  <div class="ch-card p-4">
-    {% if trabajo.estado_vacante == 'ocupada' %}
-    <div class="text-center py-2">
-      <i class="bi bi-x-circle-fill text-danger fs-2 d-block mb-2"></i>
-      <p class="fw-bold">Esta vacante ya está ocupada</p>
-    </div>
-    {% elif ya_aplico %}
-    <h6 class="fw-bold mb-1">Tu postulación</h6>
-    <p class="text-muted small mb-3">Ya aplicaste a esta vacante.</p>
-    {% if mi_solicitud %}
-    <div class="p-3 rounded mb-3" style="background:#f0f9ff;">
-      <span class="fw-semibold small">Estado: </span>
-      <span class="badge bg-{{ mi_solicitud.get_estado_color }} text-white">{{ mi_solicitud.get_estado_display }}</span>
-    </div>
+  <div class="flex-c gap-8">
+    {% if request.user.profile.rol == 'trabajador' %}
+    <form method="post" action="{% url 'toggle_guardado' trabajo.pk %}"><input type="hidden" name="next" value="{{ request.get_full_path }}">{% csrf_token %}
+      <button type="submit" class="btn btn-outline btn-sm"><i class="bi {% if esta_guardado %}bi-heart-fill{% else %}bi-heart{% endif %}" style="{% if esta_guardado %}color:var(--red);{% endif %}"></i> Guardar</button>
+    </form>
     {% endif %}
-    <a href="{% url 'mis_solicitudes' %}" class="btn btn-ch-green w-100 fw-bold">Ver mis solicitudes</a>
-    {% else %}
-    <h6 class="fw-bold mb-1">Aplicación rápida</h6>
-    <p class="text-muted small mb-3">Tu perfil ya está completo. Elige cómo aplicar:</p>
-    <a href="{% url 'aplicar_trabajo' trabajo.pk %}" class="btn btn-ch-green w-100 fw-bold mb-2">
-      <i class="bi bi-send-fill"></i> Postularme con mensaje
-    </a>
-    <a href="{% url 'aplicar_rapido' trabajo.pk %}" class="btn btn-outline-success w-100 fw-bold mb-3">
-      <i class="bi bi-lightning-fill"></i> Aplicación rápida (sin mensaje)
-    </a>
-    <div class="row g-2">
-      <div class="col-6">
-        <a href="tel:+503" class="btn btn-outline-secondary w-100"><i class="bi bi-telephone-fill"></i> Llamar</a>
-      </div>
-      <div class="col-6">
-        <a href="https://wa.me/503" class="btn btn-outline-success w-100"><i class="bi bi-whatsapp"></i> WhatsApp</a>
-      </div>
-    </div>
-    {% endif %}
+    <a href="javascript:history.back()" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
   </div>
 </div>
 
-<nav class="bottom-nav">
-  <a href="{% url 'home_trabajador' %}"><i class="bi bi-search"></i><span>Buscar</span></a>
-  <a href="{% url 'mis_solicitudes' %}"><i class="bi bi-briefcase"></i><span>Solicitudes</span></a>
-  <a href="{% url 'notificaciones' %}"><i class="bi bi-bell"></i><span>Notif.</span></a>
-  <a href="{% url 'perfil_trabajador' %}"><i class="bi bi-person-fill"></i><span>Perfil</span></a>
-</nav>
+<div class="layout-2col-rev">
+  <div>
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-10">Descripción del trabajo</h3>
+      <p class="t-body t-mid" style="line-height:1.7;">{{ trabajo.descripcion }}</p>
+    </div></div>
+
+    {% if trabajo.requisitos %}
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-10">Requisitos</h3>
+      <p class="t-body t-mid" style="line-height:1.7;">{{ trabajo.requisitos }}</p>
+    </div></div>
+    {% endif %}
+
+    {% if trabajo.habilidades_req %}
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-10">Habilidades requeridas</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">{% for hab in trabajo.habilidades_req %}<span class="skill-tag">{{ hab }}</span>{% endfor %}</div>
+    </div></div>
+    {% endif %}
+
+    {% if match_score > 0 %}
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-10">Compatibilidad con tu perfil</h3>
+      <div class="flex-bc mb-6"><span class="t-sm t-mid">Coincidencia de habilidades</span><span class="fw-800 t-green">{{ match_score }}%</span></div>
+      <div class="prog-wrap"><div class="prog-fill" style="width:{{ match_score }}%;"></div></div>
+    </div></div>
+    {% endif %}
+
+    <!-- Mapa -->
+    {% if trabajo.lat and trabajo.lng %}
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-10"><i class="bi bi-geo-alt-fill t-green"></i> Ubicación del trabajo</h3>
+      <div class="map-wrap"><div id="mapaDetalle" class="gmap" style="height:230px;"></div></div>
+      <div class="flex-c gap-6 mt-8">
+        <span class="t-sm t-mid fw-600">{{ trabajo.ubicacion }}</span>
+        <a href="https://www.google.com/maps/search/?api=1&query={{ trabajo.lat }},{{ trabajo.lng }}" target="_blank" class="btn btn-outline btn-xs" style="margin-left:auto;"><i class="bi bi-box-arrow-up-right"></i> Abrir en Maps</a>
+      </div>
+    </div></div>
+    <script>
+    function initDetalleMap(){
+      const pos={lat:{{ trabajo.lat }},lng:{{ trabajo.lng }}};
+      const map=new google.maps.Map(document.getElementById('mapaDetalle'),{center:pos,zoom:14,disableDefaultUI:true,zoomControl:true,
+        styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{elementType:'geometry',stylers:[{color:'#f5f5f5'}]},
+          {featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#c9d8f0'}]}]});
+      new google.maps.Marker({position:pos,map,icon:{path:google.maps.SymbolPath.CIRCLE,scale:14,
+        fillColor:'{{ trabajo.es_urgente|yesno:"#e5484d,#1FA35A" }}',fillOpacity:1,strokeColor:'#fff',strokeWeight:3},animation:google.maps.Animation.DROP});
+      new google.maps.Circle({strokeColor:'{{ trabajo.es_urgente|yesno:"#e5484d,#1FA35A" }}',strokeOpacity:.2,strokeWeight:1,
+        fillColor:'{{ trabajo.es_urgente|yesno:"#e5484d,#1FA35A" }}',fillOpacity:.07,map,center:pos,radius:800});
+    }
+    if(window._mapReady){initDetalleMap();}else{const o=window.initMap;window.initMap=function(){if(o)o();initDetalleMap();};}
+    </script>
+    {% endif %}
+  </div>
+
+  <!-- Sidebar pago -->
+  <div class="detail-sidebar">
+    <div class="pago-box mb-16">
+      <div class="lbl">PAGO ESTIMADO</div>
+      <div class="amt">${{ trabajo.presupuesto }}</div>
+
+      {% if request.user.profile.rol == 'trabajador' %}
+        {% if ya_aplico %}
+        <div style="background:var(--green-light);border-radius:10px;padding:12px;text-align:center;">
+          <i class="bi bi-check-circle-fill t-green" style="font-size:20px;"></i>
+          <div class="fw-700 t-green mt-4">Ya aplicaste</div>
+          <div class="t-xs t-mid">Estado: {{ solicitud_estado }}</div>
+        </div>
+        {% elif trabajo.estado_vacante == 'disponible' %}
+        <a href="{% url 'aplicar_trabajo' trabajo.pk %}" class="btn btn-g btn-full btn-lg mb-10" style="justify-content:center;">Postularme ahora</a>
+        <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <a href="tel:{{ trabajo.contratista.profile.telefono }}" class="btn btn-outline btn-sm" style="justify-content:center;"><i class="bi bi-telephone"></i> Llamar</a>
+          <a href="https://wa.me/503{{ trabajo.contratista.profile.telefono|cut:' '|cut:'+503' }}" target="_blank" class="btn btn-outline btn-sm" style="justify-content:center;"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+        </div>
+        {% else %}
+        <div class="btn btn-outline btn-full" style="opacity:.5;justify-content:center;">No disponible</div>
+        {% endif %}
+        <div class="info-box-sm"><i class="bi bi-shield-check"></i> <strong>Pago seguro</strong> — Chambazo protege tu pago hasta completar el trabajo.</div>
+      {% else %}
+        <a href="{% url 'candidatos' trabajo.pk %}" class="btn btn-y btn-full btn-lg" style="justify-content:center;"><i class="bi bi-people"></i> Ver candidatos ({{ trabajo.candidatos_count }})</a>
+      {% endif %}
+    </div>
+
+    <div class="card"><div class="card-body">
+      <h4 class="t-h3 mb-10">Sobre el empleador</h4>
+      <div class="flex-c gap-10">
+        <div class="conv-av" style="background:var(--yellow);">{% if trabajo.contratista.profile.foto %}<img src="{{ trabajo.contratista.profile.foto.url }}" alt="">{% else %}<i class="bi bi-building"></i>{% endif %}</div>
+        <div>
+          <div class="fw-700 t-sm">{{ trabajo.contratista.profile.nombre_display }}</div>
+          {% if trabajo.contratista.profile.verificado %}<div class="t-xxs t-green fw-700"><i class="bi bi-patch-check-fill"></i> Verificado</div>{% endif %}
+        </div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
 {% endblock %}

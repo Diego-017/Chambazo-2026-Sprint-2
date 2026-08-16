@@ -1,77 +1,107 @@
 {% extends 'core/base.html' %}
-{% block title %}Asistente Chambazo{% endblock %}
+{% block title %}Asistente IA{% endblock %}
 {% block body %}
-<div class="chat-page">
-  <div class="ch-navbar" style="position:relative;">
-    <a href="{% url 'home' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
-    <div class="brand-icon" style="width:36px;height:36px;font-size:16px;"><i class="bi bi-robot"></i></div>
-    <div class="ms-2">
-      <div class="fw-bold" style="font-size:14px;">Asistente Chambazo</div>
-      <div style="font-size:11px;color:var(--ch-green);">● En línea</div>
-    </div>
-  </div>
+{% if request.user.profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
 
-  <div class="chat-messages" id="chatMessages">
-    <div class="msg-bot d-flex flex-column gap-1">
-      <div class="bubble">¡Hola! 👋 Soy el asistente de Chambazo. ¿En qué puedo ayudarte hoy?</div>
-      <div class="bubble">¿Estás buscando trabajo o necesitas contratar a alguien?</div>
-      <div class="d-flex flex-wrap gap-2 mt-1">
-        <button class="qr-btn" onclick="sendQ('Busco trabajo')">Busco trabajo</button>
-        <button class="qr-btn" onclick="sendQ('Quiero contratar')">Quiero contratar</button>
-        <button class="qr-btn" onclick="sendQ('Tengo un problema')">Tengo un problema</button>
+<div class="page-hd"><div><h1>Asistente Chambazo</h1><p><span class="pill-dot" style="background:var(--green);display:inline-block;width:7px;height:7px;border-radius:50%;"></span> En línea — responde al instante</p></div></div>
+
+<div class="card" style="height:calc(100vh - 190px);display:flex;flex-direction:column;overflow:hidden;">
+  <div class="chat-msgs" id="chatMessages" style="flex:1;">
+    <div class="msg-row">
+      <div class="msg-av-sm" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:32px;height:32px;">🤖</div>
+      <div>
+        <div class="bubble bubble-them">
+          👋 ¡Hola, <strong>{{ request.user.first_name|default:'amigo' }}</strong>! Soy el asistente de Chambazo.
+          {% if request.user.profile.rol == 'trabajador' %}
+          Puedo ayudarte a encontrar trabajo, mejorar tu perfil o resolver dudas sobre pagos. ¿En qué te ayudo?
+          {% else %}
+          Puedo ayudarte a redactar vacantes, encontrar candidatos o revisar tus estadísticas. ¿En qué te ayudo?
+          {% endif %}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;">
+          {% if request.user.profile.rol == 'trabajador' %}
+          <button class="qr-btn" onclick="sendQuick('¿Cómo mejoro mi perfil?')">¿Cómo mejoro mi perfil?</button>
+          <button class="qr-btn" onclick="sendQuick('¿Cómo funciona el pago?')">¿Cómo funciona el pago?</button>
+          <button class="qr-btn" onclick="sendQuick('Busco trabajo urgente')">Busco trabajo urgente</button>
+          <button class="qr-btn" onclick="sendQuick('¿Cómo me califica el empleador?')">¿Cómo me califica el empleador?</button>
+          {% else %}
+          <button class="qr-btn" onclick="sendQuick('Ayúdame a redactar una vacante')">Ayúdame a redactar una vacante</button>
+          <button class="qr-btn" onclick="sendQuick('¿Cómo encuentro el candidato ideal?')">¿Cómo encuentro el candidato ideal?</button>
+          <button class="qr-btn" onclick="sendQuick('¿Cuánto debería pagar?')">¿Cuánto debería pagar?</button>
+          <button class="qr-btn" onclick="sendQuick('¿Cómo van mis estadísticas?')">¿Cómo van mis estadísticas?</button>
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
-
-  <div style="padding:12px 16px;background:white;border-top:1px solid #e9ecef;display:flex;gap:10px;align-items:center;">
-    <input type="text" id="chatInput" class="form-control" placeholder="Escribe tu mensaje..."
-           onkeydown="if(event.key==='Enter')sendMsg()">
-    <button class="btn btn-ch-green" style="border-radius:50%;width:44px;height:44px;padding:0;flex-shrink:0;" onclick="sendMsg()">
-      <i class="bi bi-send-fill"></i>
-    </button>
-  </div>
+  <form class="chat-input-bar" id="chatForm">
+    {% csrf_token %}
+    <input type="text" class="chat-input" id="chatInput" placeholder="Escribe tu pregunta..." autocomplete="off">
+    <button type="submit" class="btn {% if request.user.profile.rol == 'contratista' %}btn-y{% else %}btn-g{% endif %} btn-icon-circle" style="width:38px;height:38px;" id="sendBtn"><i class="bi bi-send-fill"></i></button>
+  </form>
 </div>
 
+{% include 'core/_sidebar_close.html' %}
 <script>
-const respuestas = {
-  'busco trabajo': ['¡Perfecto! Puedes explorar las oportunidades en la pantalla principal.', '¿En qué área te especializas? Así puedo sugerirte vacantes que coincidan con tus habilidades.'],
-  'quiero contratar': ['Como contratista puedes publicar tus necesidades y encontrar trabajadores calificados.', '¿Qué tipo de trabajo necesitas? Puedo ayudarte a redactar la publicación.'],
-  'tengo un problema': ['Lamento escuchar eso. ¿Puedes describir el problema?', 'Estoy aquí para ayudarte. ¿Es un problema técnico o relacionado con una postulación?'],
-  'electricidad': ['Hay varios electricistas disponibles en tu zona con calificaciones excelentes. Mira la sección principal.', '¿Cuándo necesitas el servicio? ¿Es urgente?'],
-  'plomeria': ['Tenemos plomeros verificados cerca de ti.', '¿Es una emergencia o puedes esperar? Hay trabajos urgentes disponibles.'],
-  'urgente': ['Para trabajos urgentes toca el banner rojo en la pantalla principal.', '¡Respondemos rápido! Los trabajos urgentes tienen mayor visibilidad.'],
-  'default': ['Entendido. Déjame ayudarte. ¿Hay algo más específico?', 'Puedo ayudarte con búsqueda de trabajo, postulaciones o publicar vacantes.']
-};
+const CSRF = document.querySelector('[name=csrfmiddlewaretoken]').value;
+const form = document.getElementById('chatForm');
+const input = document.getElementById('chatInput');
+const wrap = document.getElementById('chatMessages');
+const esRol = '{{ request.user.profile.rol }}';
 
-function addMsg(text, type) {
-  const chat = document.getElementById('chatMessages');
+form.addEventListener('submit', function(e){
+  e.preventDefault();
+  const text = input.value.trim();
+  if(!text) return;
+  input.value='';
+  addMsg('user', text);
+  sendToServer(text);
+});
+
+function sendQuick(text){ input.value = text; form.dispatchEvent(new Event('submit')); }
+
+async function sendToServer(text){
+  setLoading(true);
+  try{
+    const res = await fetch('{% url "asistente_responder" %}', {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':CSRF},
+      body:'mensaje='+encodeURIComponent(text)
+    });
+    const data = await res.json();
+    addMsg('bot', data.respuesta || 'No pude generar una respuesta, intenta de nuevo.');
+  }catch(e){
+    addMsg('bot', '❌ Hubo un problema de conexión. Intenta de nuevo.');
+  }
+  setLoading(false);
+}
+
+function addMsg(who, text){
   const div = document.createElement('div');
-  div.className = `msg-${type} d-flex ${type === 'user' ? 'justify-content-end' : ''}`;
-  div.innerHTML = `<div class="bubble">${text}</div>`;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+  div.className = 'msg-row' + (who==='user' ? ' me' : '');
+  const formatted = text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  div.innerHTML = who==='user'
+    ? `<div class="msg-av-sm" style="background:var(--green);">👤</div><div class="bubble bubble-me">${escHtml(text)}</div>`
+    : `<div class="msg-av-sm" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">🤖</div><div class="bubble bubble-them">${formatted}</div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
 }
 
-function sendQ(text) {
-  addMsg(text, 'user');
-  respond(text.toLowerCase());
+function setLoading(on){
+  document.getElementById('sendBtn').disabled = on;
+  input.disabled = on;
+  if(on){
+    const d = document.createElement('div');
+    d.className='msg-row'; d.id='loadingMsg';
+    d.innerHTML = `<div class="msg-av-sm" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">🤖</div>
+      <div class="bubble bubble-them" style="display:flex;gap:4px;">
+        <span style="animation:blink 1s infinite 0s;">●</span><span style="animation:blink 1s infinite .3s;">●</span><span style="animation:blink 1s infinite .6s;">●</span>
+      </div>`;
+    wrap.appendChild(d); wrap.scrollTop = wrap.scrollHeight;
+  } else {
+    document.getElementById('loadingMsg')?.remove();
+  }
 }
-
-function sendMsg() {
-  const inp = document.getElementById('chatInput');
-  const text = inp.value.trim();
-  if (!text) return;
-  addMsg(text, 'user');
-  inp.value = '';
-  respond(text.toLowerCase());
-}
-
-function respond(text) {
-  setTimeout(() => {
-    const key = Object.keys(respuestas).find(k => k !== 'default' && text.includes(k));
-    const resps = respuestas[key || 'default'];
-    resps.forEach((r, i) => setTimeout(() => addMsg(r, 'bot'), i * 600));
-  }, 400);
-}
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>
 {% endblock %}

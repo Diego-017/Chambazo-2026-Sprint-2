@@ -1,57 +1,57 @@
 {% extends 'core/base.html' %}
-{% block title %}Crear cuenta – Último paso{% endblock %}
+{% block title %}{% if rol == 'trabajador' %}Tus habilidades{% else %}Descripción{% endif %}{% endblock %}
 {% block body %}
-<div class="auth-bg">
-  <div class="auth-card" style="max-width:480px;">
-    <div class="logo-circle {% if rol == 'contratista' %}bg-yellow{% endif %}"><i class="bi bi-briefcase-fill"></i></div>
-    <h1 class="auth-title">Crear cuenta</h1>
-    <p class="auth-sub">Únete a Chambazo en minutos</p>
-    <div class="step-dots mt-3">
-      <div class="step-dot {% if rol == 'trabajador' %}active-g{% else %}active-y{% endif %}"></div>
-      <div class="step-dot {% if rol == 'trabajador' %}active-g{% else %}active-y{% endif %}"></div>
-      <div class="step-dot {% if rol == 'trabajador' %}active-g{% else %}active-y{% endif %}"></div>
-    </div>
-    <form method="post" id="s3form">
-      {% csrf_token %}
+<div class="wizard-shell">
+  <div class="wizard-card" style="{% if rol == 'trabajador' %}max-width:960px;{% endif %}">
+    <aside class="wizard-side">
+      <div class="wizard-side-logo"><div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div><span>Chambazo</span></div>
+      <div class="wizard-step done"><div class="wizard-step-num"><i class="bi bi-check-lg"></i></div> Tipo de cuenta</div>
+      <div class="wizard-step done"><div class="wizard-step-num"><i class="bi bi-check-lg"></i></div> Información</div>
+      <div class="wizard-step current"><div class="wizard-step-num">3</div> Detalles</div>
+      <div class="wizard-side-footer">¿Ya tienes cuenta?<br><a href="{% url 'login' %}">Iniciar sesión</a></div>
+    </aside>
+    <div class="wizard-main">
       {% if rol == 'trabajador' %}
-      <h6 class="fw-bold mb-1">¿Qué sabes hacer?</h6>
-      <p class="text-muted small mb-3">Selecciona tus habilidades para que te encuentren más fácilmente</p>
-      <div id="skillsWrap">
-        {% for val, label in skills %}
-        <label class="skill-chip-label" id="chip-{{ val }}">
-          <input type="checkbox" name="habilidades" value="{{ val }}" onchange="upChip('{{ val }}')"> {{ label }}
-        </label>
-        {% endfor %}
-      </div>
-      <p class="text-muted small mt-2 mb-3" id="skillCount">0 habilidades seleccionadas</p>
+      <h2>Tus habilidades</h2>
+      <p class="sub">Selecciona lo que sabes hacer</p>
       {% else %}
-      <h6 class="fw-bold mb-2">Sobre tu empresa</h6>
-      <div class="mb-3">
-        <label class="form-label fw-semibold small">Descripción</label>
-        <textarea name="descripcion" class="form-control" rows="4" placeholder="Cuéntanos sobre tu empresa, qué tipo de trabajos sueles necesitar..."></textarea>
-      </div>
+      <h2>Descripción</h2>
+      <p class="sub">Cuéntanos sobre tu empresa</p>
       {% endif %}
-      <div class="form-check p-3 rounded mb-3" style="background:var(--ch-green-light);border:1px solid var(--ch-green);">
-        <input class="form-check-input" type="checkbox" name="terminos" id="terminos" required>
-        <label class="form-check-label small" for="terminos">
-          Acepto los <a href="#" class="text-green fw-bold">Términos y Condiciones</a> y la <a href="#" class="text-green fw-bold">Política de Privacidad</a>
-        </label>
-      </div>
-      {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors.0 }}</div>{% endif %}
-      <div class="d-grid gap-2 d-flex">
-        <a href="{% url 'registro_step2' %}" class="btn btn-outline-secondary flex-fill">Atrás</a>
-        <button type="submit" class="btn {% if rol == 'trabajador' %}btn-ch-green{% else %}btn-ch-yellow{% endif %} flex-fill fw-bold">Crear cuenta</button>
-      </div>
-    </form>
-    <p class="text-center text-muted small mt-3">¿Ya tienes cuenta? <a href="{% url 'login' %}" class="text-green fw-bold">Iniciar sesión</a></p>
+      <form method="post" style="flex:1;display:flex;flex-direction:column;">
+        {% csrf_token %}
+        {% if rol == 'trabajador' %}
+        <div style="margin-bottom:18px;">
+          {% for val, label in skills %}
+          <label class="skill-chip-label">
+            <input type="checkbox" name="habilidades" value="{{ val }}">
+            {{ label }}
+          </label>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="form-group">
+          {{ form.descripcion }}
+        </div>
+        {% endif %}
+        <div class="form-group" style="display:flex;align-items:flex-start;gap:10px;background:var(--bg);padding:13px;border-radius:10px;">
+          {{ form.terminos }}
+          <label style="font-size:12.5px;color:var(--mid);">Acepto los <a href="{% url 'terminos_condiciones' %}" target="_blank" class="t-green fw-700">Términos</a> y la <a href="{% url 'politica_privacidad' %}" target="_blank" class="t-green fw-700">Política de Privacidad</a></label>
+        </div>
+        {% if form.terminos.errors %}<p style="color:var(--red);font-size:11.5px;margin-top:-8px;margin-bottom:10px;">{{ form.terminos.errors.0 }}</p>{% endif %}
+        <div style="margin-top:auto;padding-top:10px;display:flex;gap:10px;">
+          <a href="{% url 'registro_step2' %}" class="btn btn-outline" style="flex:1;justify-content:center;"><i class="bi bi-arrow-left"></i> Atrás</a>
+          <button type="submit" class="btn btn-g" style="flex:1;justify-content:center;">Crear cuenta</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 <script>
-function upChip(val) {
-  const inp = document.querySelector(`input[value="${val}"]`);
-  document.getElementById('chip-' + val).classList.toggle('active', inp.checked);
-  const n = document.querySelectorAll('#skillsWrap input:checked').length;
-  document.getElementById('skillCount').textContent = n + ' habilidad' + (n !== 1 ? 'es' : '') + ' seleccionada' + (n !== 1 ? 's' : '');
-}
+document.querySelectorAll('.skill-chip-label').forEach(label=>{
+  label.addEventListener('click',()=>{
+    setTimeout(()=>label.classList.toggle('active', label.querySelector('input').checked),0);
+  });
+});
 </script>
 {% endblock %}

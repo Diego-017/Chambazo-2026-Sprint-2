@@ -1,39 +1,64 @@
 {% extends 'core/base.html' %}
-{% block title %}Chambazo – Iniciar Sesión{% endblock %}
+{% block title %}Iniciar sesión{% endblock %}
 {% block body %}
-<div class="auth-bg">
-  <div class="auth-card">
-    <div class="logo-circle"><i class="bi bi-briefcase-fill"></i></div>
-    <h1 class="auth-title">Chambazo</h1>
-    <p class="auth-sub">Encuentra trabajo rápido y cerca de ti</p>
-    {% if error %}<div class="alert alert-danger mt-3 py-2 small">{{ error }}</div>{% endif %}
-    {% if messages %}{% for m in messages %}<div class="alert alert-info mt-3 py-2 small">{{ m }}</div>{% endfor %}{% endif %}
-    <form method="post" class="mt-4" id="loginForm">
-      {% csrf_token %}
-      <input type="hidden" name="rol_login" id="rolInput" value="trabajador">
-      <div class="mb-3">
-        <label class="form-label fw-semibold small">Correo electrónico</label>
-        <input type="email" name="email" class="form-control" placeholder="tu@email.com" required>
+<div class="auth-shell">
+  <aside class="auth-side">
+    <div class="auth-side-logo">
+      <div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+      <span>Chambazo</span>
+    </div>
+    <h1>Tu próxima oportunidad está aquí.</h1>
+    <p class="lead">Conectamos trabajadores informales con empleadores de confianza en El Salvador.</p>
+    <div class="auth-side-stats">
+      <div class="auth-stat-box"><div class="n">{{ stats_landing.trabajadores }}+</div><div class="l">Trabajadores</div></div>
+      <div class="auth-stat-box"><div class="n">{{ stats_landing.empleadores }}+</div><div class="l">Empleadores</div></div>
+      <div class="auth-stat-box"><div class="n">{{ stats_landing.promedio }}★</div><div class="l">Promedio</div></div>
+    </div>
+    <div class="auth-side-footer">Universidad Gerardo Barrios · Sprint #2 · Chambazo 2026</div>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-form-wrap">
+      <h2>Bienvenido de vuelta</h2>
+      <p class="sub">Ingresa a tu cuenta para continuar</p>
+
+      {% if error %}
+      <div style="background:var(--red-light);color:#a3282c;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:7px;">
+        <i class="bi bi-exclamation-triangle-fill"></i> {{ error }}
       </div>
-      <div class="mb-3">
-        <label class="form-label fw-semibold small">Contraseña</label>
-        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-        <div class="text-end mt-1">
-          <a href="{% url 'recuperar_password' %}" class="small text-green">¿Olvidaste tu contraseña?</a>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="rol_login" id="rolInput" value="trabajador">
+        <div class="form-group">
+          <label class="form-label">Correo electrónico</label>
+          {{ form.email }}
         </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          {{ form.password }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Entrar como:</label>
+          <div class="role-btn-row">
+            <button type="submit" name="rol_login" value="trabajador" class="role-btn role-btn-g">
+              <i class="bi bi-person-fill"></i> Trabajador
+            </button>
+            <button type="submit" name="rol_login" value="contratista" class="role-btn role-btn-y">
+              <i class="bi bi-building"></i> Empleador
+            </button>
+          </div>
+        </div>
+      </form>
+      <div class="text-center mt-8">
+        <a href="{% url 'recuperar_password' %}" class="t-xs t-green fw-600">¿Olvidaste tu contraseña?</a>
       </div>
-      <p class="text-center text-muted small mb-2">Iniciar sesión como:</p>
-      <div class="role-btn-wrap">
-        <button type="submit" class="role-btn role-btn-w" onclick="document.getElementById('rolInput').value='trabajador'">
-          <i class="bi bi-person-fill fs-5"></i>Trabajador
-        </button>
-        <button type="submit" class="role-btn role-btn-c" onclick="document.getElementById('rolInput').value='contratista'">
-          <i class="bi bi-building fs-5"></i>Contratista
-        </button>
-      </div>
-    </form>
-    <hr class="my-3">
-    <a href="{% url 'registro_step1' %}" class="btn btn-outline-success w-100 fw-bold">Crear cuenta nueva</a>
-  </div>
+
+      <div class="auth-divider">o</div>
+
+      <a href="{% url 'registro_step1' %}" class="btn btn-outline btn-full btn-lg">Crear cuenta nueva</a>
+    </div>
+  </main>
 </div>
 {% endblock %}

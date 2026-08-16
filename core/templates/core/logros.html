@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+{% block title %}Logros{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_trabajador.html' %}
+
+<div class="page-hd"><div><h1>Logros</h1><p>Desbloquea insignias completando trabajos</p></div></div>
+
+<div class="logro-hero">
+  <div class="logro-hero-icon"><i class="bi bi-trophy-fill"></i></div>
+  <div style="flex:1;">
+    <div class="fw-800" style="font-size:19px;">{{ puntos_totales }} puntos</div>
+    <div class="t-xs" style="color:#aab4c4;margin-bottom:10px;">{{ desbloqueados }} de {{ total_logros }} logros desbloqueados · Te faltan {{ puntos_faltan }} pts para el siguiente nivel</div>
+    <div class="prog-wrap" style="background:rgba(255,255,255,.12);"><div class="prog-fill" style="width:{{ nivel_pct }}%;"></div></div>
+  </div>
+</div>
+
+<div class="logros-grid">
+  {% for item in lista_logros %}
+  <div class="logro-card {% if not item.desbloqueado %}locked{% endif %}">
+    <div class="logro-icon-box">{{ item.logro.icono }}</div>
+    <div class="fw-700 t-sm">{{ item.logro.nombre }}</div>
+    <div class="t-xs t-muted mt-4">{{ item.logro.descripcion }}</div>
+    <div class="logro-pts">{% if item.desbloqueado %}✓ Desbloqueado{% else %}{{ item.logro.puntos }} pts{% endif %}</div>
+  </div>
+  {% endfor %}
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

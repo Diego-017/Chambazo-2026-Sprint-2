@@ -1,105 +1,64 @@
 {% extends 'core/base.html' %}
-{% block title %}Candidatos – {{ trabajo.titulo }}{% endblock %}
+{% block title %}Candidatos{% endblock %}
 {% block body %}
-<nav class="ch-navbar">
-  <a href="{% url 'panel_contratista' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
-  <span class="fw-bold">Candidatos</span>
-  <span class="badge bg-secondary ms-2">{{ solicitudes.count }}</span>
-</nav>
-<div class="page-wrap">
-  <div class="ch-card p-3 mb-3">
-    <div class="fw-bold">{{ trabajo.titulo }}</div>
-    <div class="d-flex gap-3 text-muted small mt-1">
-      <span>${{ trabajo.presupuesto }}</span>
-      <span>{{ trabajo.get_categoria_display }}</span>
-      <span class="badge-{{ trabajo.estado_vacante }}">{{ trabajo.get_estado_vacante_display }}</span>
-    </div>
-    <!-- Cambiar estado vacante -->
-    <div class="mt-2 d-flex gap-2 flex-wrap align-items-center">
-      <span class="text-muted small fw-semibold">Estado vacante:</span>
-      <span class="badge-disponible {% if trabajo.estado_vacante != 'disponible' %}opacity-50{% endif %}">Disponible</span>
-      <span class="badge-en_proceso {% if trabajo.estado_vacante != 'en_proceso' %}opacity-50{% endif %}">En proceso</span>
-      <span class="badge-ocupada {% if trabajo.estado_vacante != 'ocupada' %}opacity-50{% endif %}">Ocupada</span>
-    </div>
-  </div>
+{% include 'core/_sidebar_contratista.html' %}
 
-  {% if messages %}{% for m in messages %}<div class="alert alert-success py-2 small">{{ m }}</div>{% endfor %}{% endif %}
-
-  {% for sol in solicitudes %}
-  <div class="ch-card p-3 mb-3">
-    <div class="d-flex align-items-start gap-3 mb-2">
-      <div class="avatar-xl" style="width:48px;height:48px;font-size:20px;flex-shrink:0;">
-        {% if sol.trabajador.profile.foto %}<img src="{{ sol.trabajador.profile.foto.url }}" alt="">
-        {% else %}<i class="bi bi-person-fill"></i>{% endif %}
-      </div>
-      <div class="flex-grow-1">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <div class="fw-bold">{{ sol.trabajador.get_full_name }}</div>
-            <div class="text-muted small">Aplicó a: {{ trabajo.titulo }}</div>
-            <div class="d-flex gap-2 mt-1 small">
-              <span class="text-warning">★ {{ sol.trabajador.profile.calificacion|floatformat:1 }}</span>
-              <span class="text-muted">· {{ sol.trabajador.profile.total_trabajos }} trabajos</span>
-              {% if sol.trabajador.profile.ubicacion %}
-              <span class="text-muted">· <i class="bi bi-geo-alt"></i> {{ sol.trabajador.profile.ubicacion }}</span>
-              {% endif %}
-            </div>
-          </div>
-          <span class="badge bg-{{ sol.get_estado_color }}">{{ sol.get_estado_display }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Habilidades del candidato -->
-    <div class="mb-2">
-      {% for h in sol.trabajador.profile.habilidades %}
-      <span class="skill-tag">{{ h|capfirst }}</span>
-      {% endfor %}
-    </div>
-
-    <!-- Mensaje de presentación -->
-    {% if sol.mensaje %}
-    <div class="p-2 rounded mb-2" style="background:#f8fafc;border-left:3px solid var(--ch-green);">
-      <div class="text-muted small fst-italic">"{{ sol.mensaje }}"</div>
-    </div>
-    {% endif %}
-
-    {% if sol.rapida %}
-    <span class="badge bg-warning text-dark mb-2"><i class="bi bi-lightning-fill"></i> Aplicación rápida</span>
-    {% endif %}
-
-    <!-- Acciones -->
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="{% url 'perfil_publico' sol.trabajador.pk %}" class="btn btn-sm btn-outline-warning fw-bold">
-        Ver perfil completo
-      </a>
-      {% if sol.estado != 'contratado' %}
-      <a href="{% url 'cambiar_estado_solicitud' sol.pk 'contratado' %}" class="btn btn-sm btn-ch-green fw-bold"
-         onclick="return confirm('¿Contratar a {{ sol.trabajador.get_full_name }}?')">
-        <i class="bi bi-check-circle-fill me-1"></i> Contratar
-      </a>
-      {% if sol.estado == 'pendiente' %}
-      <a href="{% url 'cambiar_estado_solicitud' sol.pk 'en_revision' %}" class="btn btn-sm btn-outline-primary">
-        <i class="bi bi-clock me-1"></i> En revisión
-      </a>
-      <a href="{% url 'cambiar_estado_solicitud' sol.pk 'rechazado' %}" class="btn btn-sm btn-outline-danger"
-         onclick="return confirm('¿Rechazar esta solicitud?')">
-        <i class="bi bi-x-circle me-1"></i> Rechazar
-      </a>
-      {% endif %}
-      {% else %}
-      <span class="badge bg-success fs-6"><i class="bi bi-check-circle-fill me-1"></i> Contratado</span>
-      <a href="tel:{{ sol.trabajador.profile.telefono }}" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-telephone-fill"></i>
-      </a>
-      {% endif %}
-    </div>
-  </div>
-  {% empty %}
-  <div class="text-center py-5 text-muted">
-    <i class="bi bi-people fs-1 d-block mb-2"></i>
-    <p>Aún no hay candidatos para este trabajo.</p>
-  </div>
-  {% endfor %}
+<div class="page-hd">
+  <div><h1>{% if trabajo %}Candidatos — {{ trabajo.titulo }}{% else %}Todos los candidatos{% endif %}</h1><p>{{ solicitudes|length }} candidato{{ solicitudes|length|pluralize }}</p></div>
+  {% if not trabajo and trabajos_propios %}
+  <select onchange="if(this.value)window.location=this.value" class="form-control" style="width:auto;">
+    <option value="">Filtrar por vacante...</option>
+    {% for t in trabajos_propios %}<option value="{% url 'candidatos' t.pk %}">{{ t.titulo }}</option>{% endfor %}
+  </select>
+  {% endif %}
 </div>
+
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+  <a href="?" class="btn {% if not request.GET.estado %}btn-y{% else %}btn-outline{% endif %} btn-xs">Todos</a>
+  <a href="?estado=pendiente" class="btn {% if request.GET.estado == 'pendiente' %}btn-y{% else %}btn-outline{% endif %} btn-xs">Pendientes</a>
+  <a href="?estado=en_revision" class="btn {% if request.GET.estado == 'en_revision' %}btn-y{% else %}btn-outline{% endif %} btn-xs">En revisión</a>
+  <a href="?estado=aceptado" class="btn {% if request.GET.estado == 'aceptado' %}btn-y{% else %}btn-outline{% endif %} btn-xs">Aceptados</a>
+  <a href="?estado=contratado" class="btn {% if request.GET.estado == 'contratado' %}btn-y{% else %}btn-outline{% endif %} btn-xs">Contratados</a>
+  <a href="?estado=rechazado" class="btn {% if request.GET.estado == 'rechazado' %}btn-y{% else %}btn-outline{% endif %} btn-xs">Rechazados</a>
+</div>
+
+{% if solicitudes %}
+<table class="data-table">
+  <thead><tr><th>Candidato</th><th>Habilidades</th><th>Calificación</th><th>Experiencia</th><th>Tarifa</th><th>Compatibilidad</th><th>Estado</th><th>Acciones</th></tr></thead>
+  <tbody>
+    {% for sol in solicitudes %}
+    <tr>
+      <td>
+        <div class="flex-c gap-8">
+          <div class="conv-av" style="width:32px;height:32px;">{% if sol.trabajador.profile.foto %}<img src="{{ sol.trabajador.profile.foto.url }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">{% else %}<i class="bi bi-person" style="font-size:14px;"></i>{% endif %}</div>
+          <div>
+            <a href="{% url 'perfil_publico' sol.trabajador.pk %}" class="dt-title" style="color:var(--dark);">{{ sol.trabajador.get_full_name|default:sol.trabajador.username }}</a>
+            {% if not trabajo %}<div class="dt-sub">{{ sol.trabajo.titulo }}</div>{% endif %}
+          </div>
+        </div>
+      </td>
+      <td>{% for h in sol.trabajador.profile.habilidades|slice:":2" %}<span class="skill-tag" style="margin-right:3px;">{{ h }}</span>{% endfor %}</td>
+      <td><span class="stars" style="font-size:11px;">★</span> {{ sol.trabajador.profile.calificacion|default:"—" }}</td>
+      <td>{{ sol.trabajador.profile.experiencia_anos }} años</td>
+      <td class="fw-700 t-green">{% if sol.tarifa_propuesta %}${{ sol.tarifa_propuesta }}{% else %}—{% endif %}</td>
+      <td>{% with score=sol.trabajador.profile.match_score %}{% if score > 0 %}<span class="match-badge {% if score >= 80 %}match-hi{% elif score >= 50 %}match-md{% else %}match-lo{% endif %}">{{ score }}%</span>{% else %}—{% endif %}{% endwith %}</td>
+      <td><span class="est-badge est-{{ sol.estado }}">{{ sol.estado_label }}</span></td>
+      <td>
+        <div class="flex-c gap-4">
+          {% if sol.estado != 'contratado' and sol.estado != 'rechazado' %}
+          <a href="{% url 'cambiar_estado_solicitud' sol.pk 'aceptado' %}?next={{ request.path }}" class="btn-icon-circle" style="background:var(--green-light);color:var(--green-dark);" title="Aceptar"><i class="bi bi-check-lg"></i></a>
+          <a href="{% url 'cambiar_estado_solicitud' sol.pk 'rechazado' %}?next={{ request.path }}" class="btn-icon-circle" style="background:var(--red-light);color:var(--red);" title="Rechazar"><i class="bi bi-x-lg"></i></a>
+          {% endif %}
+          <a href="{% url 'perfil_publico' sol.trabajador.pk %}" class="t-xs t-green fw-700">Ver perfil</a>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Sin candidatos aún</div><div class="empty-sub">Cuando alguien aplique aparecerá aquí</div></div>
+{% endif %}
+
+{% include 'core/_sidebar_close.html' %}
 {% endblock %}

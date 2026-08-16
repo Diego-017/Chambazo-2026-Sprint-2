@@ -1,0 +1,61 @@
+{% extends 'core/base.html' %}
+{% block title %}Términos y Condiciones{% endblock %}
+{% block body %}
+{% if request.user.is_authenticated %}
+  {% if request.user.profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
+{% else %}
+<div style="max-width:900px;margin:0 auto;padding:40px 20px;">
+{% endif %}
+
+<div class="page-hd"><div><h1>Términos y Condiciones</h1><p>Última actualización: Enero 2026 · Versión 2026.1</p></div></div>
+
+<div class="policy-grid mb-16">
+  <div class="policy-card">
+    <h4><i class="bi bi-person-check t-green"></i> Para trabajadores</h4>
+    <p>Al registrarte como trabajador en Chambazo, aceptas proporcionar información veraz sobre tus
+    habilidades y experiencia. Te comprometes a cumplir con los trabajos aceptados con profesionalismo,
+    puntualidad y respeto hacia los empleadores. Chambazo no es responsable de acuerdos verbales fuera
+    de la plataforma.</p>
+  </div>
+  <div class="policy-card">
+    <h4><i class="bi bi-building t-yellow"></i> Para empleadores</h4>
+    <p>Al publicar vacantes, te comprometes a ofrecer condiciones de trabajo justas y seguras, describir
+    con precisión el trabajo requerido, y pagar el monto acordado en tiempo y forma. Está prohibido
+    publicar vacantes fraudulentas, discriminatorias o que promuevan actividades ilegales.</p>
+  </div>
+  <div class="policy-card">
+    <h4><i class="bi bi-cash-coin"></i> Pagos y tarifas</h4>
+    <p>Chambazo facilita la conexión entre trabajadores y empleadores. Los montos y formas de pago se
+    acuerdan directamente entre las partes. Recomendamos usar la función de "pago seguro" cuando esté
+    disponible para mayor protección de ambas partes.</p>
+  </div>
+  <div class="policy-card">
+    <h4><i class="bi bi-star-half"></i> Calificaciones y reseñas</h4>
+    <p>El sistema de calificaciones refleja experiencias reales entre usuarios. Las reseñas falsas,
+    ofensivas o que violen la buena fe pueden ser eliminadas y el usuario suspendido de la plataforma.</p>
+  </div>
+  <div class="policy-card">
+    <h4><i class="bi bi-exclamation-octagon"></i> Conducta prohibida</h4>
+    <p>Se prohíbe el acoso, discriminación, publicación de contenido falso, suplantación de identidad,
+    o cualquier actividad que ponga en riesgo la seguridad de otros usuarios. El incumplimiento puede
+    resultar en suspensión permanente de la cuenta.</p>
+  </div>
+  <div class="policy-card">
+    <h4><i class="bi bi-shield-check"></i> Responsabilidad</h4>
+    <p>Chambazo actúa como intermediario tecnológico. No garantiza la calidad del trabajo realizado ni
+    la solvencia de los empleadores; sin embargo, monitorea activamente reportes de mal comportamiento
+    para mantener la plataforma segura.</p>
+  </div>
+</div>
+
+{% if request.user.is_authenticated %}
+<form method="post">{% csrf_token %}
+  <button type="submit" class="btn btn-g btn-lg"><i class="bi bi-check-lg"></i> He leído y acepto</button>
+  <a href="javascript:history.back()" class="btn btn-outline btn-lg">Volver</a>
+</form>
+{% endif %}
+
+{% if request.user.is_authenticated %}
+{% include 'core/_sidebar_close.html' %}
+{% else %}</div>{% endif %}
+{% endblock %}

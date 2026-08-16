@@ -1,0 +1,47 @@
+{% extends 'core/base.html' %}
+{% block title %}Ganancias{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_trabajador.html' %}
+
+<div class="page-hd"><div><h1>Ganancias</h1><p>Resumen de tus ingresos en Chambazo</p></div></div>
+
+<div class="stats-grid">
+  <div class="stat-card"><div class="lbl">TOTAL ESTE MES</div><div class="num t-green">${{ total_mes }}</div><div class="sub">Ingresos acumulados</div></div>
+  <div class="stat-card"><div class="lbl">MEJOR SEMANA</div><div class="num">${{ mejor_semana.monto }}</div><div class="sub">{{ mejor_semana.label }}</div></div>
+  <div class="stat-card"><div class="lbl">TRABAJOS TOTALES</div><div class="num" style="color:var(--blue);">{{ total_trabajos }}</div><div class="sub">Completados</div></div>
+  <div class="stat-card"><div class="lbl">PROM. POR TRABAJO</div><div class="num" style="color:var(--purple);">${{ prom_trabajo }}</div><div class="sub">Promedio</div></div>
+</div>
+
+<div class="card mb-16"><div class="card-body">
+  <h3 class="t-h3 mb-16">Ingresos por semana</h3>
+  <div class="bar-chart">
+    {% for s in semanas %}
+    <div class="bar-chart-col">
+      <span class="t-xs fw-700 t-green">${{ s.monto|floatformat:0 }}</span>
+      <div class="bar-chart-bar" style="height:{{ s.pct }}%;min-height:4px;"></div>
+      <span class="bar-chart-label">{{ s.label }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div></div>
+
+<div class="card"><div class="card-body">
+  <h3 class="t-h3 mb-12">Últimos pagos</h3>
+  {% for sol in ultimos_pagos %}
+  <div class="pago-row">
+    <div>
+      <div class="fw-700 t-sm">{{ sol.trabajo.titulo }}</div>
+      <div class="t-xs t-muted">{{ sol.trabajo.contratista.profile.nombre_display }} · {{ sol.actualizado|date:"d/m/Y" }}</div>
+    </div>
+    <div class="flex-c gap-10">
+      <span class="fw-800 t-green">${{ sol.trabajo.presupuesto }}</span>
+      <span class="est-badge est-pagado">Pagado</span>
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty-state"><div class="empty-icon">💵</div><div class="empty-title">Sin pagos aún</div><div class="empty-sub">Completa trabajos para ver tus ganancias</div></div>
+  {% endfor %}
+</div></div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

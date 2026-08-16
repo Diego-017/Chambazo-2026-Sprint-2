@@ -1,86 +1,46 @@
 {% extends 'core/base.html' %}
-{% block title %}Perfil – {{ perfil_user.get_full_name }}{% endblock %}
+{% block title %}Perfil de {{ profile.nombre_display }}{% endblock %}
 {% block body %}
-<nav class="ch-navbar">
-  <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
-  <span class="fw-bold">Perfil del trabajador</span>
-</nav>
-<div class="page-wrap">
-  <div class="ch-card p-4 mb-3">
-    <div class="d-flex align-items-start gap-3 mb-3">
-      <div class="avatar-xl">
-        {% if profile.foto %}<img src="{{ profile.foto.url }}" alt="">
-        {% else %}<i class="bi bi-person-fill"></i>{% endif %}
-      </div>
-      <div class="flex-grow-1">
-        <h2 class="fw-bold mb-0" style="font-size:18px;">{{ perfil_user.get_full_name }}</h2>
-        <div class="text-muted small">{{ profile.ubicacion }}</div>
-        <div class="d-flex gap-1 mt-1">
-          <span class="text-warning fw-bold small">★ {{ profile.calificacion|floatformat:1 }}</span>
-          <span class="text-muted small">({{ profile.total_trabajos }} trabajos)</span>
-        </div>
-      </div>
-      {% if profile.verificado %}
-      <div class="verified-badge"><i class="bi bi-patch-check-fill"></i> Verificado</div>
-      {% endif %}
-    </div>
-    <div class="mb-3">
-      {% for h in profile.habilidades %}<span class="skill-tag">{{ h|capfirst }}</span>{% endfor %}
-    </div>
+{% if request.user.profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
+
+<div class="page-hd"><div><h1>{{ profile.nombre_display }}</h1><p>Perfil público</p></div>
+  <a href="javascript:history.back()" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="layout-2col">
+  <div class="profile-card">
+    <div class="profile-av-lg">{% if profile.foto %}<img src="{{ profile.foto.url }}" alt="">{% else %}<i class="bi bi-person-fill"></i>{% endif %}</div>
+    <div class="fw-800 t-h2">{{ profile.nombre_display }}</div>
+    <div class="t-xs t-muted mb-8">{{ profile.ubicacion|default:"El Salvador" }}</div>
+    {% if profile.calificacion > 0 %}<div class="flex-c gap-6" style="justify-content:center;"><span class="stars">{{ profile.estrellas }}</span><span class="fw-700 t-sm">{{ profile.calificacion }}</span></div>{% endif %}
+    {% if profile.verificado %}<span class="pill pill-green mt-8"><i class="bi bi-patch-check-fill"></i> Verificado</span>{% endif %}
+    <div class="divider"></div>
+    <div class="mini-stat-row"><span class="lbl">Solicitudes</span><span class="val">{{ stats.aplicaciones }}</span></div>
+    <div class="mini-stat-row"><span class="lbl">Contratados</span><span class="val">{{ stats.contratados }}</span></div>
+    <div class="mini-stat-row"><span class="lbl">Experiencia</span><span class="val">{{ profile.experiencia_anos }} años</span></div>
+  </div>
+
+  <div>
+    {% if profile.habilidades %}
+    <div class="card mb-16"><div class="card-body">
+      <h4 class="t-h3 mb-10">Habilidades</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">{% for h in profile.habilidades %}<span class="skill-tag">{{ h }}</span>{% endfor %}</div>
+    </div></div>
+    {% endif %}
     {% if profile.descripcion %}
-    <p class="text-muted small mb-0">{{ profile.descripcion }}</p>
+    <div class="card mb-16"><div class="card-body"><h4 class="t-h3 mb-10">Acerca de</h4><p class="t-sm t-mid">{{ profile.descripcion }}</p></div></div>
     {% endif %}
-  </div>
-
-  {% if galeria %}
-  <div class="ch-card p-4 mb-3">
-    <h6 class="fw-bold mb-2">Galería de trabajos</h6>
-    <div class="gallery-grid">
-      {% for item in galeria %}
-      <div class="gallery-item">
-        {% if item.imagen %}<img src="{{ item.imagen.url }}" alt="">{% endif %}
-        <div class="gallery-caption">{{ item.titulo }}</div>
+    <div class="card"><div class="card-body">
+      <h4 class="t-h3 mb-10">Reseñas</h4>
+      {% for r in resenas %}
+      <div style="padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border);">
+        <div class="flex-bc mb-4"><span class="fw-700 t-sm">{{ r.autor.get_full_name|default:r.autor.username }}</span><span class="stars" style="font-size:12px;">{{ r.estrellas }}</span></div>
+        <p class="t-sm t-mid">{{ r.comentario }}</p>
       </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  <div class="ch-card p-4 mb-3">
-    <div class="d-flex justify-content-between mb-3">
-      <h6 class="fw-bold mb-0">Reseñas ({{ resenas.count }})</h6>
-      {% if puedo_calificar %}
-      <button class="btn btn-sm btn-ch-green" data-bs-toggle="collapse" data-bs-target="#formResena">
-        <i class="bi bi-star-fill me-1"></i> Calificar
-      </button>
-      {% endif %}
-    </div>
-    {% if puedo_calificar %}
-    <div class="collapse mb-3" id="formResena">
-      <form method="post" class="p-3 rounded" style="background:#f8fafc;">
-        {% csrf_token %}
-        {% for field in form %}
-        <div class="mb-2">
-          <label class="form-label small fw-semibold">{{ field.label }}</label>
-          {{ field }}
-        </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-ch-green btn-sm fw-bold w-100">Enviar reseña</button>
-      </form>
-    </div>
-    {% endif %}
-    {% for r in resenas %}
-    <div class="border-bottom pb-2 mb-2">
-      <div class="d-flex justify-content-between">
-        <span class="fw-semibold small">{{ r.autor.get_full_name }}</span>
-        <span class="text-warning small">{% for i in "12345" %}{% if forloop.counter <= r.calificacion %}★{% endif %}{% endfor %}</span>
-      </div>
-      <div class="text-muted" style="font-size:11px;">{{ r.creado|date:"d/m/Y" }}</div>
-      <div class="text-muted small">{{ r.comentario }}</div>
-    </div>
-    {% empty %}
-    <p class="text-muted small">Sin reseñas todavía.</p>
-    {% endfor %}
+      {% empty %}<p class="t-sm t-muted">Sin reseñas aún.</p>{% endfor %}
+    </div></div>
   </div>
 </div>
+
+{% include 'core/_sidebar_close.html' %}
 {% endblock %}

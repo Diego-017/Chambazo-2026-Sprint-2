@@ -1,33 +1,38 @@
 {% extends 'core/base.html' %}
-{% block title %}Crear cuenta – Información{% endblock %}
+{% block title %}Información básica{% endblock %}
 {% block body %}
-<div class="auth-bg">
-  <div class="auth-card" style="max-width:480px;">
-    <div class="logo-circle {% if rol == 'contratista' %}bg-yellow{% endif %}"><i class="bi bi-briefcase-fill"></i></div>
-    <h1 class="auth-title">Crear cuenta</h1>
-    <p class="auth-sub">Únete a Chambazo en minutos</p>
-    <div class="step-dots mt-3">
-      <div class="step-dot {% if rol == 'trabajador' %}active-g{% else %}active-y{% endif %}"></div>
-      <div class="step-dot {% if rol == 'trabajador' %}active-g{% else %}active-y{% endif %}"></div>
-      <div class="step-dot"></div>
+<div class="wizard-shell">
+  <div class="wizard-card">
+    <aside class="wizard-side">
+      <div class="wizard-side-logo"><div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div><span>Chambazo</span></div>
+      <div class="wizard-step done"><div class="wizard-step-num"><i class="bi bi-check-lg"></i></div> Tipo de cuenta</div>
+      <div class="wizard-step current"><div class="wizard-step-num">2</div> Información</div>
+      <div class="wizard-step"><div class="wizard-step-num">3</div> Detalles</div>
+      <div class="wizard-side-footer">¿Ya tienes cuenta?<br><a href="{% url 'login' %}">Iniciar sesión</a></div>
+    </aside>
+    <div class="wizard-main">
+      <h2>Información básica</h2>
+      <p class="sub">Completa tus datos personales</p>
+      {% if form.non_field_errors %}
+      <div style="background:var(--red-light);color:#a3282c;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:600;margin-bottom:14px;">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <form method="post" style="flex:1;display:flex;flex-direction:column;">
+        {% csrf_token %}
+        <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          {% for field in form %}
+          <div class="form-group">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<p style="color:var(--red);font-size:11.5px;margin-top:4px;">{{ field.errors.0 }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div style="margin-top:auto;padding-top:10px;display:flex;gap:10px;">
+          <a href="{% url 'registro_step1' %}" class="btn btn-outline" style="flex:1;justify-content:center;"><i class="bi bi-arrow-left"></i> Atrás</a>
+          <button type="submit" class="btn btn-g" style="flex:1;justify-content:center;">Continuar <i class="bi bi-arrow-right"></i></button>
+        </div>
+      </form>
     </div>
-    <h6 class="fw-bold mb-3">Información básica</h6>
-    <form method="post">
-      {% csrf_token %}
-      {% for field in form %}
-      <div class="mb-3">
-        <label class="form-label fw-semibold small">{{ field.label }}</label>
-        {{ field }}
-        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-      </div>
-      {% endfor %}
-      {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors.0 }}</div>{% endif %}
-      <div class="d-grid gap-2 d-flex mt-3">
-        <a href="{% url 'registro_step1' %}" class="btn btn-outline-secondary flex-fill">Atrás</a>
-        <button type="submit" class="btn {% if rol == 'trabajador' %}btn-ch-green{% else %}btn-ch-yellow{% endif %} flex-fill fw-bold">Continuar</button>
-      </div>
-    </form>
-    <p class="text-center text-muted small mt-3">¿Ya tienes cuenta? <a href="{% url 'login' %}" class="text-green fw-bold">Iniciar sesión</a></p>
   </div>
 </div>
 {% endblock %}

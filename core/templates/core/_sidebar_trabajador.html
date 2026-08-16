@@ -1,0 +1,54 @@
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<div class="app-shell">
+<aside class="app-sidebar" id="appSidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+    <span class="sidebar-brand-text">Chambazo</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="{% url 'home_trabajador' %}" class="sidebar-link {% if active == 'buscar' %}active{% endif %}">
+      <i class="bi bi-search"></i> Buscar empleos
+    </a>
+    <a href="{% url 'trabajos_urgentes' %}" class="sidebar-link {% if active == 'urgentes' %}active{% endif %}">
+      <i class="bi bi-lightning-charge"></i> Urgentes
+      {% if urgentes_count > 0 %}<span class="sidebar-badge">{{ urgentes_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'mis_solicitudes' %}" class="sidebar-link {% if active == 'solicitudes' %}active{% endif %}">
+      <i class="bi bi-card-checklist"></i> Mis solicitudes
+      {% if solicitudes_pend_count > 0 %}<span class="sidebar-badge">{{ solicitudes_pend_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'guardados' %}" class="sidebar-link {% if active == 'guardados' %}active{% endif %}">
+      <i class="bi bi-heart"></i> Guardados
+    </a>
+    <a href="{% url 'mensajes' %}" class="sidebar-link {% if active == 'mensajes' %}active{% endif %}">
+      <i class="bi bi-chat-dots"></i> Mensajes
+    </a>
+    <a href="{% url 'ganancias' %}" class="sidebar-link {% if active == 'ganancias' %}active{% endif %}">
+      <i class="bi bi-wallet2"></i> Ganancias
+    </a>
+    <a href="{% url 'logros' %}" class="sidebar-link {% if active == 'logros' %}active{% endif %}">
+      <i class="bi bi-trophy"></i> Logros
+    </a>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-bottom">
+    <a href="{% url 'asistente' %}" class="sidebar-link {% if active == 'asistente' %}active{% endif %}">
+      <i class="bi bi-robot"></i> Asistente IA
+    </a>
+    <a href="{% url 'perfil_trabajador' %}" class="sidebar-link {% if active == 'perfil' %}active{% endif %}">
+      <i class="bi bi-person"></i> Mi perfil
+    </a>
+    <a href="{% url 'notificaciones' %}" class="sidebar-link {% if active == 'notif' %}active{% endif %}">
+      <i class="bi bi-bell"></i> Notificaciones
+      {% if notif_count > 0 %}<span class="sidebar-badge">{{ notif_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'logout' %}" class="sidebar-link"><i class="bi bi-box-arrow-right"></i> Salir</a>
+  </div>
+</aside>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+  <div class="mobile-topbar">
+    <button class="toggle-btn" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+    <div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+    <span style="font-weight:800;">Chambazo</span>
+  </div>
+  <main class="app-content">

@@ -1,0 +1,47 @@
+{% extends 'core/base.html' %}
+{% block title %}Buscar trabajadores{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_contratista.html' %}
+
+<div class="page-hd"><div><h1>Buscar trabajadores</h1><p>{{ trabajadores|length }} perfiles encontrados</p></div></div>
+
+<div class="filter-card mb-16">
+  <form method="get" class="flex-c gap-10">
+    <div class="input-icon-wrap" style="flex:1;"><i class="bi bi-search"></i><input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Nombre o habilidad..."></div>
+    <button type="submit" class="btn btn-y">Buscar</button>
+  </form>
+</div>
+
+<div class="stats-grid g3">
+{% for p in trabajadores %}
+  <div class="card">
+    <div class="card-body">
+      <div class="flex-c gap-10 mb-10">
+        <div class="conv-av" style="width:44px;height:44px;">{% if p.foto %}<img src="{{ p.foto.url }}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;">{% else %}<i class="bi bi-person"></i>{% endif %}</div>
+        <div style="flex:1;">
+          <div class="fw-700 t-sm">{{ p.user.get_full_name|default:p.user.username }} {% if p.verificado %}<i class="bi bi-patch-check-fill t-green" style="font-size:11px;"></i>{% endif %}</div>
+          <div class="t-xxs t-muted">{{ p.ubicacion|default:"El Salvador" }}</div>
+        </div>
+        <span class="pill {% if p.disponible %}pill-green{% else %}pill-red-lt{% endif %}" style="padding:2px 9px;font-size:10px;">{% if p.disponible %}Disponible{% else %}Ocupado{% endif %}</span>
+      </div>
+      <div class="flex-c gap-10 mb-10 t-xs t-muted">
+        <span><span class="stars" style="font-size:11px;">★</span> {{ p.calificacion|default:"—" }}</span>
+        <span>{{ p.total_trabajos }} trabajos</span>
+        {% if p.tarifa_hora %}<span class="fw-700 t-green">${{ p.tarifa_hora }}/hr</span>{% endif %}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">
+        {% for h in p.habilidades|slice:":3" %}<span class="skill-tag">{{ h }}</span>{% endfor %}
+      </div>
+      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <a href="{% url 'perfil_publico' p.user.pk %}" class="btn btn-outline btn-sm" style="justify-content:center;">Ver perfil</a>
+        <a href="{% url 'invitar_trabajador' p.user.pk %}" class="btn btn-y btn-sm" style="justify-content:center;">Invitar</a>
+      </div>
+    </div>
+  </div>
+{% empty %}
+  <div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🔍</div><div class="empty-title">Sin resultados</div></div>
+{% endfor %}
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

@@ -1,36 +1,28 @@
 {% extends 'core/base.html' %}
-{% block title %}Notificaciones – Chambazo{% endblock %}
+{% block title %}Notificaciones{% endblock %}
 {% block body %}
-<nav class="ch-navbar">
-  <a href="{% url 'home' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
-  <span class="fw-bold">Notificaciones</span>
-</nav>
-<div class="page-wrap">
-  {% if notifs %}
-  <div class="ch-card overflow-hidden">
-    {% for n in notifs %}
-    <div class="notif-item {% if not n.leida %}unread{% endif %}">
-      <div class="flex-shrink-0 mt-1">
-        {% if not n.leida %}<div class="notif-dot"></div>{% else %}<div style="width:10px;"></div>{% endif %}
-      </div>
-      <div class="flex-grow-1">
-        <div class="d-flex justify-content-between">
-          <span class="fw-semibold small">{{ n.titulo }}</span>
-          <span class="text-muted" style="font-size:11px;">{{ n.creado|date:"d/m G:i" }}</span>
-        </div>
-        <div class="text-muted small">{{ n.mensaje }}</div>
-        {% if n.url %}
-        <a href="{{ n.url }}" class="small text-green fw-semibold">Ver detalles →</a>
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="text-center py-5 text-muted">
-    <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>
-    <p>No tienes notificaciones.</p>
-  </div>
-  {% endif %}
+{% if request.user.profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
+
+<div class="page-hd">
+  <div><h1>Notificaciones</h1><p>{{ notificaciones|length }} notificaciones</p></div>
+  {% if notificaciones %}<a href="?marcar_todas=1" class="btn btn-outline btn-sm">Marcar todas leídas</a>{% endif %}
 </div>
+
+{% for n in notificaciones %}
+<a href="{% url 'marcar_notif_leida' n.pk %}" style="text-decoration:none;">
+  <div class="notif-item {% if n.tipo == 'contratado' or n.tipo == 'match' %}green{% elif n.tipo == 'solicitud' %}yellow{% endif %} {% if n.leida %}read{% endif %}">
+    <div class="notif-icon-box {% if n.tipo == 'contratado' %}g{% elif n.tipo == 'solicitud' %}y{% elif n.tipo == 'sistema' %}b{% else %}grey{% endif %}">{{ n.icono }}</div>
+    <div style="flex:1;min-width:0;">
+      <div class="fw-700 t-sm">{{ n.titulo }}{% if not n.leida and n.tipo == 'solicitud' %}<span class="live-badge">EN VIVO</span>{% endif %}</div>
+      <div class="t-sm t-mid mt-4">{{ n.mensaje }}</div>
+      <div class="t-xxs t-muted mt-4">{{ n.creado|timesince }} atrás</div>
+    </div>
+    {% if not n.leida %}<div class="notif-live-dot"></div>{% endif %}
+  </div>
+</a>
+{% empty %}
+<div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-title">Sin notificaciones</div><div class="empty-sub">Aquí verás tus alertas</div></div>
+{% endfor %}
+
+{% include 'core/_sidebar_close.html' %}
 {% endblock %}

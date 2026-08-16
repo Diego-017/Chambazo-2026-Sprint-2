@@ -1,54 +1,42 @@
 {% extends 'core/base.html' %}
-{% block title %}Editar Perfil – Chambazo{% endblock %}
+{% block title %}Editar perfil{% endblock %}
 {% block body %}
-<nav class="ch-navbar">
-  <a href="{% if profile.rol == 'trabajador' %}{% url 'perfil_trabajador' %}{% else %}{% url 'perfil_contratista' %}{% endif %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
-  <span class="fw-bold">Editar perfil</span>
-</nav>
-<div class="page-wrap">
-  {% if messages %}{% for m in messages %}<div class="alert alert-success py-2 small">{{ m }}</div>{% endfor %}{% endif %}
+{% if profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
+
+<div class="page-hd"><div><h1>Editar perfil</h1><p>Actualiza tu información</p></div></div>
+
+<div style="max-width:640px;">
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <div class="ch-card p-4 mb-3">
-      <h6 class="fw-bold mb-3">Información personal</h6>
-      <div class="row g-3">
-        <div class="col-6">
-          <label class="form-label small fw-semibold">Nombre</label>
-          <input type="text" name="first_name" class="form-control" value="{{ request.user.first_name }}">
-        </div>
-        <div class="col-6">
-          <label class="form-label small fw-semibold">Apellido</label>
-          <input type="text" name="last_name" class="form-control" value="{{ request.user.last_name }}">
-        </div>
-        {% for field in form %}
-        <div class="col-12">
-          <label class="form-label small fw-semibold">{{ field.label }}</label>
-          {{ field }}
-          {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
-        </div>
-        {% endfor %}
-      </div>
-    </div>
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-14">Información personal</h3>
+      <div class="form-group"><label class="form-label">Nombre completo</label><input type="text" name="nombre" value="{{ request.user.get_full_name }}" class="form-control"></div>
+      {% for field in form %}
+      <div class="form-group"><label class="form-label">{{ field.label }}</label>{{ field }}</div>
+      {% endfor %}
+    </div></div>
 
     {% if profile.rol == 'trabajador' %}
-    <div class="ch-card p-4 mb-3">
-      <h6 class="fw-bold mb-3">Mis habilidades</h6>
-      <div>
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-12">Habilidades</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
         {% for val, label in skills %}
-        <label class="skill-chip-label {% if val in profile.habilidades %}active{% endif %}" id="echip-{{ val }}">
-          <input type="checkbox" name="habilidades" value="{{ val }}"
-            {% if val in profile.habilidades %}checked{% endif %}
-            onchange="document.getElementById('echip-{{ val }}').classList.toggle('active', this.checked)">
-          {{ label }}
+        <label class="skill-chip-label {% if val in profile.habilidades %}active{% endif %}">
+          <input type="checkbox" name="habilidades" value="{{ val }}" {% if val in profile.habilidades %}checked{% endif %}>{{ label }}
         </label>
         {% endfor %}
       </div>
-    </div>
+    </div></div>
     {% endif %}
 
-    <button type="submit" class="btn {% if profile.rol == 'trabajador' %}btn-ch-green{% else %}btn-ch-yellow{% endif %} w-100 fw-bold mb-3">
-      <i class="bi bi-check-lg me-1"></i> Guardar cambios
-    </button>
+    <button type="submit" class="btn btn-g btn-full btn-lg"><i class="bi bi-check-lg"></i> Guardar cambios</button>
   </form>
 </div>
+
+{% include 'core/_sidebar_close.html' %}
+<script>
+document.querySelectorAll('.skill-chip-label').forEach(label=>{
+  label.addEventListener('click',()=>setTimeout(()=>label.classList.toggle('active',label.querySelector('input').checked),0));
+});
+</script>
 {% endblock %}

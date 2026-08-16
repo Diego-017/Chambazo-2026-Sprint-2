@@ -1,44 +1,42 @@
 {% extends 'core/base.html' %}
-{% block title %}Trabajos Urgentes – Chambazo{% endblock %}
+{% block title %}Trabajos Urgentes{% endblock %}
 {% block body %}
-<nav class="ch-navbar">
-  <a href="{% url 'home_trabajador' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
-  <span class="fw-bold">Trabajos Urgentes</span>
-</nav>
-<div class="page-wrap">
-  <div class="p-3 rounded mb-3" style="background:#fff5f5;border:1px solid #fecaca;">
-    <h5 class="fw-bold text-danger mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Trabajos Urgentes</h5>
-    <p class="text-muted small mb-0">{{ trabajos.count }} trabajos urgentes disponibles cerca de ti. ¡Responde rápido para ganar más!</p>
-  </div>
-  {% for trabajo in trabajos %}
-  <div class="job-card" style="border-left:4px solid var(--ch-red);">
-    <div class="d-flex justify-content-between align-items-start mb-1">
-      <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="job-title-link">{{ trabajo.titulo }}</a>
-      <span class="badge-urgente">URGENTE</span>
-    </div>
-    <div class="text-green fw-semibold small mb-1">{{ trabajo.contratista.profile.nombre_display }}</div>
-    <div class="d-flex gap-3 text-muted small mb-2">
-      <span><i class="bi bi-geo-alt-fill text-green"></i> {{ trabajo.ubicacion }}</span>
-      <span style="color:var(--ch-red);"><i class="bi bi-clock-fill"></i> {{ trabajo.tiempo_relativo }}</span>
-    </div>
-    <p class="text-muted small mb-2">{{ trabajo.descripcion|truncatewords:20 }}</p>
-    <div class="mb-2">
-      {% for skill in trabajo.habilidades_req %}
-      <span class="skill-tag">{{ skill|capfirst }}</span>
-      {% endfor %}
-    </div>
-    <div class="d-flex justify-content-between align-items-center">
-      <span class="job-price">${{ trabajo.presupuesto }}</span>
-      <a href="{% url 'aplicar_rapido' trabajo.pk %}" class="btn-apply" style="background:var(--ch-red);">
-        <i class="bi bi-lightning-fill"></i> Aplicar ahora
-      </a>
-    </div>
-  </div>
-  {% empty %}
-  <div class="text-center py-5 text-muted">
-    <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-2"></i>
-    <p>No hay trabajos urgentes en este momento.</p>
-  </div>
-  {% endfor %}
+{% include 'core/_sidebar_trabajador.html' %}
+
+<div class="page-hd">
+  <div><h1>Trabajos Urgentes</h1><p>Empleadores que necesitan ayuda inmediata</p></div>
+  <span class="pill pill-red-lt"><span class="pill-dot" style="background:var(--red);"></span>{{ trabajos|length }} activos ahora</span>
 </div>
+
+<div class="alert-banner red">
+  <i class="bi bi-exclamation-triangle-fill" style="font-size:18px;"></i>
+  Los empleadores esperan respuesta inmediata. Postúlate ahora para tener prioridad sobre otros trabajadores.
+</div>
+
+{% for trabajo in trabajos %}
+<div class="job-row-card">
+  <div class="job-row-top">
+    <div style="flex:1;min-width:0;">
+      <div class="flex-c gap-8">
+        <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="job-row-title-link">{{ trabajo.titulo }}</a>
+        {% if trabajo.contratista.profile.verificado %}<i class="bi bi-patch-check-fill t-green" style="font-size:13px;"></i>{% endif %}
+      </div>
+      <div class="job-row-author">{{ trabajo.contratista.profile.nombre_display }} · {{ trabajo.ubicacion }}</div>
+    </div>
+    <div class="job-row-price">${{ trabajo.presupuesto }}</div>
+  </div>
+  <div class="job-row-desc">{{ trabajo.descripcion|truncatechars:150 }}</div>
+  <div class="flex-bc mt-8">
+    <div class="job-row-meta" style="margin-bottom:0;">
+      <span><i class="bi bi-clock"></i> {{ trabajo.tiempo_relativo }}</span>
+      <span><i class="bi bi-people"></i> {{ trabajo.candidatos_count }}</span>
+    </div>
+    <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="btn btn-r btn-sm"><i class="bi bi-lightning-fill"></i> Aplicar ahora</a>
+  </div>
+</div>
+{% empty %}
+<div class="empty-state"><div class="empty-icon">🔥</div><div class="empty-title">Sin urgentes ahora</div><div class="empty-sub">Vuelve más tarde</div></div>
+{% endfor %}
+
+{% include 'core/_sidebar_close.html' %}
 {% endblock %}

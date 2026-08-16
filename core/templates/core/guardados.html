@@ -1,0 +1,34 @@
+{% extends 'core/base.html' %}
+{% block title %}Trabajos Guardados{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_trabajador.html' %}
+
+<div class="page-hd">
+  <div><h1>Trabajos Guardados</h1><p>{{ trabajos|length }} trabajo{{ trabajos|length|pluralize }} guardado{{ trabajos|length|pluralize }}</p></div>
+</div>
+
+<div class="stats-grid g3">
+{% for trabajo in trabajos %}
+  <div class="card">
+    <div class="card-body">
+      <div class="flex-bc mb-8">
+        <div class="fw-800 t-body">{{ trabajo.titulo }}</div>
+        <form method="post" action="{% url 'toggle_guardado' trabajo.pk %}"><input type="hidden" name="next" value="{{ request.get_full_path }}">{% csrf_token %}
+          <button type="submit" class="save-heart saved"><i class="bi bi-heart-fill"></i></button>
+        </form>
+      </div>
+      <div class="t-xs t-muted mb-12">{{ trabajo.contratista.profile.nombre_display }}</div>
+      <div class="flex-bc">
+        <div class="job-row-price" style="font-size:20px;">${{ trabajo.presupuesto }}</div>
+        {% if trabajo.match > 0 %}<span class="match-badge match-hi"><i class="bi bi-bullseye"></i> {{ trabajo.match }}%</span>{% endif %}
+      </div>
+      <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="btn btn-outline btn-full btn-sm mt-12" style="justify-content:center;">Ver detalle</a>
+    </div>
+  </div>
+{% empty %}
+  <div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">💔</div><div class="empty-title">Sin guardados</div><div class="empty-sub">Guarda trabajos con el ❤️ para verlos aquí</div></div>
+{% endfor %}
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

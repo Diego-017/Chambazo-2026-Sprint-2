@@ -1,0 +1,41 @@
+{% extends 'core/base.html' %}
+{% block title %}Mi empresa{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_contratista.html' %}
+
+<div class="page-hd"><div><h1>Mi empresa</h1><p>Información y accesos rápidos</p></div>
+  <a href="{% url 'editar_perfil' %}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+</div>
+
+<div class="layout-2col">
+  <div class="profile-card">
+    <div class="profile-av-lg yellow">{% if profile.foto %}<img src="{{ profile.foto.url }}" alt="">{% else %}<i class="bi bi-building"></i>{% endif %}</div>
+    <div class="fw-800 t-h2">{{ profile.nombre_display }}</div>
+    <div class="t-xs t-muted mb-8">{{ profile.ubicacion|default:"El Salvador" }}</div>
+    {% if profile.verificado %}<span class="pill pill-green"><i class="bi bi-patch-check-fill"></i> Verificado</span>{% endif %}
+    {% if profile.descripcion %}<p class="t-sm t-mid mt-12" style="text-align:left;">{{ profile.descripcion }}</p>{% endif %}
+  </div>
+
+  <div>
+    <div class="card mb-16"><div class="card-body">
+      <h4 class="t-h3 mb-12">Estadísticas de la empresa</h4>
+      <div class="mini-stat-row"><span class="lbl">Publicaciones totales</span><span class="val">{{ total_pub }}</span></div>
+      <div class="mini-stat-row"><span class="lbl">Trabajos completados</span><span class="val">{{ contratados }}</span></div>
+      <div class="mini-stat-row"><span class="lbl">Tasa de éxito</span><span class="val t-green">{{ tasa_exito }}%</span></div>
+      <div class="mini-stat-row"><span class="lbl">En plataforma desde</span><span class="val">{{ anos_plataforma }} año{{ anos_plataforma|pluralize }}</span></div>
+    </div></div>
+
+    <div class="card"><div class="card-body">
+      <h4 class="t-h3 mb-12">Accesos rápidos</h4>
+      <div class="quick-access-grid">
+        <a href="{% url 'estadisticas' %}" class="quick-access-item"><div class="quick-access-icon"><i class="bi bi-bar-chart"></i></div><div class="t-sm fw-600">Estadísticas</div></a>
+        <a href="{% url 'politica_privacidad' %}" class="quick-access-item"><div class="quick-access-icon"><i class="bi bi-shield-lock"></i></div><div class="t-sm fw-600">Política de Privacidad</div></a>
+        <a href="{% url 'terminos_condiciones' %}" class="quick-access-item"><div class="quick-access-icon"><i class="bi bi-file-text"></i></div><div class="t-sm fw-600">Términos y Condiciones</div></a>
+        <a href="{% url 'asistente' %}" class="quick-access-item"><div class="quick-access-icon"><i class="bi bi-robot"></i></div><div class="t-sm fw-600">Asistente IA</div></a>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

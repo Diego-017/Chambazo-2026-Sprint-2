@@ -1,0 +1,46 @@
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<div class="app-shell">
+<aside class="app-sidebar" id="appSidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon yellow"><i class="bi bi-building"></i></div>
+    <span class="sidebar-brand-text">Chambazo Pro</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="{% url 'panel_contratista' %}" class="sidebar-link {% if active == 'panel' %}active yellow{% endif %}">
+      <i class="bi bi-grid-1x2"></i> Panel principal
+    </a>
+    <a href="{% url 'publicar_trabajo' %}" class="sidebar-link {% if active == 'publicar' %}active yellow{% endif %}">
+      <i class="bi bi-plus-square"></i> Publicar trabajo
+    </a>
+    <a href="{% url 'candidatos_general' %}" class="sidebar-link {% if active == 'candidatos' %}active yellow{% endif %}">
+      <i class="bi bi-person-check"></i> Candidatos
+    </a>
+    <a href="{% url 'buscar_trabajadores' %}" class="sidebar-link {% if active == 'buscar_trab' %}active yellow{% endif %}">
+      <i class="bi bi-people"></i> Buscar trabajadores
+    </a>
+    <a href="{% url 'mensajes' %}" class="sidebar-link {% if active == 'mensajes' %}active yellow{% endif %}">
+      <i class="bi bi-chat-dots"></i> Mensajes
+    </a>
+    <a href="{% url 'estadisticas' %}" class="sidebar-link {% if active == 'stats' %}active yellow{% endif %}">
+      <i class="bi bi-bar-chart"></i> Estadísticas
+    </a>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-bottom">
+    <a href="{% url 'notificaciones' %}" class="sidebar-link {% if active == 'notif' %}active yellow{% endif %}">
+      <i class="bi bi-bell"></i> Notificaciones
+      {% if notif_count > 0 %}<span class="sidebar-badge">{{ notif_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'mi_empresa' %}" class="sidebar-link {% if active == 'empresa' %}active yellow{% endif %}">
+      <i class="bi bi-briefcase"></i> Mi empresa
+    </a>
+    <a href="{% url 'logout' %}" class="sidebar-link"><i class="bi bi-box-arrow-right"></i> Salir</a>
+  </div>
+</aside>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+  <div class="mobile-topbar">
+    <button class="toggle-btn" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+    <div class="brand-icon yellow"><i class="bi bi-building"></i></div>
+    <span style="font-weight:800;">Chambazo Pro</span>
+  </div>
+  <main class="app-content">

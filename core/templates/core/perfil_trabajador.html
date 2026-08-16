@@ -1,104 +1,83 @@
 {% extends 'core/base.html' %}
-{% block title %}Mi Perfil – Chambazo{% endblock %}
+{% block title %}Mi perfil{% endblock %}
 {% block body %}
-<nav class="ch-navbar">
-  <span class="fw-bold" style="font-size:15px;">Mi Perfil</span>
-  <a href="{% url 'notificaciones' %}" class="notif-btn ms-auto">
-    <i class="bi bi-bell-fill"></i>
-    {% if notif_count > 0 %}<span class="notif-badge">{{ notif_count }}</span>{% endif %}
-  </a>
-  <a href="{% url 'editar_perfil' %}" class="btn btn-sm btn-ch-green ms-2">
-    <i class="bi bi-pencil-fill"></i> Editar
-  </a>
-</nav>
-<div class="page-wrap">
-  <!-- Header perfil -->
-  <div class="ch-card p-4 mb-3">
-    <div class="d-flex align-items-start gap-3 mb-3">
-      <div class="avatar-xl">
-        {% if profile.foto %}<img src="{{ profile.foto.url }}" alt="">
-        {% else %}<i class="bi bi-person-fill"></i>{% endif %}
-      </div>
-      <div class="flex-grow-1">
-        <h2 class="fw-bold mb-0" style="font-size:18px;">{{ request.user.get_full_name }}</h2>
-        <div class="text-muted small">{{ profile.ubicacion }}</div>
-        <div class="d-flex align-items-center gap-1 mt-1">
-          <span class="text-warning fw-bold small">{% for i in "12345" %}{% if forloop.counter <= profile.calificacion|floatformat:0|add:0 %}★{% else %}☆{% endif %}{% endfor %} {{ profile.calificacion|floatformat:1 }}</span>
-          <span class="text-muted small">({{ profile.total_trabajos }} trabajos)</span>
-        </div>
-      </div>
-      {% if profile.verificado %}
-      <div class="verified-badge"><i class="bi bi-patch-check-fill"></i> Verificado</div>
-      {% endif %}
+{% include 'core/_sidebar_trabajador.html' %}
+
+<div class="page-hd"><div><h1>Mi perfil</h1><p>Así te ven los empleadores</p></div>
+  <a href="{% url 'editar_perfil' %}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+</div>
+
+<div class="layout-2col">
+  <div class="profile-card">
+    <div class="profile-av-lg">
+      {% if profile.foto %}<img src="{{ profile.foto.url }}" alt="">{% else %}<i class="bi bi-person-fill"></i>{% endif %}
+      {% if profile.disponible %}<div class="profile-online-badge"></div>{% endif %}
     </div>
-    <div class="border-top pt-3">
-      <div class="fw-bold small mb-2">Habilidades</div>
-      <div>
-        {% for h in profile.habilidades %}
-        <span class="skill-tag">{{ h|capfirst }}</span>
-        {% empty %}<span class="text-muted small">Sin habilidades registradas</span>{% endfor %}
-      </div>
-    </div>
-    {% if profile.descripcion %}
-    <div class="border-top pt-3 mt-3">
-      <div class="fw-bold small mb-1">Descripción profesional</div>
-      <p class="text-muted small mb-0">{{ profile.descripcion }}</p>
+    <div class="fw-800 t-h2">{{ profile.nombre_display }}</div>
+    <div class="t-xs t-muted mb-8">{{ profile.ubicacion|default:"El Salvador" }}</div>
+    {% if profile.calificacion > 0 %}
+    <div class="flex-c gap-6" style="justify-content:center;margin-bottom:10px;">
+      <span class="stars">{{ profile.estrellas }}</span><span class="t-sm fw-700">{{ profile.calificacion }}</span>
     </div>
     {% endif %}
-    <div class="border-top pt-3 mt-3 d-flex gap-3 flex-wrap">
-      {% if profile.telefono %}
-      <span class="text-muted small"><i class="bi bi-telephone-fill text-green me-1"></i>{{ profile.telefono }}</span>
-      {% endif %}
-      <span class="text-muted small"><i class="bi bi-envelope-fill text-green me-1"></i>{{ request.user.email }}</span>
-    </div>
+    <span class="pill {% if profile.disponible %}pill-green{% else %}pill-red-lt{% endif %}">
+      <span class="pill-dot"></span>{% if profile.disponible %}Disponible{% else %}No disponible{% endif %}
+    </span>
+
+    <div class="divider"></div>
+    <div class="mini-stat-row"><span class="lbl">Trabajos completados</span><span class="val">{{ stats.completados }}</span></div>
+    <div class="mini-stat-row"><span class="lbl">Calificación</span><span class="val">{{ stats.calificacion|default:"—" }} ★</span></div>
+    <div class="mini-stat-row"><span class="lbl">Ganado este mes</span><span class="val t-green">${{ stats.ganado_mes }}</span></div>
+
+    <form method="post" action="{% url 'toggle_disponibilidad' %}" class="mt-16">
+      {% csrf_token %}
+      <button type="submit" class="btn {% if profile.disponible %}btn-outline{% else %}btn-g{% endif %} btn-full btn-sm">
+        {% if profile.disponible %}Marcar no disponible{% else %}Marcar disponible{% endif %}
+      </button>
+    </form>
   </div>
 
-  <!-- Galería -->
-  {% if galeria %}
-  <div class="ch-card p-4 mb-3">
-    <div class="d-flex justify-content-between mb-2">
-      <span class="fw-bold">Galería de trabajos</span>
-      <span class="text-muted small">{{ galeria.count }} proyectos</span>
-    </div>
-    <div class="gallery-grid">
-      {% for item in galeria %}
-      <div class="gallery-item">
-        {% if item.imagen %}<img src="{{ item.imagen.url }}" alt="{{ item.titulo }}" style="width:100%;height:100%;object-fit:cover;">{% endif %}
-        <div class="gallery-caption">{{ item.titulo }}<br><small>{{ item.categoria }}</small></div>
+  <div>
+    <div class="card mb-16"><div class="card-body">
+      <div class="flex-bc mb-8"><h4 class="t-h3">Completitud del perfil</h4><span class="fw-800 t-green">{{ profile.completitud_perfil }}%</span></div>
+      <div class="prog-wrap"><div class="prog-fill" style="width:{{ profile.completitud_perfil }}%;"></div></div>
+      {% if profile.descripcion %}<p class="t-sm t-mid mt-12">{{ profile.descripcion }}</p>{% endif %}
+    </div></div>
+
+    <div class="card mb-16"><div class="card-body">
+      <div class="flex-bc mb-10"><h4 class="t-h3">Habilidades</h4><a href="{% url 'editar_perfil' %}" class="t-xs t-green fw-700">+ Agregar</a></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        {% for hab in profile.habilidades %}<span class="skill-tag">{{ hab }}</span>{% empty %}<span class="t-sm t-muted">Sin habilidades registradas</span>{% endfor %}
       </div>
+    </div></div>
+
+    {% if logros_obtenidos %}
+    <div class="card mb-16"><div class="card-body">
+      <div class="flex-bc mb-10"><h4 class="t-h3">Logros desbloqueados</h4><a href="{% url 'logros' %}" class="t-xs t-green fw-700">Ver todos</a></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        {% for l in logros_obtenidos %}
+        <div style="text-align:center;width:70px;">
+          <div class="logro-icon-box" style="width:44px;height:44px;font-size:19px;margin:0 auto 4px;">{{ l.logro.icono }}</div>
+          <div class="t-xxs t-mid fw-600">{{ l.logro.nombre|truncatechars:14 }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div></div>
+    {% endif %}
+
+    <div class="card"><div class="card-body">
+      <h4 class="t-h3 mb-10">Calificaciones recibidas</h4>
+      {% for r in resenas %}
+      <div style="padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border);">
+        <div class="flex-bc mb-4"><span class="fw-700 t-sm">{{ r.autor.get_full_name|default:r.autor.username }}</span><span class="stars" style="font-size:12px;">{{ r.estrellas }}</span></div>
+        <p class="t-sm t-mid">{{ r.comentario }}</p>
+      </div>
+      {% empty %}
+      <p class="t-sm t-muted">Aún no tienes calificaciones.</p>
       {% endfor %}
-    </div>
+    </div></div>
   </div>
-  {% endif %}
-
-  <!-- Reseñas -->
-  <div class="ch-card p-4 mb-3">
-    <div class="d-flex justify-content-between mb-3">
-      <span class="fw-bold">Reseñas recientes</span>
-      <span class="text-muted small">{{ resenas.count }} reseñas</span>
-    </div>
-    {% for r in resenas %}
-    <div class="border-bottom pb-2 mb-2">
-      <div class="d-flex justify-content-between align-items-center">
-        <span class="fw-semibold small">{{ r.autor.get_full_name }}</span>
-        <span class="text-warning small">{% for i in "12345" %}{% if forloop.counter <= r.calificacion %}★{% endif %}{% endfor %}</span>
-      </div>
-      <div class="text-muted" style="font-size:11px;">{{ r.creado|date:"d/m/Y" }}</div>
-      <div class="text-muted small">{{ r.comentario }}</div>
-    </div>
-    {% empty %}
-    <p class="text-muted small">Aún no tienes reseñas.</p>
-    {% endfor %}
-  </div>
-
-  <a href="{% url 'logout' %}" class="btn btn-outline-danger w-100 fw-bold">
-    <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
-  </a>
 </div>
-<nav class="bottom-nav">
-  <a href="{% url 'home_trabajador' %}"><i class="bi bi-search"></i><span>Buscar</span></a>
-  <a href="{% url 'mis_solicitudes' %}"><i class="bi bi-briefcase"></i><span>Solicitudes</span></a>
-  <a href="{% url 'notificaciones' %}"><i class="bi bi-bell"></i><span>Notif.</span></a>
-  <a href="{% url 'perfil_trabajador' %}" class="active"><i class="bi bi-person-fill"></i><span>Perfil</span></a>
-</nav>
+
+{% include 'core/_sidebar_close.html' %}
 {% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+{% block title %}Política de Privacidad{% endblock %}
+{% block body %}
+{% if request.user.is_authenticated %}
+  {% if request.user.profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
+{% else %}
+<div style="max-width:900px;margin:0 auto;padding:40px 20px;">
+{% endif %}
+
+<div class="page-hd"><div><h1>Política de Privacidad</h1><p>Cómo protegemos y usamos tu información</p></div></div>
+
+<div class="policy-grid mb-16">
+  <div class="policy-card">
+    <h4><i class="bi bi-database t-green"></i> Datos que recopilamos</h4>
+    <p>Recopilamos tu nombre, correo, teléfono, ubicación aproximada, habilidades (trabajadores) o
+    información de empresa (empleadores), fotografías de perfil y el historial de trabajos e interacciones
+    dentro de la plataforma.</p>
+  </div>
+  <div class="policy-card">
+    <h4><i class="bi bi-gear t-yellow"></i> Cómo usamos tus datos</h4>
+    <p>Usamos tu información para conectar trabajadores con empleadores, calcular compatibilidad entre
+    perfiles y vacantes, mostrar tu ubicación aproximada en el mapa de trabajos, y enviarte notificaciones
+    relevantes sobre tus solicitudes.</p>
+  </div>
+  <div class="policy-card">
+    <h4><i class="bi bi-lock"></i> Seguridad de la información</h4>
+    <p>Implementamos medidas técnicas para proteger tus datos: contraseñas cifradas, conexiones seguras
+    y acceso restringido a información sensible. Ningún sistema es 100% infalible, pero trabajamos
+    constantemente en mejorar nuestra seguridad.</p>
+  </div>
+  <div class="policy-card">
+    <h4><i class="bi bi-person-badge"></i> Tus derechos</h4>
+    <p>Puedes acceder, corregir o eliminar tu información personal en cualquier momento desde tu perfil.
+    También puedes solicitar la eliminación completa de tu cuenta y los datos asociados contactando a soporte.</p>
+  </div>
+  <div class="policy-card">
+    <h4><i class="bi bi-cookie"></i> Cookies</h4>
+    <p>Usamos cookies de sesión para mantenerte conectado y recordar tus preferencias de navegación.
+    No compartimos ni vendemos tus datos de navegación a terceros con fines publicitarios.</p>
+  </div>
+  <div class="policy-card">
+    <h4><i class="bi bi-envelope"></i> Contacto</h4>
+    <p>Si tienes preguntas sobre esta política o el manejo de tus datos personales, puedes escribirnos a
+    <strong>privacidad@chambazo.sv</strong> y te responderemos en un plazo máximo de 5 días hábiles.</p>
+  </div>
+</div>
+
+{% if request.user.is_authenticated %}
+<form method="post">{% csrf_token %}
+  <button type="submit" class="btn btn-g btn-lg"><i class="bi bi-check-lg"></i> He leído y acepto</button>
+  <a href="javascript:history.back()" class="btn btn-outline btn-lg">Volver</a>
+</form>
+{% endif %}
+
+{% if request.user.is_authenticated %}
+{% include 'core/_sidebar_close.html' %}
+{% else %}</div>{% endif %}
+{% endblock %}

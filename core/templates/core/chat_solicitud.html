@@ -1,0 +1,75 @@
+{% extends 'core/base.html' %}
+{% block title %}Chat{% endblock %}
+{% block body %}
+
+<div class="chat-page">
+
+  <nav class="ch-nav">
+    <a href="javascript:history.back()" class="nav-icon-btn" style="text-decoration:none;color:var(--mid);margin-right:4px;">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div class="brand">
+      <div class="cand-avatar" style="width:36px;height:36px;">
+        {% if otro_user.profile.foto %}
+          <img src="{{ otro_user.profile.foto.url }}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:50%;">
+        {% else %}
+          <i class="bi bi-person"></i>
+        {% endif %}
+      </div>
+      <div>
+        <div style="font-size:14px;font-weight:700;">{{ otro_user.get_full_name|default:otro_user.username }}</div>
+        <div style="font-size:11px;color:var(--mid);">{{ solicitud.trabajo.titulo }}</div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="chat-messages" id="chatMessages">
+    {% for msg in mensajes %}
+    <div class="msg-row {% if msg.autor == request.user %}user{% endif %}">
+      {% if msg.autor != request.user %}
+      <div class="msg-avatar">
+        {% if msg.autor.profile.foto %}<img src="{{ msg.autor.profile.foto.url }}" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:50%;">
+        {% else %}<i class="bi bi-person"></i>{% endif %}
+      </div>
+      {% endif %}
+      <div>
+        <div class="bubble {% if msg.autor == request.user %}bubble-user{% else %}bubble-bot{% endif %}">
+          {{ msg.texto }}
+        </div>
+        <div class="t-xs t-muted" style="margin-top:3px;{% if msg.autor == request.user %}text-align:right;{% endif %}">
+          {{ msg.creado|date:"H:i" }}
+        </div>
+      </div>
+      {% if msg.autor == request.user %}
+      <div class="msg-avatar" style="background:var(--green-dim);color:var(--green);">
+        {% if request.user.profile.foto %}<img src="{{ request.user.profile.foto.url }}" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:50%;">
+        {% else %}<i class="bi bi-person"></i>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div style="text-align:center;padding:40px 20px;color:var(--muted);">
+      <div style="font-size:40px;margin-bottom:10px;">💬</div>
+      <p class="fw-600">Inicia la conversación</p>
+      <p class="t-sm">Este es el inicio de tu chat con {{ otro_user.get_full_name|default:otro_user.username }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="chat-input-bar">
+    <form method="post" style="display:flex;flex:1;gap:8px;align-items:center;">
+      {% csrf_token %}
+      <input type="text" name="texto" class="chat-input" placeholder="Escribe un mensaje..." autocomplete="off" required>
+      <button type="submit" class="btn btn-primary btn-icon">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </form>
+  </div>
+
+</div>
+
+<script>
+// Scroll al final al cargar
+document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+</script>
+{% endblock %}

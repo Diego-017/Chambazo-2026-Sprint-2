@@ -1,25 +1,20 @@
 {% extends 'core/base.html' %}
-{% block title %}¡Solicitud Enviada! – Chambazo{% endblock %}
+{% block title %}Solicitud enviada{% endblock %}
 {% block body %}
-<div class="success-wrap">
-  <div class="success-card">
-    <div class="success-icon"><i class="bi bi-check-circle-fill"></i></div>
-    <h2 class="fw-bold mb-2">¡Solicitud Enviada!</h2>
-    <p class="text-muted mb-4">Tu postulación fue enviada exitosamente. El empleador revisará tu perfil y te contactará pronto.</p>
-    <div class="p-3 rounded mb-4 text-start" style="background:var(--ch-green-light);">
-      <div class="d-flex align-items-center gap-2 fw-bold mb-1">
-        <i class="bi bi-briefcase-fill text-green"></i> {{ trabajo.titulo }}
-      </div>
-      <div class="text-muted small">{{ trabajo.contratista.profile.nombre_display }}</div>
-      <div class="text-muted small mt-1">
-        <i class="bi bi-calendar3 me-1"></i> Aplicaste el {{ solicitud.creado|date:"d/m/Y" }} a las {{ solicitud.creado|time:"g:i A" }}
-      </div>
-      {% if solicitud.rapida %}
-      <span class="badge bg-warning text-dark mt-1"><i class="bi bi-lightning-fill"></i> Aplicación rápida</span>
-      {% endif %}
+<div class="confirm-shell">
+  <div class="confirm-card">
+    <div class="confirm-icon"><i class="bi bi-check-lg"></i></div>
+    <h2 class="t-h1 mb-8">¡Solicitud enviada!</h2>
+    <p class="t-sm t-mid">Tu postulación para <strong>{{ trabajo.titulo }}</strong> fue enviada exitosamente al empleador.</p>
+    <div class="confirm-steps-box">
+      <div class="confirm-step"><div class="confirm-step-num">1</div> El empleador revisará tu perfil y solicitud</div>
+      <div class="confirm-step"><div class="confirm-step-num">2</div> Recibirás una notificación cuando respondan</div>
+      <div class="confirm-step"><div class="confirm-step-num">3</div> Si te aceptan, podrán chatear directamente</div>
     </div>
-    <a href="{% url 'mis_solicitudes' %}" class="btn btn-ch-green w-100 fw-bold mb-2">Ver mis solicitudes</a>
-    <a href="{% url 'home_trabajador' %}" class="btn btn-outline-success w-100 fw-bold">Buscar más trabajos</a>
+    <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;">
+      <a href="{% url 'mis_solicitudes' %}" class="btn btn-g" style="justify-content:center;">Ver mis solicitudes</a>
+      <a href="{% url 'home_trabajador' %}" class="btn btn-outline" style="justify-content:center;">Seguir buscando</a>
+    </div>
   </div>
 </div>
 {% endblock %}

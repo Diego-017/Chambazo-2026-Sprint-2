@@ -1,0 +1,59 @@
+{% extends 'core/base.html' %}
+{% block title %}Mensajes{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_trabajador.html' %}
+
+<div class="page-hd"><div><h1>Mensajes</h1><p>Conversaciones con empleadores</p></div></div>
+
+<div class="msg-shell">
+  <div class="msg-list {% if sol_activa %}mobile-hide{% else %}mobile-show{% endif %}">
+    <div class="msg-list-hd"><span class="fw-700 t-sm">{{ conversaciones|length }} conversación{{ conversaciones|length|pluralize:"es" }}</span></div>
+    {% for c in conversaciones %}
+    <a href="{% url 'mensajes_chat' c.sol.pk %}" class="conv-item {% if sol_activa.pk == c.sol.pk %}active{% endif %}">
+      <div style="position:relative;">
+        <div class="conv-av">{% if c.otro.profile.foto %}<img src="{{ c.otro.profile.foto.url }}" alt="">{% else %}<i class="bi bi-building"></i>{% endif %}</div>
+        <div class="conv-online-dot"></div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="flex-bc"><span class="conv-name">{{ c.otro.profile.nombre_display }}</span><span class="conv-time">{{ c.ultimo_fecha|date:"H:i" }}</span></div>
+        <div class="conv-preview">{{ c.ultimo_msg }}</div>
+      </div>
+      {% if c.no_leidos > 0 %}<span class="sidebar-badge" style="position:static;">{{ c.no_leidos }}</span>{% endif %}
+    </a>
+    {% empty %}
+    <div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">Sin conversaciones</div><div class="empty-sub">Aparecen cuando te aceptan en un trabajo</div></div>
+    {% endfor %}
+  </div>
+
+  <div class="chat-area {% if not sol_activa %}mobile-hide{% endif %}">
+    {% if sol_activa %}
+    <div class="chat-area-hd">
+      <a href="{% url 'mensajes' %}" class="btn btn-ghost btn-icon-circle" style="display:none;" id="backBtn"><i class="bi bi-arrow-left"></i></a>
+      <div class="conv-av">{% if otro_user.profile.foto %}<img src="{{ otro_user.profile.foto.url }}" alt="">{% else %}<i class="bi bi-building"></i>{% endif %}</div>
+      <div><div class="fw-700 t-sm">{{ otro_user.profile.nombre_display }}</div><div class="t-xxs t-muted">{{ sol_activa.trabajo.titulo }}</div></div>
+    </div>
+    <div class="chat-msgs" id="chatMsgs">
+      {% for m in mensajes_list %}
+      <div class="msg-row {% if m.autor == request.user %}me{% endif %}">
+        <div class="msg-av-sm">{% if m.autor.profile.foto %}<img src="{{ m.autor.profile.foto.url }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">{% else %}<i class="bi bi-person"></i>{% endif %}</div>
+        <div><div class="bubble {% if m.autor == request.user %}bubble-me{% else %}bubble-them{% endif %}">{{ m.texto }}</div>
+        <div class="t-xxs t-muted mt-4" style="{% if m.autor == request.user %}text-align:right;{% endif %}">{{ m.creado|date:"H:i" }}</div></div>
+      </div>
+      {% empty %}
+      <div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">Inicia la conversación</div></div>
+      {% endfor %}
+    </div>
+    <form method="post" class="chat-input-bar">
+      {% csrf_token %}
+      <input type="text" name="texto" class="chat-input" placeholder="Escribe un mensaje..." autocomplete="off" required>
+      <button type="submit" class="btn btn-g btn-icon-circle" style="width:38px;height:38px;"><i class="bi bi-send-fill"></i></button>
+    </form>
+    {% else %}
+    <div class="empty-state" style="margin:auto;"><div class="empty-icon">💬</div><div class="empty-title">Selecciona una conversación</div></div>
+    {% endif %}
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+<script>document.getElementById('chatMsgs') && (document.getElementById('chatMsgs').scrollTop = document.getElementById('chatMsgs').scrollHeight);</script>
+{% endblock %}

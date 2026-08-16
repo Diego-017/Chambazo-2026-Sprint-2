@@ -1,85 +1,124 @@
 {% extends 'core/base.html' %}
-{% block title %}{% if editar %}Editar{% else %}Publicar{% endif %} trabajo – Chambazo{% endblock %}
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block extra_head %}
+<script>function initMapPicker(){window._pickerReady=true;}</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_KEY }}&callback=initMapPicker&libraries=places" async defer></script>
+{% endblock %}
 {% block body %}
-<nav class="ch-navbar">
-  <a href="{% url 'panel_contratista' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
-  <span class="fw-bold">{% if editar %}Editar trabajo{% else %}Publicar nuevo trabajo{% endif %}</span>
-</nav>
-<div class="page-wrap">
-  {% if messages %}{% for m in messages %}<div class="alert alert-success py-2 small">{{ m }}</div>{% endfor %}{% endif %}
-  <form method="post">
-    {% csrf_token %}
-    <div class="ch-card p-4 mb-3">
-      <h6 class="fw-bold mb-3">¿Qué necesitas?</h6>
-      <div class="row g-3">
-        <div class="col-12">
-          <label class="form-label small fw-semibold">Título del trabajo *</label>
-          {{ form.titulo }}
-          {% if form.titulo.errors %}<div class="text-danger small">{{ form.titulo.errors.0 }}</div>{% endif %}
+{% include 'core/_sidebar_contratista.html' %}
+
+<div class="page-hd"><div><h1>{{ titulo_pagina }}</h1><p>Completa los detalles de tu vacante</p></div></div>
+
+<form method="post" id="jobForm">
+  {% csrf_token %}
+  <div class="layout-2col-rev">
+    <div>
+      <div class="card mb-16"><div class="card-body">
+        <h3 class="t-h3 mb-14">Información básica</h3>
+        <div class="form-group"><label class="form-label">Título *</label>{{ form.titulo }}</div>
+        <div class="form-group">
+          <label class="form-label">Categoría *</label>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            {% for val, label in skills %}
+            <label class="cat-icon-btn {% if form.instance.categoria == val %}active{% endif %}" onclick="selectCat('{{ val }}')" id="cat-{{ val }}">{{ label }}</label>
+            {% endfor %}
+          </div>
+          <div style="display:none;">{{ form.categoria }}</div>
         </div>
-        <div class="col-md-6">
-          <label class="form-label small fw-semibold">Categoría *</label>
-          {{ form.categoria }}
+        <div class="form-group"><label class="form-label">Descripción detallada *</label>{{ form.descripcion }}</div>
+        <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group"><label class="form-label">Requisitos</label>{{ form.requisitos }}</div>
+          <div class="form-group"><label class="form-label">Beneficios</label>{{ form.beneficios }}</div>
         </div>
-        <div class="col-md-6">
-          <label class="form-label small fw-semibold">Presupuesto (USD) *</label>
-          {{ form.presupuesto }}
+        <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group"><label class="form-label">Presupuesto (USD) *</label>{{ form.presupuesto }}</div>
+          <div class="form-group"><label class="form-label">Modalidad</label>{{ form.modalidad }}</div>
         </div>
-        <div class="col-12">
-          <label class="form-label small fw-semibold">Descripción del trabajo *</label>
-          {{ form.descripcion }}
+        <div class="form-group"><label class="form-label">Duración estimada</label>{{ form.duracion }}</div>
+      </div></div>
+
+      <div class="card mb-16"><div class="card-body">
+        <h3 class="t-h3 mb-12">🛠️ Habilidades requeridas</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+          {% for val, label in skills %}
+          <label class="skill-chip-label yellow">
+            <input type="checkbox" name="habilidades_req" value="{{ val }}">{{ label }}
+          </label>
+          {% endfor %}
         </div>
-        <div class="col-12">
-          <label class="form-label small fw-semibold">Requisitos mínimos</label>
-          {{ form.requisitos }}
+      </div></div>
+
+      <div class="card"><div class="card-body">
+        <h3 class="t-h3 mb-12">📍 Ubicación (opcional)</h3>
+        <div class="form-group">{{ form.ubicacion }}</div>
+        <input type="hidden" name="lat" id="latInput"><input type="hidden" name="lng" id="lngInput">
+        <p class="t-xs t-muted mb-8"><i class="bi bi-info-circle"></i> Haz clic en el mapa para fijar la ubicación exacta. Si no seleccionas, se asignará una zona aleatoria de El Salvador.</p>
+        <div class="map-wrap">
+          <div class="map-search-overlay"><i class="bi bi-search" style="color:var(--muted);"></i><input type="text" id="pickerSearch" placeholder="Buscar zona en El Salvador…"></div>
+          <div id="mapPicker" class="gmap" style="height:230px;"></div>
         </div>
-        <div class="col-12">
-          <label class="form-label small fw-semibold">Beneficios adicionales</label>
-          {{ form.beneficios }}
+        <div id="coordsDisplay" style="display:none;background:var(--green-light);border-radius:8px;padding:8px 12px;margin-top:8px;font-size:12px;color:var(--green-dark);align-items:center;gap:6px;">
+          <i class="bi bi-geo-alt-fill"></i> <span id="coordsText"></span>
         </div>
-        <div class="col-12">
-          <label class="form-label small fw-semibold">Ubicación del trabajo *</label>
-          {{ form.ubicacion }}
-        </div>
-        <div class="col-md-6">
-          <label class="form-label small fw-semibold">Estado de la vacante</label>
-          {{ form.estado_vacante }}
-        </div>
-      </div>
+      </div></div>
     </div>
 
-    <div class="ch-card p-4 mb-3">
-      <h6 class="fw-bold mb-3">Habilidades requeridas</h6>
-      <div>
-        {% for val, label in form.habilidades_req.field.choices %}
-        <label class="skill-chip-label {% if val in form.habilidades_req.value %}active{% endif %}" id="pchip-{{ val }}">
-          <input type="checkbox" name="habilidades_req" value="{{ val }}"
-            {% if val in form.habilidades_req.value %}checked{% endif %}
-            onchange="document.getElementById('pchip-{{ val }}').classList.toggle('active', this.checked)">
-          {{ label }}
-        </label>
-        {% endfor %}
-      </div>
+    <div class="detail-sidebar">
+      <div class="card mb-16"><div class="card-body">
+        <h4 class="t-h3 mb-12">Opciones</h4>
+        <div class="flex-bc mb-14">
+          <div><div class="t-sm fw-700">Marcar como urgente</div><div class="t-xxs t-muted">Se destacará en el feed</div></div>
+          <label class="toggle-switch">{{ form.es_urgente }}<span class="toggle-slider"></span></label>
+        </div>
+        <div class="flex-bc">
+          <div><div class="t-sm fw-700">Verificación requerida</div><div class="t-xxs t-muted">Solo candidatos verificados</div></div>
+          <label class="toggle-switch">{{ form.verificacion_requerida }}<span class="toggle-slider"></span></label>
+        </div>
+      </div></div>
+
+      <div class="card mb-16" style="background:var(--yellow-light);border-color:var(--yellow);"><div class="card-body">
+        <div class="flex-c gap-8 mb-6"><i class="bi bi-lightbulb-fill t-yellow"></i><span class="fw-700 t-sm">Consejo</span></div>
+        <p class="t-xs" style="color:#6b5300;">Las vacantes con descripción detallada y presupuesto justo reciben hasta 3 veces más candidatos calificados.</p>
+      </div></div>
+
+      <button type="submit" class="btn btn-y btn-full btn-lg"><i class="bi bi-send-fill"></i> {{ btn_label }}</button>
     </div>
+  </div>
+</form>
 
-    <div class="ch-card p-3 mb-3" style="border:1.5px solid #fecaca;background:#fff5f5;">
-      <div class="form-check">
-        {{ form.es_urgente }}
-        <label class="form-check-label fw-bold" for="{{ form.es_urgente.id_for_label }}" style="color:var(--ch-red);">
-          <i class="bi bi-exclamation-triangle-fill me-1"></i> ¿Es urgente?
-        </label>
-        <div class="text-muted small mt-1" style="color:var(--ch-red) !important;opacity:.7;">Tu publicación aparecerá destacada y con mayor visibilidad</div>
-      </div>
-    </div>
+{% include 'core/_sidebar_close.html' %}
+<script>
+function selectCat(val){
+  document.querySelectorAll('.cat-icon-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('cat-'+val).classList.add('active');
+  document.getElementById('id_categoria').value = val;
+}
+const habilidadesGuardadas = {{ form.instance.habilidades_req|default:'[]'|safe }};
+document.querySelectorAll('.skill-chip-label').forEach(label=>{
+  const input = label.querySelector('input');
+  if(habilidadesGuardadas.includes(input.value)){ label.classList.add('active'); input.checked=true; }
+  label.addEventListener('click', ()=> setTimeout(()=>label.classList.toggle('active', input.checked),0));
+});
 
-    {% if form.non_field_errors %}
-    <div class="alert alert-danger py-2 small">{{ form.non_field_errors.0 }}</div>
-    {% endif %}
-
-    <button type="submit" class="btn btn-ch-yellow w-100 fw-bold" style="font-size:15px;">
-      <i class="bi bi-megaphone-fill me-1"></i>
-      {% if editar %}Guardar cambios{% else %}Publicar trabajo{% endif %}
-    </button>
-  </form>
-</div>
+let pickerMarker=null, pickerMap=null;
+function initMapPicker(){
+  pickerMap=new google.maps.Map(document.getElementById('mapPicker'),{center:{lat:13.6929,lng:-89.2182},zoom:9,disableDefaultUI:true,zoomControl:true,
+    styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{elementType:'geometry',stylers:[{color:'#f5f5f5'}]},
+      {featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#c9d8f0'}]}]});
+  const bounds=new google.maps.LatLngBounds(new google.maps.LatLng(13.15,-90.10),new google.maps.LatLng(14.45,-87.68));
+  const ac=new google.maps.places.Autocomplete(document.getElementById('pickerSearch'),{bounds,strictBounds:false,componentRestrictions:{country:'sv'}});
+  ac.addListener('place_changed',()=>{const p=ac.getPlace(); if(p.geometry){pickerMap.setCenter(p.geometry.location);pickerMap.setZoom(14);ponerPin(p.geometry.location.lat(),p.geometry.location.lng());}});
+  pickerMap.addListener('click',e=>ponerPin(e.latLng.lat(),e.latLng.lng()));
+  const eLat='{{ form.instance.lat|default:"" }}', eLng='{{ form.instance.lng|default:"" }}';
+  if(eLat && eLng){ ponerPin(parseFloat(eLat),parseFloat(eLng)); pickerMap.setCenter({lat:parseFloat(eLat),lng:parseFloat(eLng)}); pickerMap.setZoom(14); }
+}
+function ponerPin(lat,lng){
+  if(pickerMarker) pickerMarker.setMap(null);
+  pickerMarker=new google.maps.Marker({position:{lat,lng},map:pickerMap,animation:google.maps.Animation.DROP,
+    icon:{path:google.maps.SymbolPath.CIRCLE,scale:13,fillColor:'#F2B90D',fillOpacity:1,strokeColor:'#fff',strokeWeight:3}});
+  document.getElementById('latInput').value=lat; document.getElementById('lngInput').value=lng;
+  const d=document.getElementById('coordsDisplay'); d.style.display='flex';
+  document.getElementById('coordsText').textContent=`Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`;
+}
+</script>
 {% endblock %}
