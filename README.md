@@ -1,8 +1,8 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
-# Chambazo-2026-Version 2 Julio 2026
+# Chambazo-2026-Version 2 Sprint 2 Julio 2026
 =======
-# 🟢 Chambazo — Django + Python | Sprint 1 Completo
+# 🟢 Chambazo — Django + Python | Sprint 2 Completo
 
 ## Historias de Usuario implementadas (15 HUs del Sprint 1)
 
