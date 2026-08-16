@@ -68,6 +68,54 @@ python manage.py runserver
 - Perfiles con foto, habilidades, galería y reseñas
 - Trabajos urgentes con banner y sección dedicada
 - Asistente de chat inteligente
+
+  Chambazo — Sprint 2 (rediseño completo según PDF)
+Instalación
+bash
+tar -xzf chambazo_final.tar.gz
+cd chambazo
+pip install django pillow
+python manage.py runserver
+
+Abrir → http://127.0.0.1:8000
+
+Cuentas de prueba
+Rol	Email	Contraseña
+Trabajador	carlos@demo.com	demo123
+Empleador	(usuario) constructora_sv	demo123
+Admin	admin	admin123
+Qué cambió en esta vuelta
+
+Diseño 100% igual al PDF de Figma:
+
+Layout de dashboard con sidebar oscuro (navy) — ya no es mobile con bottom-nav
+Sidebar verde para trabajador, amarillo/dorado para empleador ("Chambazo Pro")
+Login y registro en pantalla dividida (panel oscuro + formulario)
+Tablas de datos (Mis solicitudes, Candidatos, Publicaciones) igual al PDF
+Todas las páginas nuevas del PDF: Guardados, Mensajes, Ganancias, Logros, Estadísticas, Mi empresa
+
+Google Maps con direcciones aleatorias reales:
+
+Mapa interactivo en "Buscar empleos" con buscador, filtro urgentes, vista satélite
+Mapa en cada detalle de trabajo con círculo de radio aproximado
+Selector de ubicación (click en mapa) al publicar una vacante
+Los trabajos se generan con coordenadas aleatorias reales de 20 ciudades de El Salvador
+
+Términos y Política de Privacidad — página completa para ambos roles (trabajador/empleador), con botón "He leído y acepto"
+
+Chatbot generador de respuestas real — motor de reglas en Python del lado del servidor (sin depender de API externa), que consulta la base de datos en vivo: trabajos mejor pagados, % de completitud de perfil, ganancias del mes, estadísticas de vacantes, etc.
+
+Funcionalidades extra no pedidas en el Sprint original:
+
+Sistema de Logros/gamificación con puntos y niveles
+Guardados (favoritos) con botón de corazón
+Ganancias con gráfica de barras por semana
+Estadísticas para empleador con gráficas de vistas vs aplicaciones y por categoría
+Buscar trabajadores — el empleador puede invitar directamente a candidatos
+Chat en tiempo real entre trabajador y empleador tras ser aceptado
+Propuesta de tarifa personalizada al aplicar a un trabajo
+
+  
 >>>>>>> e69eda2 (Subiendo proyecto)
 =======
 # Chambazo-2026-Sprint-2
