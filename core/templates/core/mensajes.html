@@ -1,59 +1,322 @@
 {% extends 'core/base.html' %}
-{% block title %}Mensajes{% endblock %}
+{% block title %}Mensajes · Chambazo{% endblock %}
+
+{% block extra_head %}
+<style>
+  .whatsapp-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 82%;
+    word-break: break-word;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  .bubble-me-wa {
+    background: #dcf8c6;
+    color: #111827;
+    margin-left: auto;
+    border-top-right-radius: 2px;
+  }
+  .bubble-them-wa {
+    background: #ffffff;
+    color: #111827;
+    margin-right: auto;
+    border-top-left-radius: 2px;
+  }
+  .emoji-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: transform 0.1s;
+  }
+  .emoji-btn:hover {
+    transform: scale(1.25);
+    background: #f1f5f9;
+  }
+</style>
+{% endblock %}
+
 {% block body %}
-{% include 'core/_sidebar_trabajador.html' %}
+{% if request.user.profile.rol == 'contratista' %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
 
-<div class="page-hd"><div><h1>Mensajes</h1><p>Conversaciones con empleadores</p></div></div>
+<div class="page-hd"><div><h1>💬 Mensajes & Chat Directo</h1><p>Comunicación en tiempo real con confirmación de lectura</p></div></div>
 
-<div class="msg-shell">
-  <div class="msg-list {% if sol_activa %}mobile-hide{% else %}mobile-show{% endif %}">
-    <div class="msg-list-hd"><span class="fw-700 t-sm">{{ conversaciones|length }} conversación{{ conversaciones|length|pluralize:"es" }}</span></div>
-    {% for c in conversaciones %}
-    <a href="{% url 'mensajes_chat' c.sol.pk %}" class="conv-item {% if sol_activa.pk == c.sol.pk %}active{% endif %}">
-      <div style="position:relative;">
-        <div class="conv-av">{% if c.otro.profile.foto %}<img src="{{ c.otro.profile.foto.url }}" alt="">{% else %}<i class="bi bi-building"></i>{% endif %}</div>
-        <div class="conv-online-dot"></div>
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div class="flex-bc"><span class="conv-name">{{ c.otro.profile.nombre_display }}</span><span class="conv-time">{{ c.ultimo_fecha|date:"H:i" }}</span></div>
-        <div class="conv-preview">{{ c.ultimo_msg }}</div>
-      </div>
-      {% if c.no_leidos > 0 %}<span class="sidebar-badge" style="position:static;">{{ c.no_leidos }}</span>{% endif %}
-    </a>
-    {% empty %}
-    <div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">Sin conversaciones</div><div class="empty-sub">Aparecen cuando te aceptan en un trabajo</div></div>
-    {% endfor %}
-  </div>
-
-  <div class="chat-area {% if not sol_activa %}mobile-hide{% endif %}">
-    {% if sol_activa %}
-    <div class="chat-area-hd">
-      <a href="{% url 'mensajes' %}" class="btn btn-ghost btn-icon-circle" style="display:none;" id="backBtn"><i class="bi bi-arrow-left"></i></a>
-      <div class="conv-av">{% if otro_user.profile.foto %}<img src="{{ otro_user.profile.foto.url }}" alt="">{% else %}<i class="bi bi-building"></i>{% endif %}</div>
-      <div><div class="fw-700 t-sm">{{ otro_user.profile.nombre_display }}</div><div class="t-xxs t-muted">{{ sol_activa.trabajo.titulo }}</div></div>
+<div class="msg-shell" style="height: calc(100vh - 180px); min-height: 520px; display: flex; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+  <!-- Lista de conversaciones -->
+  <div class="msg-list {% if sol_activa %}mobile-hide{% else %}mobile-show{% endif %}" style="width: 320px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; background: #fafafa;">
+    <div class="msg-list-hd" style="padding: 16px; border-bottom: 1px solid #e2e8f0; background: #fff;">
+      <span class="fw-700 t-sm">{{ conversaciones|length }} conversación{{ conversaciones|length|pluralize:"es" }}</span>
     </div>
-    <div class="chat-msgs" id="chatMsgs">
-      {% for m in mensajes_list %}
-      <div class="msg-row {% if m.autor == request.user %}me{% endif %}">
-        <div class="msg-av-sm">{% if m.autor.profile.foto %}<img src="{{ m.autor.profile.foto.url }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">{% else %}<i class="bi bi-person"></i>{% endif %}</div>
-        <div><div class="bubble {% if m.autor == request.user %}bubble-me{% else %}bubble-them{% endif %}">{{ m.texto }}</div>
-        <div class="t-xxs t-muted mt-4" style="{% if m.autor == request.user %}text-align:right;{% endif %}">{{ m.creado|date:"H:i" }}</div></div>
-      </div>
+    <div style="flex: 1; overflow-y: auto;">
+      {% for c in conversaciones %}
+      <a href="{% url 'mensajes_chat' c.sol.pk %}" class="conv-item {% if sol_activa.pk == c.sol.pk %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-decoration: none; color: inherit; transition: background 0.2s;">
+        <div style="position: relative;">
+          <div class="conv-av" style="width: 44px; height: 44px; border-radius: 50%; background: #e2e8f0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+            {% if c.otro.profile.foto %}
+              <img src="{{ c.otro.profile.foto.url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}
+              {{ c.otro.first_name|default:c.otro.username|slice:":1"|upper }}
+            {% endif %}
+          </div>
+          <div class="conv-online-dot" style="position: absolute; bottom: 2px; right: 2px; width: 10px; height: 10px; background: #10b981; border: 2px solid #fff; border-radius: 50%;"></div>
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <div class="flex-bc mb-2">
+            <span class="conv-name" style="font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.otro.profile.nombre_display }}</span>
+            <span class="conv-time" style="font-size: 0.75rem; color: #94a3b8;">{{ c.ultimo_fecha|date:"H:i" }}</span>
+          </div>
+          <div class="conv-preview" style="font-size: 0.8rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.ultimo_msg }}</div>
+        </div>
+        {% if c.no_leidos > 0 %}
+          <span class="sidebar-badge" style="background: #1FA35A; color: #fff; border-radius: 12px; padding: 2px 7px; font-size: 0.75rem; font-weight: 700;">{{ c.no_leidos }}</span>
+        {% endif %}
+      </a>
       {% empty %}
-      <div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">Inicia la conversación</div></div>
+      <div class="empty-state" style="padding: 40px 16px; text-align: center;">
+        <div class="empty-icon" style="font-size: 2.5rem; margin-bottom: 8px;">💬</div>
+        <div class="empty-title" style="font-weight: 700; font-size: 0.95rem; color: #334155;">Sin conversaciones</div>
+        <div class="empty-sub" style="font-size: 0.8rem; color: #94a3b8;">Se activan cuando postulas o aceptas una oferta.</div>
+      </div>
       {% endfor %}
     </div>
-    <form method="post" class="chat-input-bar">
+  </div>
+
+  <!-- Área de Chat -->
+  <div class="chat-area {% if not sol_activa %}mobile-hide{% endif %}" style="flex: 1; display: flex; flex-direction: column; background: #efeae2; position: relative;">
+    {% if sol_activa %}
+    <!-- Cabecera del chat -->
+    <div class="chat-area-hd" style="padding: 12px 18px; background: #f0f2f5; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="{% url 'mensajes' %}" class="btn btn-ghost btn-icon-circle" style="display:none;" id="backBtn"><i class="bi bi-arrow-left"></i></a>
+        <div class="conv-av" style="width: 40px; height: 40px; border-radius: 50%; background: #cbd5e1; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+          {% if otro_user.profile.foto %}
+            <img src="{{ otro_user.profile.foto.url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+          {% else %}
+            {{ otro_user.first_name|default:otro_user.username|slice:":1"|upper }}
+          {% endif %}
+        </div>
+        <div>
+          <div class="fw-700 t-sm" style="color: #0f172a;">{{ otro_user.profile.nombre_display }}</div>
+          <div class="t-xxs t-muted" style="color: #1FA35A; font-weight: 600;">
+            <i class="bi bi-briefcase"></i> {{ sol_activa.trabajo.titulo }} ({{ sol_activa.get_estado_display }})
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <a href="{% url 'trabajo_detalle' sol_activa.trabajo.pk %}" class="btn btn-outline btn-xs" style="background:#fff;border-radius:8px;font-weight:600;">
+          <i class="bi bi-eye"></i> Ver oferta
+        </a>
+        <a href="{% url 'comprobante_contrato' sol_activa.pk %}" class="btn btn-outline btn-xs" style="background:#fff;border-radius:8px;font-weight:600;color:#10b981;">
+          <i class="bi bi-file-text"></i> Contrato
+        </a>
+      </div>
+    </div>
+
+    <!-- Lista de mensajes con scroll -->
+    <div class="chat-msgs" id="chatMsgs" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+      {% for m in mensajes_list %}
+      <div style="display: flex; flex-direction: column; align-items: {% if m.autor == request.user %}flex-end{% else %}flex-start{% endif %};">
+        <div class="whatsapp-bubble {% if m.autor == request.user %}bubble-me-wa{% else %}bubble-them-wa{% endif %}">
+          <!-- Texto del mensaje -->
+          {% if m.texto %}
+            <div style="margin-bottom: 4px;">{{ m.texto }}</div>
+          {% endif %}
+
+          <!-- Imagen o archivo adjunto -->
+          {% if m.adjunto %}
+            <div style="margin-top: 6px; margin-bottom: 4px;">
+              {% if m.adjunto.url|slice:"-4:" == '.jpg' or m.adjunto.url|slice:"-4:" == '.png' or m.adjunto.url|slice:"-5:" == '.jpeg' or m.adjunto.url|slice:"-5:" == '.webp' %}
+                <a href="{{ m.adjunto.url }}" target="_blank">
+                  <img src="{{ m.adjunto.url }}" alt="Adjunto" style="max-width: 240px; max-height: 200px; border-radius: 8px; display: block;">
+                </a>
+              {% else %}
+                <a href="{{ m.adjunto.url }}" target="_blank" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.06); padding: 8px 12px; border-radius: 8px; text-decoration: none; color: inherit; font-size: 0.85rem; font-weight: 600;">
+                  <i class="bi bi-file-earmark-arrow-down-fill" style="font-size: 1.4rem; color: #1FA35A;"></i>
+                  <span>Descargar Archivo Adjunto</span>
+                </a>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <!-- Nota de voz / Audio -->
+          {% if m.audio %}
+            <div style="margin-top: 6px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+              <audio controls style="max-width: 250px; height: 38px;">
+                <source src="{{ m.audio.url }}" type="audio/mpeg">
+                <source src="{{ m.audio.url }}" type="audio/wav">
+                <source src="{{ m.audio.url }}" type="audio/webm">
+                Tu navegador no soporta reproducción de audio.
+              </audio>
+            </div>
+          {% endif %}
+
+          <!-- Ubicación compartida -->
+          {% if m.lat and m.lng %}
+            <div style="margin-top: 6px; margin-bottom: 4px; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; max-width: 250px;">
+              <div style="background: #e0f2fe; padding: 6px 10px; font-weight: 700; font-size: 0.75rem; color: #0369a1; display: flex; align-items: center; gap: 4px;">
+                <i class="bi bi-geo-alt-fill" style="color: #ef4444;"></i> Ubicación compartida
+              </div>
+              <div style="padding: 8px 10px; font-size: 0.8rem;">
+                <div>{{ m.ubicacion_nombre|default:"Punto de ubicación fijado" }}</div>
+                <a href="https://www.google.com/maps/search/?api=1&query={{ m.lat }},{{ m.lng }}" target="_blank" style="color: #0284c7; font-weight: 700; text-decoration: none; display: inline-block; margin-top: 4px; font-size: 0.75rem;">
+                  <i class="bi bi-box-arrow-up-right"></i> Abrir en Google Maps
+                </a>
+              </div>
+            </div>
+          {% endif %}
+
+          <!-- Timestamp y Double Check (WhatsApp style) -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 0.68rem; color: #6b7280; margin-top: 2px;">
+            <span>{{ m.creado|date:"H:i" }}</span>
+            {% if m.autor == request.user %}
+              <span title="{{ m.check_icon.title }}" style="color: {{ m.check_icon.color }}; font-weight: 900; font-size: 0.78rem; letter-spacing: -1px;">
+                {{ m.check_icon.symbol }}
+              </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-state" style="margin: auto; text-align: center; background: rgba(255,255,255,0.8); padding: 24px; border-radius: 12px; border: 1px dashed #cbd5e1;">
+        <div class="empty-icon" style="font-size: 2.2rem; margin-bottom: 6px;">💬</div>
+        <div class="empty-title" style="font-weight: 700; color: #334155;">Inicia la conversación directa</div>
+        <div class="empty-sub" style="font-size: 0.8rem; color: #64748b;">Coordina detalles, envía fotos de avance o comparte tu ubicación.</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Barra de emojis rápida -->
+    <div id="quickEmojiBar" style="background: #f0f2f5; padding: 4px 14px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px; overflow-x: auto;">
+      <button type="button" class="emoji-btn" onclick="addEmoji('👍')">👍</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('😊')">😊</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('👋')">👋</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('🛠️')">🛠️</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('📍')">📍</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('🤝')">🤝</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('💰')">💰</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('⏰')">⏰</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('🚗')">🚗</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('⚡')">⚡</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('🏠')">🏠</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('📞')">📞</button>
+    </div>
+
+    <!-- Formulario de envío multimedia tipo WhatsApp -->
+    <form method="post" enctype="multipart/form-data" class="chat-input-bar" id="chatForm" style="padding: 10px 14px; background: #f0f2f5; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px;">
       {% csrf_token %}
-      <input type="text" name="texto" class="chat-input" placeholder="Escribe un mensaje..." autocomplete="off" required>
-      <button type="submit" class="btn btn-g btn-icon-circle" style="width:38px;height:38px;"><i class="bi bi-send-fill"></i></button>
+      
+      <!-- Inputs ocultos para adjuntos y ubicación -->
+      <input type="file" name="adjunto" id="fileInput" style="display:none;" onchange="handleFileSelected(this)">
+      <input type="file" name="audio" id="audioInput" accept="audio/*" style="display:none;" onchange="handleAudioSelected(this)">
+      <input type="hidden" name="lat" id="latInputChat">
+      <input type="hidden" name="lng" id="lngInputChat">
+      <input type="hidden" name="ubicacion_nombre" id="ubicacionNombreInputChat">
+
+      <!-- Botón de Adjuntar Archivo -->
+      <button type="button" onclick="document.getElementById('fileInput').click()" title="Adjuntar documento o imagen" style="background: none; border: none; font-size: 1.3rem; color: #64748b; cursor: pointer; padding: 4px;">
+        <i class="bi bi-paperclip"></i>
+      </button>
+
+      <!-- Botón de Compartir Ubicación Actual -->
+      <button type="button" onclick="compartirUbicacionActual()" title="Enviar mi ubicación actual" style="background: none; border: none; font-size: 1.2rem; color: #ef4444; cursor: pointer; padding: 4px;">
+        <i class="bi bi-geo-alt-fill"></i>
+      </button>
+
+      <!-- Botón de Nota de Voz / Audio -->
+      <button type="button" onclick="document.getElementById('audioInput').click()" title="Subir nota de voz / audio" style="background: none; border: none; font-size: 1.2rem; color: #3b82f6; cursor: pointer; padding: 4px;">
+        <i class="bi bi-mic-fill"></i>
+      </button>
+
+      <!-- Input de texto -->
+      <input type="text" name="texto" id="chatTextInput" class="chat-input" placeholder="Escribe un mensaje..." autocomplete="off" style="flex: 1; padding: 10px 16px; border-radius: 24px; border: 1px solid #cbd5e1; outline: none; background: #fff; font-size: 0.9rem;">
+
+      <!-- Botón de Enviar -->
+      <button type="submit" class="btn btn-g btn-icon-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #1FA35A; color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(31,163,90,0.3);">
+        <i class="bi bi-send-fill"></i>
+      </button>
     </form>
+    
+    <!-- Toast informativo de adjunto seleccionado -->
+    <div id="attachmentIndicator" style="display:none;background:#fef3c7;padding:6px 14px;font-size:0.8rem;color:#92400e;border-top:1px solid #fde68a;">
+      <i class="bi bi-file-earmark-check"></i> <span id="attachmentText"></span>
+      <button type="button" onclick="clearAttachments()" style="background:none;border:none;color:#b45309;font-weight:700;margin-left:10px;cursor:pointer;">Quitar</button>
+    </div>
+
     {% else %}
-    <div class="empty-state" style="margin:auto;"><div class="empty-icon">💬</div><div class="empty-title">Selecciona una conversación</div></div>
+    <div class="empty-state" style="margin: auto; text-align: center;">
+      <div class="empty-icon" style="font-size: 3rem; margin-bottom: 8px;">💬</div>
+      <div class="empty-title" style="font-size: 1.2rem; font-weight: 700; color: #334155;">Selecciona una conversación</div>
+      <div class="empty-sub" style="font-size: 0.9rem; color: #94a3b8;">Elige un contacto del menú izquierdo para chatear.</div>
+    </div>
     {% endif %}
   </div>
 </div>
 
 {% include 'core/_sidebar_close.html' %}
-<script>document.getElementById('chatMsgs') && (document.getElementById('chatMsgs').scrollTop = document.getElementById('chatMsgs').scrollHeight);</script>
+
+<script>
+  const msgsDiv = document.getElementById('chatMsgs');
+  if (msgsDiv) { msgsDiv.scrollTop = msgsDiv.scrollHeight; }
+
+  function addEmoji(emoji) {
+    const input = document.getElementById('chatTextInput');
+    if (input) {
+      input.value += emoji;
+      input.focus();
+    }
+  }
+
+  function handleFileSelected(input) {
+    if (input.files && input.files[0]) {
+      const name = input.files[0].name;
+      document.getElementById('attachmentIndicator').style.display = 'block';
+      document.getElementById('attachmentText').innerText = 'Archivo listo para enviar: ' + name;
+    }
+  }
+
+  function handleAudioSelected(input) {
+    if (input.files && input.files[0]) {
+      const name = input.files[0].name;
+      document.getElementById('attachmentIndicator').style.display = 'block';
+      document.getElementById('attachmentText').innerText = 'Nota de voz lista para enviar: ' + name;
+    }
+  }
+
+  function clearAttachments() {
+    document.getElementById('fileInput').value = '';
+    document.getElementById('audioInput').value = '';
+    document.getElementById('latInputChat').value = '';
+    document.getElementById('lngInputChat').value = '';
+    document.getElementById('attachmentIndicator').style.display = 'none';
+  }
+
+  function compartirUbicacionActual() {
+    if (!navigator.geolocation) {
+      alert("Tu navegador no soporta geolocalización.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      document.getElementById('latInputChat').value = lat;
+      document.getElementById('lngInputChat').value = lng;
+      document.getElementById('ubicacionNombreInputChat').value = 'Mi ubicación actual en El Salvador';
+      
+      document.getElementById('attachmentIndicator').style.display = 'block';
+      document.getElementById('attachmentText').innerText = `📍 Ubicación GPS lista: Lat ${lat.toFixed(4)}, Lng ${lng.toFixed(4)}`;
+      document.getElementById('chatTextInput').placeholder = 'Presiona Enviar para compartir tu ubicación...';
+    }, function(err) {
+      alert("No se pudo obtener la ubicación: " + err.message);
+    });
+  }
+</script>
 {% endblock %}

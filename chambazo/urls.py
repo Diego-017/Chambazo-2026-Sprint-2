@@ -57,6 +57,7 @@ urlpatterns = [
     # Contratista
     path('contratista/', views.panel_contratista, name='panel_contratista'),
     path('contratista/publicar/', views.publicar_trabajo, name='publicar_trabajo'),
+    path('contratista/trabajo/<int:pk>/pagar/', views.pagar_trabajo, name='pagar_trabajo'),
     path('contratista/trabajo/<int:pk>/editar/', views.editar_trabajo, name='editar_trabajo'),
     path('contratista/trabajo/<int:pk>/candidatos/', views.candidatos, name='candidatos'),
     path('contratista/candidatos/', views.candidatos_general, name='candidatos_general'),

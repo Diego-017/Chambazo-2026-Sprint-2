@@ -1,10 +1,11 @@
+from decimal import Decimal
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 from core.models import (
-    UserProfile, Trabajo, Solicitud, Resena, GaleriaItem, Logro, LogroObtenido
+    UserProfile, Trabajo, Solicitud, Resena, GaleriaItem, Mensaje, Logro, LogroObtenido
 )
 
 
@@ -22,7 +23,9 @@ class ChambazoCoreTests(TestCase):
             user=self.contratista_user,
             rol='contratista',
             empresa='Constructora Nacional S.A.',
-            ubicacion='San Salvador'
+            ubicacion='San Salvador',
+            nit_nrc='0614-010190-001-1',
+            giro_comercial='Construcción y Acabados'
         )
 
         # Crear usuario Trabajador
@@ -41,7 +44,9 @@ class ChambazoCoreTests(TestCase):
             descripcion='Electricista con 8 años de experiencia en residencias.',
             habilidades=['electricidad', 'instalaciones'],
             tarifa_hora=15.00,
-            experiencia_anos=8
+            experiencia_anos=8,
+            dui='01234567-8',
+            vehiculo='moto'
         )
 
         # Crear trabajo
@@ -51,14 +56,20 @@ class ChambazoCoreTests(TestCase):
             categoria='electricidad',
             descripcion='Instalación de acometida trifásica en casa de campo.',
             ubicacion='Santa Tecla',
+            lat=13.6740,
+            lng=-89.2797,
             presupuesto=180.00,
-            habilidades_req=['electricidad']
+            habilidades_req=['electricidad'],
+            nivel_experiencia='experto',
+            vacantes_disponibles=2
         )
 
     def test_user_profile_properties(self):
-        """Valida propiedades calculadas del perfil (nombre display, completitud)."""
+        """Valida propiedades calculadas del perfil y campos extendidos."""
         self.assertEqual(self.contratista_profile.nombre_display, 'Constructora Nacional S.A.')
         self.assertEqual(self.trabajador_profile.nombre_display, 'Carlos Gómez')
+        self.assertEqual(self.trabajador_profile.dui, '01234567-8')
+        self.assertEqual(self.trabajador_profile.vehiculo, 'moto')
         self.assertGreater(self.trabajador_profile.completitud_perfil, 50)
 
     def test_match_score(self):
@@ -91,6 +102,63 @@ class ChambazoCoreTests(TestCase):
         solicitud.estado = 'completado'
         solicitud.save()
         self.assertEqual(solicitud.estado_label, 'Completado')
+
+    def test_calcular_tarifas_normal_y_urgente(self):
+        """Valida el cálculo de comisiones base y recargo por urgencia."""
+        # Trabajo normal ($100 -> comisión 2.50)
+        t_normal = Trabajo.objects.create(
+            contratista=self.contratista_user,
+            titulo='Pintura de sala',
+            categoria='pintura',
+            descripcion='Pintura interior',
+            ubicacion='San Salvador',
+            presupuesto=100.00,
+            es_urgente=False
+        )
+        t_normal.calcular_tarifas()
+        self.assertEqual(t_normal.comision_plataforma, Decimal('2.50'))
+        self.assertEqual(t_normal.tarifa_urgencia, Decimal('0.00'))
+        self.assertEqual(t_normal.total_a_pagar, Decimal('2.50'))
+
+        # Trabajo urgente ($100 -> comisión 2.50 + urgencia 3.00 = 5.50)
+        t_urgente = Trabajo.objects.create(
+            contratista=self.contratista_user,
+            titulo='Reparación urgente de fuga',
+            categoria='plomeria',
+            descripcion='Fuga inundando cocina',
+            ubicacion='San Salvador',
+            presupuesto=100.00,
+            es_urgente=True
+        )
+        t_urgente.calcular_tarifas()
+        self.assertEqual(t_urgente.tarifa_urgencia, Decimal('3.00'))
+        self.assertEqual(t_urgente.total_a_pagar, Decimal('5.50'))
+
+    def test_mensaje_multimedia_y_checks_whatsapp(self):
+        """Valida la creación de mensajes con geolocalización y checks estilo WhatsApp."""
+        solicitud = Solicitud.objects.create(
+            trabajo=self.trabajo,
+            trabajador=self.trabajador_user,
+            estado='en_progreso'
+        )
+        msg = Mensaje.objects.create(
+            solicitud=solicitud,
+            autor=self.trabajador_user,
+            texto='Ya voy en camino al lugar del trabajo.',
+            lat=13.6751,
+            lng=-89.2491,
+            ubicacion_nombre='Redondel Masferrer, San Salvador',
+            estado_entrega='entregado'
+        )
+        self.assertEqual(msg.check_icon['symbol'], '✓✓')
+        self.assertEqual(msg.check_icon['title'], 'Entregado')
+
+        # Al leerse cambia a leido (azul)
+        msg.estado_entrega = 'leido'
+        msg.leido = True
+        msg.save()
+        self.assertEqual(msg.check_icon['symbol'], '✓✓')
+        self.assertEqual(msg.check_icon['color'], '#38bdf8')
 
     def test_resena_y_reputacion(self):
         """Valida que al crear una reseña se actualice la calificación promedio."""

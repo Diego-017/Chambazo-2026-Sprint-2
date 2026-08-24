@@ -47,21 +47,33 @@ class RegistroStep3Form(forms.Form):
 class TrabajoForm(forms.ModelForm):
     class Meta:
         model = Trabajo
-        fields = ['titulo', 'categoria', 'descripcion', 'requisitos', 'beneficios',
-                  'ubicacion', 'presupuesto', 'es_urgente', 'modalidad', 'duracion',
-                  'verificacion_requerida']
+        fields = [
+            'titulo', 'categoria', 'descripcion', 'requisitos', 'beneficios',
+            'ubicacion', 'presupuesto', 'es_urgente', 'modalidad', 'duracion',
+            'verificacion_requerida', 'fecha_inicio', 'fecha_limite',
+            'nivel_experiencia', 'herramientas', 'horario', 'vacantes_disponibles',
+            'transporte_propio', 'contacto_emergencia_sitio'
+        ]
         widgets = {
             'titulo':       forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Instalación eléctrica residencial'}),
             'categoria':    forms.Select(attrs={'class':'form-control'}),
-            'descripcion':  forms.Textarea(attrs={'class':'form-control','rows':'5','placeholder':'Describe el trabajo, materiales disponibles, horario, acceso al lugar...'}),
-            'requisitos':   forms.Textarea(attrs={'class':'form-control','rows':'3','placeholder':'Experiencia, certificaciones, etc.'}),
-            'beneficios':   forms.Textarea(attrs={'class':'form-control','rows':'3','placeholder':'Alimentación, transporte, bono...'}),
-            'ubicacion':    forms.TextInput(attrs={'class':'form-control','placeholder':'Col. Escalón, San Salvador'}),
-            'presupuesto':  forms.NumberInput(attrs={'class':'form-control','placeholder':'80 - 120','min':'0'}),
-            'es_urgente':   forms.CheckboxInput(),
+            'descripcion':  forms.Textarea(attrs={'class':'form-control','rows':'4','placeholder':'Describe el trabajo, materiales disponibles, horario, acceso al lugar...'}),
+            'requisitos':   forms.Textarea(attrs={'class':'form-control','rows':'2','placeholder':'Experiencia, certificaciones, etc.'}),
+            'beneficios':   forms.Textarea(attrs={'class':'form-control','rows':'2','placeholder':'Alimentación, transporte, bono...'}),
+            'ubicacion':    forms.TextInput(attrs={'class':'form-control','id':'id_ubicacion_input','placeholder':'Col. Escalón, San Salvador'}),
+            'presupuesto':  forms.NumberInput(attrs={'class':'form-control','id':'id_presupuesto_input','placeholder':'100.00','min':'1','step':'0.50'}),
+            'es_urgente':   forms.CheckboxInput(attrs={'id':'id_es_urgente_chk'}),
             'modalidad':    forms.Select(attrs={'class':'form-control'}),
             'duracion':     forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: 3 días, 1 semana'}),
             'verificacion_requerida': forms.CheckboxInput(),
+            'fecha_inicio': forms.DateInput(attrs={'class':'form-control', 'type':'date'}),
+            'fecha_limite': forms.DateInput(attrs={'class':'form-control', 'type':'date'}),
+            'nivel_experiencia': forms.Select(attrs={'class':'form-control'}),
+            'herramientas': forms.Select(attrs={'class':'form-control'}),
+            'horario': forms.TextInput(attrs={'class':'form-control', 'placeholder':'Ej: 8:00 AM - 5:00 PM'}),
+            'vacantes_disponibles': forms.NumberInput(attrs={'class':'form-control', 'min':'1'}),
+            'transporte_propio': forms.CheckboxInput(),
+            'contacto_emergencia_sitio': forms.TextInput(attrs={'class':'form-control', 'placeholder':'Nombre y teléfono de encargado en sitio'}),
         }
 
 
@@ -70,17 +82,39 @@ class EditarPerfilForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile
-        fields = ['foto', 'telefono', 'ubicacion', 'descripcion',
-                  'empresa', 'tarifa_hora', 'experiencia_anos', 'portfolio_url']
+        fields = [
+            'foto', 'telefono', 'ubicacion', 'descripcion',
+            'empresa', 'tarifa_hora', 'experiencia_anos', 'portfolio_url',
+            # Trabajador
+            'dui', 'vehiculo', 'disponibilidad_horario', 'certificaciones',
+            'contacto_emergencia', 'nivel_educativo',
+            # Contratista
+            'nit_nrc', 'giro_comercial', 'sitio_web', 'redes_sociales',
+            'contacto_cargo', 'anos_operacion'
+        ]
         widgets = {
             'foto':            forms.FileInput(attrs={'class':'form-control'}),
             'telefono':        forms.TextInput(attrs={'class':'form-control','placeholder':'+503 7000-0000'}),
             'ubicacion':       forms.TextInput(attrs={'class':'form-control','placeholder':'Ciudad, departamento'}),
-            'descripcion':     forms.Textarea(attrs={'class':'form-control','rows':'3','placeholder':'Cuéntanos sobre ti...'}),
-            'empresa':         forms.TextInput(attrs={'class':'form-control','placeholder':'Nombre de tu empresa'}),
+            'descripcion':     forms.Textarea(attrs={'class':'form-control','rows':'3','placeholder':'Cuéntanos sobre ti o tu empresa...'}),
+            'empresa':         forms.TextInput(attrs={'class':'form-control','placeholder':'Nombre comercial de la empresa'}),
             'tarifa_hora':     forms.NumberInput(attrs={'class':'form-control','placeholder':'0.00','min':'0'}),
             'experiencia_anos':forms.NumberInput(attrs={'class':'form-control','min':'0','max':'50'}),
             'portfolio_url':   forms.URLInput(attrs={'class':'form-control','placeholder':'https://...'}),
+            # Trabajador
+            'dui':             forms.TextInput(attrs={'class':'form-control','placeholder':'01234567-8'}),
+            'vehiculo':        forms.Select(attrs={'class':'form-control'}),
+            'disponibilidad_horario': forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Lunes a Viernes, Turno completo'}),
+            'certificaciones': forms.Textarea(attrs={'class':'form-control','rows':'2','placeholder':'Diplomas, licencias de conducir, cursos INSAFORP/universitarios'}),
+            'contacto_emergencia': forms.TextInput(attrs={'class':'form-control','placeholder':'Nombre y teléfono de familiar/contacto'}),
+            'nivel_educativo': forms.Select(attrs={'class':'form-control'}),
+            # Contratista
+            'nit_nrc':         forms.TextInput(attrs={'class':'form-control','placeholder':'0614-010190-001-1 / NRC 123456'}),
+            'giro_comercial':  forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Construcción, remodelaciones y servicios residenciales'}),
+            'sitio_web':       forms.URLInput(attrs={'class':'form-control','placeholder':'https://miempresa.com'}),
+            'redes_sociales':  forms.TextInput(attrs={'class':'form-control','placeholder':'LinkedIn / Instagram / Facebook'}),
+            'contacto_cargo':  forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Gerente de Operaciones'}),
+            'anos_operacion':  forms.NumberInput(attrs={'class':'form-control','min':'0'}),
         }
 
     def __init__(self, *args, rol='trabajador', **kwargs):
@@ -90,6 +124,46 @@ class EditarPerfilForm(forms.ModelForm):
             del self.fields['tarifa_hora']
             del self.fields['experiencia_anos']
             del self.fields['portfolio_url']
+            del self.fields['dui']
+            del self.fields['vehiculo']
+            del self.fields['disponibilidad_horario']
+            del self.fields['certificaciones']
+            del self.fields['contacto_emergencia']
+            del self.fields['nivel_educativo']
+        else:
+            del self.fields['empresa']
+            del self.fields['nit_nrc']
+            del self.fields['giro_comercial']
+            del self.fields['sitio_web']
+            del self.fields['redes_sociales']
+            del self.fields['contacto_cargo']
+            del self.fields['anos_operacion']
+
+
+class PagoTarjetaForm(forms.Form):
+    numero_tarjeta = forms.CharField(max_length=19, widget=forms.TextInput(attrs={
+        'class': 'form-control', 'placeholder': '4000 1234 5678 9010', 'id': 'card_number', 'autocomplete': 'cc-number'
+    }), label='Número de tarjeta')
+    titular_tarjeta = forms.CharField(max_length=80, widget=forms.TextInput(attrs={
+        'class': 'form-control', 'placeholder': 'JUAN PEREZ', 'id': 'card_holder'
+    }), label='Nombre del titular')
+    exp_mes_ano = forms.CharField(max_length=5, widget=forms.TextInput(attrs={
+        'class': 'form-control', 'placeholder': 'MM/AA', 'id': 'card_exp'
+    }), label='Vencimiento')
+    cvc = forms.CharField(max_length=4, widget=forms.PasswordInput(attrs={
+        'class': 'form-control', 'placeholder': '123', 'id': 'card_cvc', 'maxlength': '4'
+    }), label='CVC / CVV')
+
+
+class MensajeChatForm(forms.Form):
+    texto = forms.CharField(required=False, widget=forms.TextInput(attrs={
+        'class': 'form-control', 'placeholder': 'Escribe un mensaje...', 'id': 'chatTextInput'
+    }))
+    adjunto = forms.FileField(required=False, widget=forms.FileInput(attrs={'id': 'fileInput', 'style': 'display:none;'}))
+    audio = forms.FileField(required=False, widget=forms.FileInput(attrs={'id': 'audioInput', 'style': 'display:none;'}))
+    lat = forms.FloatField(required=False, widget=forms.HiddenInput(attrs={'id': 'latInput'}))
+    lng = forms.FloatField(required=False, widget=forms.HiddenInput(attrs={'id': 'lngInput'}))
+    ubicacion_nombre = forms.CharField(required=False, widget=forms.HiddenInput(attrs={'id': 'ubicacionNombreInput'}))
 
 
 class ResenaForm(forms.ModelForm):
@@ -124,4 +198,5 @@ class GaleriaItemForm(forms.ModelForm):
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': '3', 'placeholder': 'Detalles del trabajo realizado, materiales o técnicas...'}),
             'imagen': forms.FileInput(attrs={'class': 'form-control'}),
         }
+
 

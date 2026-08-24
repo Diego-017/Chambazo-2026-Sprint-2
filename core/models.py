@@ -1,4 +1,5 @@
 import random
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Avg
@@ -78,6 +79,32 @@ class UserProfile(models.Model):
     tarifa_hora = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     experiencia_anos = models.PositiveIntegerField(default=0)
     portfolio_url = models.URLField(blank=True)
+    
+    # Nuevos campos para Trabajador
+    dui         = models.CharField(max_length=20, blank=True, help_text='Documento Único de Identidad')
+    vehiculo    = models.CharField(max_length=30, choices=[
+        ('ninguno', 'Ninguno / Transporte público'),
+        ('moto', 'Motocicleta'),
+        ('carro', 'Automóvil'),
+        ('camioneta', 'Camioneta / Pick-up'),
+    ], default='ninguno')
+    disponibilidad_horario = models.CharField(max_length=100, blank=True, help_text='Ej: Lunes a Viernes, Fines de semana, Turno completo')
+    certificaciones = models.TextField(blank=True, help_text='Cursos, diplomas o licencias técnicas')
+    contacto_emergencia = models.CharField(max_length=150, blank=True)
+    nivel_educativo = models.CharField(max_length=50, blank=True, choices=[
+        ('basica', 'Educación Básica'),
+        ('media', 'Bachillerato / Secundaria'),
+        ('tecnico', 'Técnico Vocacional'),
+        ('universitario', 'Universitario / Superior')
+    ], default='media')
+
+    # Nuevos campos para Contratista / Empresa
+    nit_nrc     = models.CharField(max_length=30, blank=True, help_text='NIT o NRC fiscal')
+    giro_comercial = models.CharField(max_length=150, blank=True, help_text='Giro o actividad económica')
+    sitio_web   = models.URLField(blank=True)
+    redes_sociales = models.CharField(max_length=255, blank=True, help_text='LinkedIn / Instagram / Facebook')
+    contacto_cargo = models.CharField(max_length=100, blank=True, help_text='Cargo o departamento de contacto')
+    anos_operacion = models.PositiveIntegerField(default=0, help_text='Años de operar en el mercado')
 
     def __str__(self):
         return f"{self.user.get_full_name()} ({self.rol})"
@@ -122,7 +149,7 @@ class UserProfile(models.Model):
         if avg:
             self.calificacion = round(avg, 1)
             self.total_trabajos = Solicitud.objects.filter(
-                trabajador=self.user, estado='contratado').count()
+                trabajador=self.user, estado__in=['contratado', 'completado']).count()
             self.save(update_fields=['calificacion', 'total_trabajos'])
 
 
@@ -157,7 +184,47 @@ class Trabajo(models.Model):
     duracion      = models.CharField(max_length=100, blank=True,
                                      help_text='Ej: 3 días, 1 semana')
     verificacion_requerida = models.BooleanField(default=False)
+    
+    # Nuevos campos de oferta extendida
+    fecha_inicio  = models.DateField(null=True, blank=True)
+    fecha_limite  = models.DateField(null=True, blank=True)
+    nivel_experiencia = models.CharField(max_length=30, choices=[
+        ('sin_experiencia', 'Sin experiencia previa'),
+        ('intermedio', 'Intermedio (1-3 años)'),
+        ('experto', 'Experto (+3 años)')
+    ], default='intermedio')
+    herramientas  = models.CharField(max_length=30, choices=[
+        ('empleador', 'Proporcionadas por el empleador'),
+        ('trabajador', 'El trabajador debe traer sus herramientas'),
+        ('ambos', 'Mixto')
+    ], default='empleador')
+    horario       = models.CharField(max_length=100, blank=True, help_text='Ej: 8:00 AM - 5:00 PM')
+    vacantes_disponibles = models.PositiveIntegerField(default=1)
+    transporte_propio = models.BooleanField(default=False)
+    contacto_emergencia_sitio = models.CharField(max_length=150, blank=True)
+
+    # Tarifas y Pago con Tarjeta
+    comision_plataforma = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+    tarifa_urgencia     = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+    total_a_pagar       = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     pagado        = models.BooleanField(default=False)
+    fecha_pago    = models.DateTimeField(null=True, blank=True)
+    metodo_pago_id= models.CharField(max_length=100, blank=True, help_text='ID de transacción / comprobante de tarjeta')
+
+    def calcular_tarifas(self):
+        """Calcula comisión de plataforma (2.5%, min $2.00) y recargo si es urgente."""
+        base_pres = Decimal(str(self.presupuesto or 0))
+        # Comisión de plataforma: 2.5% mínimo $2.00
+        self.comision_plataforma = max(Decimal('2.00'), round(base_pres * Decimal('0.025'), 2))
+        
+        if self.es_urgente:
+            self.tarifa_urgencia = Decimal('3.00')  # Tarifa extra de urgencia / visibilidad
+            self.total_a_pagar = self.comision_plataforma + self.tarifa_urgencia
+        else:
+            self.tarifa_urgencia = Decimal('0.00')
+            self.total_a_pagar = self.comision_plataforma
+        return self.total_a_pagar
+
     fecha_pago    = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -333,11 +400,22 @@ class Notificacion(models.Model):
         return self.TIPO_ICONS.get(self.tipo, '🔔')
 
 
-# ── Mensaje (Chat básico Sprint 2) ─────────────────────────────────────────────
+# ── Mensaje (Chat avanzado WhatsApp Style) ─────────────────────────────────────
 class Mensaje(models.Model):
+    ESTADO_ENTREGA = [
+        ('enviado', 'Enviado'),
+        ('entregado', 'Entregado'),
+        ('leido', 'Leído'),
+    ]
     solicitud = models.ForeignKey(Solicitud, on_delete=models.CASCADE, related_name='mensajes')
     autor     = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mensajes_enviados')
-    texto     = models.TextField()
+    texto     = models.TextField(blank=True)
+    adjunto   = models.FileField(upload_to='chat_adjuntos/', null=True, blank=True)
+    audio     = models.FileField(upload_to='chat_audios/', null=True, blank=True)
+    lat       = models.FloatField(null=True, blank=True)
+    lng       = models.FloatField(null=True, blank=True)
+    ubicacion_nombre = models.CharField(max_length=200, blank=True)
+    estado_entrega   = models.CharField(max_length=20, choices=ESTADO_ENTREGA, default='enviado')
     leido     = models.BooleanField(default=False)
     creado    = models.DateTimeField(auto_now_add=True)
 
@@ -345,7 +423,18 @@ class Mensaje(models.Model):
         ordering = ['creado']
 
     def __str__(self):
-        return f"{self.autor} → {self.solicitud} : {self.texto[:40]}"
+        txt = self.texto[:30] if self.texto else ('[Adjunto]' if self.adjunto else ('[Audio]' if self.audio else '[Ubicación]'))
+        return f"{self.autor} → {self.solicitud} : {txt}"
+
+    @property
+    def check_icon(self):
+        """Devuelve el indicador de estado estilo WhatsApp"""
+        if self.estado_entrega == 'leido' or self.leido:
+            return {'symbol': '✓✓', 'color': '#38bdf8', 'title': 'Leído'}
+        elif self.estado_entrega == 'entregado':
+            return {'symbol': '✓✓', 'color': '#94a3b8', 'title': 'Entregado'}
+        return {'symbol': '✓', 'color': '#94a3b8', 'title': 'Enviado'}
+
 
 
 # ── PasswordResetToken ─────────────────────────────────────────────────────────

@@ -19,7 +19,8 @@ from .models import (
 )
 from .forms import (
     LoginForm, RegistroStep2Form, RegistroStep3Form,
-    TrabajoForm, EditarPerfilForm, ResenaForm, GaleriaItemForm
+    TrabajoForm, EditarPerfilForm, ResenaForm, GaleriaItemForm,
+    PagoTarjetaForm, MensajeChatForm
 )
 
 
@@ -376,26 +377,41 @@ def trabajos_urgentes(request):
     return render(request, 'core/trabajos_urgentes.html', ctx)
 
 
-# ── Mensajes (lista + chat) ─────────────────────────────────────────────────────
+# ── Mensajes (lista + chat WhatsApp style) ──────────────────────────────────────
 @login_required
 def mensajes(request, sol_pk=None):
-    # conversaciones = solicitudes donde hay al menos 1 mensaje o están aceptadas/contratadas
+    # conversaciones = solicitudes aceptadas, contratadas, en progreso o con mensajes previos
     if request.user.profile.rol == 'trabajador':
         conv_qs = Solicitud.objects.filter(
-            trabajador=request.user, estado__in=['aceptado', 'contratado']
-        ).select_related('trabajo__contratista__profile')
+            trabajador=request.user
+        ).filter(
+            Q(estado__in=['aceptado', 'contratado', 'en_progreso', 'completado']) | Q(mensajes__isnull=False)
+        ).distinct().select_related('trabajo__contratista__profile')
     else:
         conv_qs = Solicitud.objects.filter(
-            trabajo__contratista=request.user, estado__in=['aceptado', 'contratado']
-        ).select_related('trabajador__profile', 'trabajo')
+            trabajo__contratista=request.user
+        ).filter(
+            Q(estado__in=['aceptado', 'contratado', 'en_progreso', 'completado']) | Q(mensajes__isnull=False)
+        ).distinct().select_related('trabajador__profile', 'trabajo')
 
     conversaciones = []
     for sol in conv_qs:
         otro = sol.trabajo.contratista if request.user == sol.trabajador else sol.trabajador
         ultimo = sol.mensajes.last()
+        resumen_ultimo = 'Inicia la conversación'
+        if ultimo:
+            if ultimo.texto:
+                resumen_ultimo = ultimo.texto[:35]
+            elif ultimo.audio:
+                resumen_ultimo = '🎤 Nota de voz'
+            elif ultimo.adjunto:
+                resumen_ultimo = '📎 Archivo adjunto'
+            elif ultimo.lat and ultimo.lng:
+                resumen_ultimo = '📍 Ubicación'
+
         conversaciones.append({
             'sol': sol, 'otro': otro,
-            'ultimo_msg': ultimo.texto if ultimo else 'Inicia la conversación',
+            'ultimo_msg': resumen_ultimo,
             'ultimo_fecha': ultimo.creado if ultimo else sol.creado,
             'no_leidos': sol.mensajes.filter(leido=False).exclude(autor=request.user).count(),
         })
@@ -410,15 +426,40 @@ def mensajes(request, sol_pk=None):
             messages.error(request, 'No tienes acceso a este chat.')
             return redirect('mensajes')
         otro_user = sol_activa.trabajo.contratista if request.user == sol_activa.trabajador else sol_activa.trabajador
+        
         if request.method == 'POST':
             texto = request.POST.get('texto', '').strip()
-            if texto:
-                Mensaje.objects.create(solicitud=sol_activa, autor=request.user, texto=texto)
-                crear_notif(otro_user, 'sistema', f'Nuevo mensaje de {request.user.get_full_name() or request.user.username}',
-                            texto[:100], f'/mensajes/{sol_pk}/')
+            adjunto = request.FILES.get('adjunto')
+            audio = request.FILES.get('audio')
+            lat_str = request.POST.get('lat', '')
+            lng_str = request.POST.get('lng', '')
+            ubicacion_nombre = request.POST.get('ubicacion_nombre', '').strip()
+
+            lat = float(lat_str) if lat_str else None
+            lng = float(lng_str) if lng_str else None
+
+            if texto or adjunto or audio or (lat and lng):
+                msg_obj = Mensaje.objects.create(
+                    solicitud=sol_activa,
+                    autor=request.user,
+                    texto=texto,
+                    adjunto=adjunto,
+                    audio=audio,
+                    lat=lat,
+                    lng=lng,
+                    ubicacion_nombre=ubicacion_nombre,
+                    estado_entrega='entregado'
+                )
+                preview_txt = texto or ('[Audio]' if audio else ('[Archivo]' if adjunto else '[Ubicación]'))
+                crear_notif(otro_user, 'sistema', f'💬 Mensaje de {request.user.profile.nombre_display}',
+                            preview_txt[:100], f'/mensajes/{sol_pk}/')
             return redirect('mensajes_chat', sol_pk=sol_pk)
+
         msgs = sol_activa.mensajes.all()
-        sol_activa.mensajes.filter(leido=False).exclude(autor=request.user).update(leido=True)
+        # Marcar los mensajes del otro usuario como leídos (doble check azul)
+        sol_activa.mensajes.filter(leido=False).exclude(autor=request.user).update(
+            leido=True, estado_entrega='leido'
+        )
 
     active = 'mensajes'
     ctx = ctx_base(request)
@@ -426,6 +467,7 @@ def mensajes(request, sol_pk=None):
                 'otro_user': otro_user, 'mensajes_list': msgs, 'active': active})
     template = 'core/mensajes_contratista.html' if request.user.profile.rol == 'contratista' else 'core/mensajes.html'
     return render(request, template, ctx)
+
 
 
 # ── Ganancias (solo trabajador) ─────────────────────────────────────────────────
@@ -521,15 +563,54 @@ def publicar_trabajo(request):
                     trabajo.lat = float(lat); trabajo.lng = float(lng)
                 except ValueError:
                     pass
+            trabajo.calcular_tarifas()
             trabajo.save()
-            messages.success(request, '✅ Vacante publicada exitosamente.')
-            return redirect('candidatos', pk=trabajo.pk)
+            messages.info(request, 'Paso 2: Confirma el pago de la tarifa de publicación para activar tu vacante.')
+            return redirect('pagar_trabajo', pk=trabajo.pk)
     else:
         form = TrabajoForm()
     ctx = ctx_base(request)
     ctx.update({'form': form, 'skills': SKILL_CHOICES, 'titulo_pagina': 'Publicar trabajo',
-                'btn_label': 'Publicar trabajo', 'active': 'publicar'})
+                'btn_label': 'Continuar al pago', 'active': 'publicar'})
     return render(request, 'core/publicar_trabajo.html', ctx)
+
+
+@login_required
+def pagar_trabajo(request, pk):
+    trabajo = get_object_or_404(Trabajo, pk=pk, contratista=request.user)
+    trabajo.calcular_tarifas()
+
+    if request.method == 'POST':
+        form = PagoTarjetaForm(request.POST)
+        if form.is_valid():
+            card_num = form.cleaned_data['numero_tarjeta'].replace(' ', '')
+            last4 = card_num[-4:] if len(card_num) >= 4 else '4242'
+            trabajo.metodo_pago_id = f"CHZ-CARD-*{last4}-{random.randint(1000, 9999)}"
+            trabajo.pagado = True
+            trabajo.fecha_pago = timezone.now()
+            trabajo.activo = True
+            trabajo.save()
+
+            crear_notif(
+                request.user, 'sistema',
+                f'💳 Pago confirmado (${trabajo.total_a_pagar} USD)',
+                f'Tu oferta "{trabajo.titulo}" ha sido activada y ya está disponible para los trabajadores. Comprobante: {trabajo.metodo_pago_id}',
+                f'/trabajo/{trabajo.pk}/'
+            )
+            messages.success(request, f'✅ ¡Pago de ${trabajo.total_a_pagar} USD aprobado con éxito! Tu vacante ya está activa.')
+            return redirect('candidatos', pk=trabajo.pk)
+        else:
+            messages.error(request, 'Por favor verifica los datos de tu tarjeta.')
+    else:
+        form = PagoTarjetaForm()
+
+    ctx = ctx_base(request)
+    ctx.update({
+        'trabajo': trabajo,
+        'form': form,
+        'active': 'publicar'
+    })
+    return render(request, 'core/pagar_trabajo.html', ctx)
 
 
 @login_required
@@ -546,6 +627,7 @@ def editar_trabajo(request, pk):
                     t.lat = float(lat); t.lng = float(lng)
                 except ValueError:
                     pass
+            t.calcular_tarifas()
             t.save()
             messages.success(request, '✅ Vacante actualizada.')
             return redirect('panel_contratista')

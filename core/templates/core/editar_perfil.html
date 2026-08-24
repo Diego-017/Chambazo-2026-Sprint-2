@@ -1,24 +1,53 @@
 {% extends 'core/base.html' %}
-{% block title %}Editar perfil{% endblock %}
+{% block title %}Editar perfil · Chambazo{% endblock %}
 {% block body %}
 {% if profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
 
-<div class="page-hd"><div><h1>Editar perfil</h1><p>Actualiza tu información</p></div></div>
+<div class="page-hd"><div><h1>Editar perfil</h1><p>Actualiza tus datos para mejorar tu presencia y confianza en Chambazo</p></div></div>
 
-<div style="max-width:640px;">
+<div style="max-width:680px;">
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
+    
+    <!-- 1. Información General -->
     <div class="card mb-16"><div class="card-body">
-      <h3 class="t-h3 mb-14">Información personal</h3>
-      <div class="form-group"><label class="form-label">Nombre completo</label><input type="text" name="nombre" value="{{ request.user.get_full_name }}" class="form-control"></div>
-      {% for field in form %}
-      <div class="form-group"><label class="form-label">{{ field.label }}</label>{{ field }}</div>
-      {% endfor %}
+      <h3 class="t-h3 mb-14"><i class="bi bi-person-badge"></i> Información General</h3>
+      <div class="form-group">
+        <label class="form-label">Nombre completo / Persona responsable *</label>
+        <input type="text" name="nombre" value="{{ request.user.get_full_name }}" class="form-control" placeholder="Juan Pérez">
+      </div>
+      <div class="form-group"><label class="form-label">Foto de perfil</label>{{ form.foto }}</div>
+      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Teléfono de contacto</label>{{ form.telefono }}</div>
+        <div class="form-group"><label class="form-label">Ubicación / Ciudad</label>{{ form.ubicacion }}</div>
+      </div>
+      <div class="form-group"><label class="form-label">Descripción / Biografía</label>{{ form.descripcion }}</div>
     </div></div>
 
     {% if profile.rol == 'trabajador' %}
+    <!-- 2. Datos Profesionales del Trabajador -->
     <div class="card mb-16"><div class="card-body">
-      <h3 class="t-h3 mb-12">Habilidades</h3>
+      <h3 class="t-h3 mb-14"><i class="bi bi-briefcase"></i> Datos Laborales y Transporte</h3>
+      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Documento de Identidad (DUI)</label>{{ form.dui }}</div>
+        <div class="form-group"><label class="form-label">Vehículo / Transporte</label>{{ form.vehiculo }}</div>
+      </div>
+      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Tarifa por hora sugerida ($ USD)</label>{{ form.tarifa_hora }}</div>
+        <div class="form-group"><label class="form-label">Años de experiencia</label>{{ form.experiencia_anos }}</div>
+      </div>
+      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Nivel Educativo</label>{{ form.nivel_educativo }}</div>
+        <div class="form-group"><label class="form-label">Disponibilidad de Horario</label>{{ form.disponibilidad_horario }}</div>
+      </div>
+      <div class="form-group"><label class="form-label">Certificaciones y Diplomas</label>{{ form.certificaciones }}</div>
+      <div class="form-group"><label class="form-label">Contacto de Emergencia</label>{{ form.contacto_emergencia }}</div>
+      <div class="form-group"><label class="form-label">Enlace a Portfolio o Red Social</label>{{ form.portfolio_url }}</div>
+    </div></div>
+
+    <!-- 3. Habilidades -->
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-12">🛠️ Habilidades y Especialidades</h3>
       <div style="display:flex;flex-wrap:wrap;gap:4px;">
         {% for val, label in skills %}
         <label class="skill-chip-label {% if val in profile.habilidades %}active{% endif %}">
@@ -27,9 +56,28 @@
         {% endfor %}
       </div>
     </div></div>
+
+    {% else %}
+    <!-- 2. Datos Comerciales de la Empresa / Contratista -->
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-14"><i class="bi bi-building"></i> Datos Corporativos y Fiscales</h3>
+      <div class="form-group"><label class="form-label">Nombre Comercial de la Empresa</label>{{ form.empresa }}</div>
+      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">NIT o Registro Fiscal (NRC)</label>{{ form.nit_nrc }}</div>
+        <div class="form-group"><label class="form-label">Años de Operación</label>{{ form.anos_operacion }}</div>
+      </div>
+      <div class="form-group"><label class="form-label">Giro Comercial / Actividad Económica</label>{{ form.giro_comercial }}</div>
+      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Cargo de la Persona de Contacto</label>{{ form.contacto_cargo }}</div>
+        <div class="form-group"><label class="form-label">Sitio Web Oficial</label>{{ form.sitio_web }}</div>
+      </div>
+      <div class="form-group"><label class="form-label">Redes Sociales (LinkedIn / Instagram / Facebook)</label>{{ form.redes_sociales }}</div>
+    </div></div>
     {% endif %}
 
-    <button type="submit" class="btn btn-g btn-full btn-lg"><i class="bi bi-check-lg"></i> Guardar cambios</button>
+    <button type="submit" class="btn btn-g btn-full btn-lg" style="box-shadow:0 4px 12px rgba(31,163,90,0.3);">
+      <i class="bi bi-check-circle-fill"></i> Guardar Cambios del Perfil
+    </button>
   </form>
 </div>
 

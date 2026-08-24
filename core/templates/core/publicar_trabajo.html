@@ -1,23 +1,30 @@
 {% extends 'core/base.html' %}
 {% block title %}{{ titulo_pagina }}{% endblock %}
 {% block extra_head %}
-<script>function initMapPicker(){window._pickerReady=true;}</script>
+<!-- Google Maps API & Leaflet Fallback -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  function initMapPicker(){ window._gmapReady = true; }
+</script>
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_KEY }}&callback=initMapPicker&libraries=places" async defer></script>
 {% endblock %}
+
 {% block body %}
 {% include 'core/_sidebar_contratista.html' %}
 
-<div class="page-hd"><div><h1>{{ titulo_pagina }}</h1><p>Completa los detalles de tu vacante</p></div></div>
+<div class="page-hd"><div><h1>{{ titulo_pagina }}</h1><p>Completa los detalles y requerimientos de tu vacante</p></div></div>
 
 <form method="post" id="jobForm">
   {% csrf_token %}
   <div class="layout-2col-rev">
     <div>
+      <!-- 1. Información principal -->
       <div class="card mb-16"><div class="card-body">
-        <h3 class="t-h3 mb-14">Información básica</h3>
-        <div class="form-group"><label class="form-label">Título *</label>{{ form.titulo }}</div>
+        <h3 class="t-h3 mb-14"><i class="bi bi-info-circle"></i> Información básica del trabajo</h3>
+        <div class="form-group"><label class="form-label">Título de la oferta *</label>{{ form.titulo }}</div>
         <div class="form-group">
-          <label class="form-label">Categoría *</label>
+          <label class="form-label">Categoría o especialidad *</label>
           <div style="display:flex;flex-wrap:wrap;gap:4px;">
             {% for val, label in skills %}
             <label class="cat-icon-btn {% if form.instance.categoria == val %}active{% endif %}" onclick="selectCat('{{ val }}')" id="cat-{{ val }}">{{ label }}</label>
@@ -27,16 +34,65 @@
         </div>
         <div class="form-group"><label class="form-label">Descripción detallada *</label>{{ form.descripcion }}</div>
         <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <div class="form-group"><label class="form-label">Requisitos</label>{{ form.requisitos }}</div>
-          <div class="form-group"><label class="form-label">Beneficios</label>{{ form.beneficios }}</div>
+          <div class="form-group"><label class="form-label">Requisitos específicos</label>{{ form.requisitos }}</div>
+          <div class="form-group"><label class="form-label">Beneficios ofrecidos</label>{{ form.beneficios }}</div>
         </div>
-        <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <div class="form-group"><label class="form-label">Presupuesto (USD) *</label>{{ form.presupuesto }}</div>
-          <div class="form-group"><label class="form-label">Modalidad</label>{{ form.modalidad }}</div>
-        </div>
-        <div class="form-group"><label class="form-label">Duración estimada</label>{{ form.duracion }}</div>
       </div></div>
 
+      <!-- 2. Requerimientos Operativos y Logísticos -->
+      <div class="card mb-16"><div class="card-body">
+        <h3 class="t-h3 mb-14"><i class="bi bi-tools"></i> Requerimientos y Logística</h3>
+        <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label class="form-label">Nivel de experiencia requerido</label>
+            {{ form.nivel_experiencia }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Herramientas y materiales</label>
+            {{ form.herramientas }}
+          </div>
+        </div>
+        <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label class="form-label">Horario de trabajo</label>
+            {{ form.horario }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Número de vacantes disponibles</label>
+            {{ form.vacantes_disponibles }}
+          </div>
+        </div>
+        <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label class="form-label">Fecha estimada de inicio</label>
+            {{ form.fecha_inicio }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha límite de postulación</label>
+            {{ form.fecha_limite }}
+          </div>
+        </div>
+        <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label class="form-label">Modalidad</label>
+            {{ form.modalidad }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duración estimada</label>
+            {{ form.duracion }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Persona de contacto / encargado en sitio</label>
+          {{ form.contacto_emergencia_sitio }}
+        </div>
+        <div class="flex-c gap-8 mt-8">
+          <label class="toggle-switch">{{ form.transporte_propio }}<span class="toggle-slider"></span></label>
+          <span class="t-sm fw-600">Requiere transporte propio (motocicleta o automóvil)</span>
+        </div>
+      </div></div>
+
+      <!-- 3. Habilidades requeridas -->
       <div class="card mb-16"><div class="card-body">
         <h3 class="t-h3 mb-12">🛠️ Habilidades requeridas</h3>
         <div style="display:flex;flex-wrap:wrap;gap:4px;">
@@ -48,49 +104,93 @@
         </div>
       </div></div>
 
+      <!-- 4. Mapa interactivo de ubicación precisa -->
       <div class="card"><div class="card-body">
-        <h3 class="t-h3 mb-12">📍 Ubicación (opcional)</h3>
+        <h3 class="t-h3 mb-12">📍 Ubicación precisa del trabajo</h3>
         <div class="form-group">{{ form.ubicacion }}</div>
-        <input type="hidden" name="lat" id="latInput"><input type="hidden" name="lng" id="lngInput">
-        <p class="t-xs t-muted mb-8"><i class="bi bi-info-circle"></i> Haz clic en el mapa para fijar la ubicación exacta. Si no seleccionas, se asignará una zona aleatoria de El Salvador.</p>
-        <div class="map-wrap">
-          <div class="map-search-overlay"><i class="bi bi-search" style="color:var(--muted);"></i><input type="text" id="pickerSearch" placeholder="Buscar zona en El Salvador…"></div>
-          <div id="mapPicker" class="gmap" style="height:230px;"></div>
+        <input type="hidden" name="lat" id="latInput" value="{{ form.instance.lat|default:'' }}">
+        <input type="hidden" name="lng" id="lngInput" value="{{ form.instance.lng|default:'' }}">
+        
+        <p class="t-xs t-muted mb-8">
+          <i class="bi bi-geo-alt"></i> Haz clic o arrastra el marcador en el mapa para fijar el punto exacto donde se realizará el trabajo.
+        </p>
+        
+        <div class="map-wrap" style="position:relative;border-radius:12px;overflow:hidden;border:1px solid #cbd5e1;">
+          <div class="map-search-overlay" style="position:absolute;top:10px;left:10px;z-index:1000;background:#fff;border-radius:8px;padding:4px 10px;box-shadow:0 2px 6px rgba(0,0,0,0.15);display:flex;align-items:center;gap:6px;width:70%;">
+            <i class="bi bi-search" style="color:var(--muted);"></i>
+            <input type="text" id="pickerSearch" placeholder="Buscar zona en El Salvador…" style="border:none;outline:none;width:100%;font-size:12px;">
+          </div>
+          <div id="mapPicker" class="gmap" style="height:280px;width:100%;"></div>
         </div>
-        <div id="coordsDisplay" style="display:none;background:var(--green-light);border-radius:8px;padding:8px 12px;margin-top:8px;font-size:12px;color:var(--green-dark);align-items:center;gap:6px;">
-          <i class="bi bi-geo-alt-fill"></i> <span id="coordsText"></span>
+
+        <div id="coordsDisplay" style="display:{% if form.instance.lat %}flex{% else %}none{% endif %};background:var(--green-light);border-radius:8px;padding:8px 12px;margin-top:8px;font-size:12px;color:var(--green-dark);align-items:center;gap:6px;">
+          <i class="bi bi-pin-map-fill"></i> <span id="coordsText">{% if form.instance.lat %}Ubicación fijada: {{ form.instance.lat|floatformat:5 }}, {{ form.instance.lng|floatformat:5 }}{% endif %}</span>
         </div>
       </div></div>
     </div>
 
+    <!-- Barra lateral de presupuesto, urgencia y tarifas -->
     <div class="detail-sidebar">
       <div class="card mb-16"><div class="card-body">
-        <h4 class="t-h3 mb-12">Opciones</h4>
-        <div class="flex-bc mb-14">
-          <div><div class="t-sm fw-700">Marcar como urgente</div><div class="t-xxs t-muted">Se destacará en el feed</div></div>
+        <h4 class="t-h3 mb-12">💰 Presupuesto & Prioridad</h4>
+        <div class="form-group">
+          <label class="form-label">Presupuesto para el trabajador (USD) *</label>
+          {{ form.presupuesto }}
+        </div>
+
+        <div class="flex-bc mb-14" style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px;">
+          <div>
+            <div class="t-sm fw-700" style="color:#b45309;">⚡ Marcar como urgente</div>
+            <div class="t-xxs t-muted">Prioridad máxima en el feed</div>
+          </div>
           <label class="toggle-switch">{{ form.es_urgente }}<span class="toggle-slider"></span></label>
         </div>
-        <div class="flex-bc">
-          <div><div class="t-sm fw-700">Verificación requerida</div><div class="t-xxs t-muted">Solo candidatos verificados</div></div>
+
+        <div class="flex-bc mb-14">
+          <div>
+            <div class="t-sm fw-700">Verificación requerida</div>
+            <div class="t-xxs t-muted">Solo postulantes verificados</div>
+          </div>
           <label class="toggle-switch">{{ form.verificacion_requerida }}<span class="toggle-slider"></span></label>
+        </div>
+
+        <!-- Desglose de Tarifas en Vivo -->
+        <div style="border-top:1px solid #f1f5f9;padding-top:12px;margin-top:12px;font-size:0.85rem;">
+          <div class="flex-bc mb-4 text-muted">
+            <span>Comisión de publicación:</span>
+            <span id="feeBaseDisplay" class="fw-700 text-dark">$2.50 USD</span>
+          </div>
+          <div class="flex-bc mb-6 text-muted" id="rowUrgentFee" style="display:none;color:#dc2626;">
+            <span>Recargo de urgencia:</span>
+            <span class="fw-700">+$3.00 USD</span>
+          </div>
+          <div class="flex-bc pt-8" style="border-top:1px dashed #cbd5e1;font-weight:800;">
+            <span>Total tarifa a pagar:</span>
+            <span id="feeTotalDisplay" style="color:var(--green);font-size:1.05rem;">$2.50 USD</span>
+          </div>
         </div>
       </div></div>
 
       <div class="card mb-16" style="background:var(--yellow-light);border-color:var(--yellow);"><div class="card-body">
-        <div class="flex-c gap-8 mb-6"><i class="bi bi-lightbulb-fill t-yellow"></i><span class="fw-700 t-sm">Consejo</span></div>
-        <p class="t-xs" style="color:#6b5300;">Las vacantes con descripción detallada y presupuesto justo reciben hasta 3 veces más candidatos calificados.</p>
+        <div class="flex-c gap-8 mb-6"><i class="bi bi-shield-check t-yellow"></i><span class="fw-700 t-sm">Garantía Chambazo</span></div>
+        <p class="t-xs" style="color:#6b5300;line-height:1.4;">
+          Tu pago incluye verificación de identidad, resguardo de satisfacción y visibilidad inmediata en toda la zona seleccionada.
+        </p>
       </div></div>
 
-      <button type="submit" class="btn btn-y btn-full btn-lg"><i class="bi bi-send-fill"></i> {{ btn_label }}</button>
+      <button type="submit" class="btn btn-y btn-full btn-lg" style="box-shadow:0 4px 12px rgba(242,185,13,0.3);">
+        <i class="bi bi-arrow-right-circle-fill"></i> {{ btn_label }}
+      </button>
     </div>
   </div>
 </form>
 
 {% include 'core/_sidebar_close.html' %}
+
 <script>
 function selectCat(val){
   document.querySelectorAll('.cat-icon-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('cat-'+val).classList.add('active');
+  document.getElementById('cat-'+val)?.classList.add('active');
   document.getElementById('id_categoria').value = val;
 }
 const habilidadesGuardadas = {{ form.instance.habilidades_req|default:'[]'|safe }};
@@ -100,25 +200,116 @@ document.querySelectorAll('.skill-chip-label').forEach(label=>{
   label.addEventListener('click', ()=> setTimeout(()=>label.classList.toggle('active', input.checked),0));
 });
 
-let pickerMarker=null, pickerMap=null;
-function initMapPicker(){
-  pickerMap=new google.maps.Map(document.getElementById('mapPicker'),{center:{lat:13.6929,lng:-89.2182},zoom:9,disableDefaultUI:true,zoomControl:true,
-    styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{elementType:'geometry',stylers:[{color:'#f5f5f5'}]},
-      {featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#c9d8f0'}]}]});
-  const bounds=new google.maps.LatLngBounds(new google.maps.LatLng(13.15,-90.10),new google.maps.LatLng(14.45,-87.68));
-  const ac=new google.maps.places.Autocomplete(document.getElementById('pickerSearch'),{bounds,strictBounds:false,componentRestrictions:{country:'sv'}});
-  ac.addListener('place_changed',()=>{const p=ac.getPlace(); if(p.geometry){pickerMap.setCenter(p.geometry.location);pickerMap.setZoom(14);ponerPin(p.geometry.location.lat(),p.geometry.location.lng());}});
-  pickerMap.addListener('click',e=>ponerPin(e.latLng.lat(),e.latLng.lng()));
-  const eLat='{{ form.instance.lat|default:"" }}', eLng='{{ form.instance.lng|default:"" }}';
-  if(eLat && eLng){ ponerPin(parseFloat(eLat),parseFloat(eLng)); pickerMap.setCenter({lat:parseFloat(eLat),lng:parseFloat(eLng)}); pickerMap.setZoom(14); }
+// Calculador dinámico de tarifas
+function actualizarCalculoTarifas() {
+  const presInput = document.getElementById('id_presupuesto_input');
+  const urgenteChk = document.getElementById('id_es_urgente_chk');
+  const feeBase = document.getElementById('feeBaseDisplay');
+  const rowUrgent = document.getElementById('rowUrgentFee');
+  const feeTotal = document.getElementById('feeTotalDisplay');
+
+  let pres = parseFloat(presInput?.value) || 100;
+  let baseComision = Math.max(2.00, +(pres * 0.025).toFixed(2));
+  let urgenteFee = urgenteChk?.checked ? 3.00 : 0.00;
+  let total = baseComision + urgenteFee;
+
+  if (feeBase) feeBase.textContent = `$${baseComision.toFixed(2)} USD`;
+  if (rowUrgent) rowUrgent.style.display = urgenteChk?.checked ? 'flex' : 'none';
+  if (feeTotal) feeTotal.textContent = `$${total.toFixed(2)} USD`;
 }
-function ponerPin(lat,lng){
-  if(pickerMarker) pickerMarker.setMap(null);
-  pickerMarker=new google.maps.Marker({position:{lat,lng},map:pickerMap,animation:google.maps.Animation.DROP,
-    icon:{path:google.maps.SymbolPath.CIRCLE,scale:13,fillColor:'#F2B90D',fillOpacity:1,strokeColor:'#fff',strokeWeight:3}});
-  document.getElementById('latInput').value=lat; document.getElementById('lngInput').value=lng;
-  const d=document.getElementById('coordsDisplay'); d.style.display='flex';
-  document.getElementById('coordsText').textContent=`Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`;
+
+document.getElementById('id_presupuesto_input')?.addEventListener('input', actualizarCalculoTarifas);
+document.getElementById('id_es_urgente_chk')?.addEventListener('change', actualizarCalculoTarifas);
+actualizarCalculoTarifas();
+
+// Inicialización de Mapa (Google Maps con Leaflet Fallback)
+let pickerMarker=null, pickerMap=null, isLeaflet=false;
+
+function ponerPin(lat, lng, address){
+  document.getElementById('latInput').value = lat;
+  document.getElementById('lngInput').value = lng;
+  const d = document.getElementById('coordsDisplay');
+  if (d) d.style.display = 'flex';
+  const t = document.getElementById('coordsText');
+  if (t) t.textContent = `Ubicación fijada: Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`;
+
+  if (address && document.getElementById('id_ubicacion_input') && !document.getElementById('id_ubicacion_input').value) {
+    document.getElementById('id_ubicacion_input').value = address;
+  }
 }
+
+function initMapPicker() {
+  const mapDiv = document.getElementById('mapPicker');
+  if (!mapDiv) return;
+
+  const defaultLat = parseFloat("{{ form.instance.lat|default:'13.6929' }}");
+  const defaultLng = parseFloat("{{ form.instance.lng|default:'-89.2182' }}");
+
+  if (window.google && window.google.maps) {
+    try {
+      pickerMap = new google.maps.Map(mapDiv, {
+        center: { lat: defaultLat, lng: defaultLng },
+        zoom: 12,
+        disableDefaultUI: false,
+        zoomControl: true
+      });
+
+      pickerMarker = new google.maps.Marker({
+        position: { lat: defaultLat, lng: defaultLng },
+        map: pickerMap,
+        draggable: true,
+        animation: google.maps.Animation.DROP
+      });
+
+      pickerMarker.addListener('dragend', function(e) {
+        ponerPin(e.latLng.lat(), e.latLng.lng());
+      });
+
+      pickerMap.addListener('click', function(e) {
+        pickerMarker.setPosition(e.latLng);
+        ponerPin(e.latLng.lat(), e.latLng.lng());
+      });
+
+      const searchInput = document.getElementById('pickerSearch');
+      if (searchInput && google.maps.places) {
+        const ac = new google.maps.places.Autocomplete(searchInput, {
+          componentRestrictions: { country: 'sv' }
+        });
+        ac.addListener('place_changed', function() {
+          const place = ac.getPlace();
+          if (place.geometry) {
+            pickerMap.setCenter(place.geometry.location);
+            pickerMap.setZoom(15);
+            pickerMarker.setPosition(place.geometry.location);
+            ponerPin(place.geometry.location.lat(), place.geometry.location.lng(), place.name);
+          }
+        });
+      }
+      return;
+    } catch(err) {
+      console.warn("Google Maps fallback to Leaflet:", err);
+    }
+  }
+
+  // Fallback con Leaflet OpenStreetMap
+  const map = L.map('mapPicker').setView([defaultLat, defaultLng], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+  marker.on('dragend', function(e) {
+    const coord = marker.getLatLng();
+    ponerPin(coord.lat, coord.lng);
+  });
+  map.on('click', function(e) {
+    marker.setLatLng(e.latlng);
+    ponerPin(e.latlng.lat, e.latlng.lng);
+  });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(initMapPicker, 600);
+});
 </script>
 {% endblock %}

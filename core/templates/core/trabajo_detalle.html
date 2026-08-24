@@ -1,9 +1,13 @@
 {% extends 'core/base.html' %}
 {% block title %}{{ trabajo.titulo }}{% endblock %}
 {% block extra_head %}
+<!-- Google Maps & Leaflet Fallback -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>function initMap(){window._mapReady=true;}</script>
 <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_KEY }}&callback=initMap" async defer></script>
 {% endblock %}
+
 {% block body %}
 {% if request.user.profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
 
@@ -12,9 +16,9 @@
     <div class="flex-c gap-8 mb-4">
       <h1 style="font-size:20px;">{{ trabajo.titulo }}</h1>
       {% if trabajo.contratista.profile.verificado %}<i class="bi bi-patch-check-fill t-green"></i>{% endif %}
-      {% if trabajo.es_urgente %}<span class="pill pill-red-lt"><i class="bi bi-fire"></i> Urgente</span>{% endif %}
+      {% if trabajo.es_urgente %}<span class="pill pill-red-lt"><i class="bi bi-fire"></i> Urgente (+20% Destaque)</span>{% endif %}
     </div>
-    <p><i class="bi bi-geo-alt"></i> {{ trabajo.ubicacion }} · <span class="stars" style="font-size:12px;">★</span> {{ trabajo.contratista.profile.calificacion|default:"4.5" }} · <i class="bi bi-people"></i> {{ trabajo.candidatos_count }} postulantes · {{ trabajo.tiempo_relativo }}</p>
+    <p><i class="bi bi-geo-alt"></i> {{ trabajo.ubicacion }} · <span class="stars" style="font-size:12px;">★</span> {{ trabajo.contratista.profile.calificacion|default:"4.8" }} · <i class="bi bi-people"></i> {{ trabajo.candidatos_count }} postulantes · {{ trabajo.tiempo_relativo }}</p>
   </div>
   <div class="flex-c gap-8">
     {% if request.user.profile.rol == 'trabajador' %}
@@ -28,15 +32,58 @@
 
 <div class="layout-2col-rev">
   <div>
+    <!-- Descripción -->
     <div class="card mb-16"><div class="card-body">
       <h3 class="t-h3 mb-10">Descripción del trabajo</h3>
       <p class="t-body t-mid" style="line-height:1.7;">{{ trabajo.descripcion }}</p>
     </div></div>
 
+    <!-- Detalles operativos extendidos -->
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-12"><i class="bi bi-card-checklist"></i> Condiciones y Logística de la Oferta</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;font-size:0.85rem;">
+        <div style="background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="color:#64748b;font-size:0.75rem;text-transform:uppercase;font-weight:700;">Experiencia Requerida</div>
+          <div style="font-weight:700;color:#0f172a;margin-top:2px;">{{ trabajo.get_nivel_experiencia_display }}</div>
+        </div>
+        <div style="background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="color:#64748b;font-size:0.75rem;text-transform:uppercase;font-weight:700;">Herramientas / Material</div>
+          <div style="font-weight:700;color:#0f172a;margin-top:2px;">{{ trabajo.get_herramientas_display }}</div>
+        </div>
+        <div style="background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="color:#64748b;font-size:0.75rem;text-transform:uppercase;font-weight:700;">Horario de Trabajo</div>
+          <div style="font-weight:700;color:#0f172a;margin-top:2px;">{{ trabajo.horario|default:"A convenir" }}</div>
+        </div>
+        <div style="background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="color:#64748b;font-size:0.75rem;text-transform:uppercase;font-weight:700;">Vacantes Disponibles</div>
+          <div style="font-weight:700;color:#0f172a;margin-top:2px;">{{ trabajo.vacantes_disponibles }} plaza{{ trabajo.vacantes_disponibles|pluralize }}</div>
+        </div>
+        {% if trabajo.fecha_inicio %}
+        <div style="background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="color:#64748b;font-size:0.75rem;text-transform:uppercase;font-weight:700;">Fecha de Inicio</div>
+          <div style="font-weight:700;color:#0f172a;margin-top:2px;">{{ trabajo.fecha_inicio|date:"d M Y" }}</div>
+        </div>
+        {% endif %}
+        {% if trabajo.transporte_propio %}
+        <div style="background:#eff6ff;padding:10px 14px;border-radius:10px;border:1px solid #bfdbfe;">
+          <div style="color:#1d4ed8;font-size:0.75rem;text-transform:uppercase;font-weight:700;">Transporte</div>
+          <div style="font-weight:700;color:#1e40af;margin-top:2px;">🚗 Requiere vehículo propio</div>
+        </div>
+        {% endif %}
+      </div>
+    </div></div>
+
     {% if trabajo.requisitos %}
     <div class="card mb-16"><div class="card-body">
-      <h3 class="t-h3 mb-10">Requisitos</h3>
+      <h3 class="t-h3 mb-10">Requisitos adicionales</h3>
       <p class="t-body t-mid" style="line-height:1.7;">{{ trabajo.requisitos }}</p>
+    </div></div>
+    {% endif %}
+
+    {% if trabajo.beneficios %}
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-10">Beneficios</h3>
+      <p class="t-body t-mid" style="line-height:1.7;">{{ trabajo.beneficios }}</p>
     </div></div>
     {% endif %}
 
@@ -55,28 +102,66 @@
     </div></div>
     {% endif %}
 
-    <!-- Mapa -->
+    <!-- Mapa interactivo de ubicación precisa -->
     {% if trabajo.lat and trabajo.lng %}
     <div class="card mb-16"><div class="card-body">
-      <h3 class="t-h3 mb-10"><i class="bi bi-geo-alt-fill t-green"></i> Ubicación del trabajo</h3>
-      <div class="map-wrap"><div id="mapaDetalle" class="gmap" style="height:230px;"></div></div>
+      <div class="flex-bc mb-10">
+        <h3 class="t-h3"><i class="bi bi-geo-alt-fill t-green"></i> Ubicación exacta del trabajo</h3>
+        <a href="https://www.google.com/maps/dir/?api=1&destination={{ trabajo.lat }},{{ trabajo.lng }}" target="_blank" class="btn btn-outline btn-xs" style="color:var(--green);font-weight:700;">
+          <i class="bi bi-cursor-fill"></i> Cómo llegar en Google Maps
+        </a>
+      </div>
+      <div class="map-wrap" style="border-radius:12px;overflow:hidden;border:1px solid #cbd5e1;">
+        <div id="mapaDetalle" class="gmap" style="height:260px;width:100%;"></div>
+      </div>
       <div class="flex-c gap-6 mt-8">
-        <span class="t-sm t-mid fw-600">{{ trabajo.ubicacion }}</span>
-        <a href="https://www.google.com/maps/search/?api=1&query={{ trabajo.lat }},{{ trabajo.lng }}" target="_blank" class="btn btn-outline btn-xs" style="margin-left:auto;"><i class="bi bi-box-arrow-up-right"></i> Abrir en Maps</a>
+        <span class="t-sm t-mid fw-600"><i class="bi bi-pin-map"></i> {{ trabajo.ubicacion }}</span>
+        <span class="t-xs t-muted" style="margin-left:auto;">Coordenadas: {{ trabajo.lat|floatformat:4 }}, {{ trabajo.lng|floatformat:4 }}</span>
       </div>
     </div></div>
     <script>
     function initDetalleMap(){
-      const pos={lat:{{ trabajo.lat }},lng:{{ trabajo.lng }}};
-      const map=new google.maps.Map(document.getElementById('mapaDetalle'),{center:pos,zoom:14,disableDefaultUI:true,zoomControl:true,
-        styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{elementType:'geometry',stylers:[{color:'#f5f5f5'}]},
-          {featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#c9d8f0'}]}]});
-      new google.maps.Marker({position:pos,map,icon:{path:google.maps.SymbolPath.CIRCLE,scale:14,
-        fillColor:'{{ trabajo.es_urgente|yesno:"#e5484d,#1FA35A" }}',fillOpacity:1,strokeColor:'#fff',strokeWeight:3},animation:google.maps.Animation.DROP});
-      new google.maps.Circle({strokeColor:'{{ trabajo.es_urgente|yesno:"#e5484d,#1FA35A" }}',strokeOpacity:.2,strokeWeight:1,
-        fillColor:'{{ trabajo.es_urgente|yesno:"#e5484d,#1FA35A" }}',fillOpacity:.07,map,center:pos,radius:800});
+      const pos = { lat: {{ trabajo.lat }}, lng: {{ trabajo.lng }} };
+      const mapDiv = document.getElementById('mapaDetalle');
+      if (!mapDiv) return;
+
+      if (window.google && window.google.maps) {
+        try {
+          const map = new google.maps.Map(mapDiv, {
+            center: pos,
+            zoom: 14,
+            disableDefaultUI: false,
+            zoomControl: true
+          });
+          new google.maps.Marker({
+            position: pos,
+            map: map,
+            title: "{{ trabajo.titulo }}",
+            animation: google.maps.Animation.DROP
+          });
+          new google.maps.Circle({
+            strokeColor: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}',
+            fillOpacity: 0.15,
+            map: map,
+            center: pos,
+            radius: 500
+          });
+          return;
+        } catch(err) {
+          console.warn("Google Maps error, fallback to Leaflet:", err);
+        }
+      }
+
+      // Fallback con Leaflet
+      const map = L.map('mapaDetalle').setView([pos.lat, pos.lng], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+      L.marker([pos.lat, pos.lng]).addTo(map).bindPopup("<strong>{{ trabajo.titulo }}</strong><br>{{ trabajo.ubicacion }}").openPopup();
+      L.circle([pos.lat, pos.lng], { radius: 500, color: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}' }).addTo(map);
     }
-    if(window._mapReady){initDetalleMap();}else{const o=window.initMap;window.initMap=function(){if(o)o();initDetalleMap();};}
+    window.addEventListener('DOMContentLoaded', () => setTimeout(initDetalleMap, 600));
     </script>
     {% endif %}
   </div>
@@ -84,38 +169,46 @@
   <!-- Sidebar pago -->
   <div class="detail-sidebar">
     <div class="pago-box mb-16">
-      <div class="lbl">PAGO ESTIMADO</div>
-      <div class="amt">${{ trabajo.presupuesto }}</div>
+      <div class="lbl">PRESUPUESTO PACTADO</div>
+      <div class="amt">${{ trabajo.presupuesto }} USD</div>
+      {% if trabajo.es_urgente %}
+      <div style="color:#b45309;font-size:0.75rem;font-weight:700;margin-bottom:8px;">
+        ⚡ Tarifa con incentivo de urgencia
+      </div>
+      {% endif %}
 
       {% if request.user.profile.rol == 'trabajador' %}
         {% if ya_aplico %}
         <div style="background:var(--green-light);border-radius:10px;padding:12px;text-align:center;">
           <i class="bi bi-check-circle-fill t-green" style="font-size:20px;"></i>
-          <div class="fw-700 t-green mt-4">Ya aplicaste</div>
+          <div class="fw-700 t-green mt-4">Ya estás postulado</div>
           <div class="t-xs t-mid">Estado: {{ solicitud_estado }}</div>
         </div>
         {% elif trabajo.estado_vacante == 'disponible' %}
         <a href="{% url 'aplicar_trabajo' trabajo.pk %}" class="btn btn-g btn-full btn-lg mb-10" style="justify-content:center;">Postularme ahora</a>
         <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          {% if trabajo.contratista.profile.telefono %}
           <a href="tel:{{ trabajo.contratista.profile.telefono }}" class="btn btn-outline btn-sm" style="justify-content:center;"><i class="bi bi-telephone"></i> Llamar</a>
           <a href="https://wa.me/503{{ trabajo.contratista.profile.telefono|cut:' '|cut:'+503' }}" target="_blank" class="btn btn-outline btn-sm" style="justify-content:center;"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+          {% endif %}
         </div>
         {% else %}
         <div class="btn btn-outline btn-full" style="opacity:.5;justify-content:center;">No disponible</div>
         {% endif %}
-        <div class="info-box-sm"><i class="bi bi-shield-check"></i> <strong>Pago seguro</strong> — Chambazo protege tu pago hasta completar el trabajo.</div>
+        <div class="info-box-sm"><i class="bi bi-shield-check"></i> <strong>Pago protegido</strong> — Chambazo custodia el monto hasta confirmar la entrega del trabajo.</div>
       {% else %}
         <a href="{% url 'candidatos' trabajo.pk %}" class="btn btn-y btn-full btn-lg" style="justify-content:center;"><i class="bi bi-people"></i> Ver candidatos ({{ trabajo.candidatos_count }})</a>
       {% endif %}
     </div>
 
     <div class="card"><div class="card-body">
-      <h4 class="t-h3 mb-10">Sobre el empleador</h4>
+      <h4 class="t-h3 mb-10">Sobre el contratista</h4>
       <div class="flex-c gap-10">
         <div class="conv-av" style="background:var(--yellow);">{% if trabajo.contratista.profile.foto %}<img src="{{ trabajo.contratista.profile.foto.url }}" alt="">{% else %}<i class="bi bi-building"></i>{% endif %}</div>
         <div>
           <div class="fw-700 t-sm">{{ trabajo.contratista.profile.nombre_display }}</div>
           {% if trabajo.contratista.profile.verificado %}<div class="t-xxs t-green fw-700"><i class="bi bi-patch-check-fill"></i> Verificado</div>{% endif %}
+          <div class="t-xs t-muted"><span class="stars" style="font-size:11px;">★</span> {{ trabajo.contratista.profile.calificacion|default:"4.8" }} · {{ trabajo.contratista.profile.total_trabajos }} contrataciones</div>
         </div>
       </div>
     </div></div>
