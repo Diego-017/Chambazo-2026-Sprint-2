@@ -1,6 +1,8 @@
 
 # Chambazo-2026-Version 2 Sprint 20 Julio - 16 Agosto 2026
 
+<img width="958" height="407" alt="image" src="https://github.com/user-attachments/assets/33d5f9a0-e7d6-4e1d-a55d-74fc7b840acb" />
+
 ## Historias de Usuario implementadas (15 HUs del Sprint 1)
 
 | HU    | Descripción                          | Estado  |
