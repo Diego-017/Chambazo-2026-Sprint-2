@@ -19,7 +19,7 @@ from .models import (
 )
 from .forms import (
     LoginForm, RegistroStep2Form, RegistroStep3Form,
-    TrabajoForm, EditarPerfilForm
+    TrabajoForm, EditarPerfilForm, ResenaForm, GaleriaItemForm
 )
 
 
@@ -586,25 +586,134 @@ def candidatos(request, pk):
 
 @login_required
 def cambiar_estado_solicitud(request, sol_pk, nuevo_estado):
-    sol = get_object_or_404(Solicitud, pk=sol_pk, trabajo__contratista=request.user)
-    estados_validos = ['pendiente', 'en_revision', 'aceptado', 'rechazado', 'contratado']
+    # Puede ser cambiado por el contratista o en caso de avance a en_progreso/completado también por el trabajador asignado
+    sol = get_object_or_404(Solicitud, pk=sol_pk)
+    if sol.trabajo.contratista != request.user and sol.trabajador != request.user:
+        messages.error(request, 'No tienes permiso para modificar esta solicitud.')
+        return redirect('home')
+
+    estados_validos = ['pendiente', 'en_revision', 'aceptado', 'rechazado', 'contratado', 'en_progreso', 'completado']
     if nuevo_estado in estados_validos:
         sol.estado = nuevo_estado
         sol.save()
-        labels = {'aceptado': '✅ Aceptado', 'rechazado': '❌ Rechazado',
-                  'contratado': '🏆 Contratado', 'en_revision': '🔍 En revisión'}
-        crear_notif(sol.trabajador, 'contratado' if nuevo_estado == 'contratado' else 'estado',
+        labels = {
+            'aceptado': '✅ Aceptado', 'rechazado': '❌ Rechazado',
+            'contratado': '🏆 Contratado', 'en_revision': '🔍 En revisión',
+            'en_progreso': '⚡ En progreso', 'completado': '✨ Trabajo Completado'
+        }
+        destinatario = sol.trabajador if request.user == sol.trabajo.contratista else sol.trabajo.contratista
+        url_destino = f'/resena/crear/{sol.pk}/' if nuevo_estado == 'completado' else '/solicitudes/'
+        
+        crear_notif(destinatario, 'contratado' if nuevo_estado in ('contratado', 'completado') else 'estado',
                     f'{labels.get(nuevo_estado, nuevo_estado)} — {sol.trabajo.titulo}',
-                    f'Tu solicitud fue marcada como {nuevo_estado}.', '/solicitudes/')
-        if nuevo_estado == 'contratado':
+                    f'El estado del trabajo fue actualizado a: {sol.get_estado_display()}.', url_destino)
+        
+        if nuevo_estado in ('contratado', 'completado'):
             sol.trabajo.estado_vacante = 'ocupada'
             sol.trabajo.save(update_fields=['estado_vacante'])
             verificar_logros(sol.trabajador)
-        messages.success(request, f'Estado actualizado a: {nuevo_estado}')
+        messages.success(request, f'Estado actualizado a: {sol.get_estado_display()}')
+
     nxt = request.GET.get('next')
     if nxt:
         return redirect(nxt)
-    return redirect('candidatos', pk=sol.trabajo.pk)
+    if request.user == sol.trabajo.contratista:
+        return redirect('candidatos', pk=sol.trabajo.pk)
+    return redirect('mis_solicitudes')
+
+
+# ── Calificaciones y Reseñas ───────────────────────────────────────────────────
+@login_required
+def crear_resena_solicitud(request, sol_pk):
+    sol = get_object_or_404(Solicitud, pk=sol_pk)
+    if request.user != sol.trabajo.contratista and request.user != sol.trabajador:
+        messages.error(request, 'Solo los participantes del trabajo pueden dejar una reseña.')
+        return redirect('home')
+
+    destinatario = sol.trabajador if request.user == sol.trabajo.contratista else sol.trabajo.contratista
+
+    # Verificar si ya existe reseña
+    if Resena.objects.filter(solicitud=sol, autor=request.user).exists():
+        messages.info(request, 'Ya has calificado este trabajo previamente.')
+        return redirect('perfil_publico', user_pk=destinatario.pk)
+
+    if request.method == 'POST':
+        form = ResenaForm(request.POST)
+        if form.is_valid():
+            resena = form.save(commit=False)
+            resena.trabajo = sol.trabajo
+            resena.solicitud = sol
+            resena.autor = request.user
+            resena.destinatario = destinatario
+            resena.etiquetas = request.POST.get('etiquetas', '')
+            resena.save()
+
+            crear_notif(destinatario, 'resena',
+                        f'⭐ ¡Nueva calificación recibida de {request.user.profile.nombre_display}!',
+                        f'Recibiste una puntuación de {resena.calificacion}★ en "{sol.trabajo.titulo}".',
+                        f'/perfil/{destinatario.pk}/')
+
+            verificar_logros(destinatario)
+            messages.success(request, '✅ ¡Calificación y reseña publicada exitosamente!')
+            return redirect('perfil_publico', user_pk=destinatario.pk)
+    else:
+        form = ResenaForm()
+
+    ctx = ctx_base(request)
+    ctx.update({
+        'form': form,
+        'solicitud': sol,
+        'destinatario': destinatario,
+        'etiquetas_opciones': ResenaForm.ETIQUETAS_OPCIONES,
+        'active': 'resena'
+    })
+    return render(request, 'core/crear_resena.html', ctx)
+
+
+# ── Comprobante de Contratación Digital ─────────────────────────────────────────
+@login_required
+def comprobante_contrato(request, sol_pk):
+    sol = get_object_or_404(Solicitud, pk=sol_pk)
+    if not (request.user == sol.trabajo.contratista or request.user == sol.trabajador or request.user.is_staff):
+        messages.error(request, 'Acceso denegado a este comprobante.')
+        return redirect('home')
+
+    ctx = ctx_base(request)
+    ctx.update({'solicitud': sol, 'active': 'contrato'})
+    return render(request, 'core/comprobante_contrato.html', ctx)
+
+
+# ── Portafolio y Galería (Trabajador) ───────────────────────────────────────────
+@login_required
+def galeria_gestionar(request):
+    if request.user.profile.rol != 'trabajador':
+        return redirect('home_trabajador')
+
+    if request.method == 'POST':
+        form = GaleriaItemForm(request.POST, request.FILES)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.trabajador = request.user
+            item.save()
+            messages.success(request, '✅ Foto agregada al portafolio exitosamente.')
+            return redirect('galeria_gestionar')
+    else:
+        form = GaleriaItemForm()
+
+    items = GaleriaItem.objects.filter(trabajador=request.user)
+    ctx = ctx_base(request)
+    ctx.update({'form': form, 'items': items, 'active': 'portafolio'})
+    return render(request, 'core/galeria_gestionar.html', ctx)
+
+
+@login_required
+def galeria_eliminar(request, pk):
+    item = get_object_or_404(GaleriaItem, pk=pk, trabajador=request.user)
+    if request.method == 'POST':
+        item.delete()
+        messages.success(request, 'Imagen eliminada del portafolio.')
+    return redirect('galeria_gestionar')
+
 
 
 # ── Buscar trabajadores (contratista) ───────────────────────────────────────────

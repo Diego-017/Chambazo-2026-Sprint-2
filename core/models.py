@@ -215,6 +215,8 @@ class Solicitud(models.Model):
         ('aceptado', 'Aceptado'),
         ('rechazado', 'Rechazado'),
         ('contratado', 'Contratado'),
+        ('en_progreso', 'En progreso'),
+        ('completado', 'Completado'),
     ]
     trabajo   = models.ForeignKey(Trabajo, on_delete=models.CASCADE, related_name='solicitudes')
     trabajador= models.ForeignKey(User, on_delete=models.CASCADE, related_name='solicitudes')
@@ -235,7 +237,9 @@ class Solicitud(models.Model):
     def get_estado_color(self):
         colores = {
             'pendiente': 'warning', 'en_revision': 'info',
-            'aceptado': 'success', 'rechazado': 'danger', 'contratado': 'success'
+            'aceptado': 'success', 'rechazado': 'danger',
+            'contratado': 'success', 'en_progreso': 'primary',
+            'completado': 'info'
         }
         return colores.get(self.estado, 'secondary')
 
@@ -247,7 +251,9 @@ class Solicitud(models.Model):
     def estado_icon(self):
         icons = {
             'pendiente': '⏳', 'en_revision': '🔍',
-            'aceptado': '✅', 'rechazado': '❌', 'contratado': '🏆'
+            'aceptado': '✅', 'rechazado': '❌',
+            'contratado': '🏆', 'en_progreso': '⚡',
+            'completado': '✨'
         }
         return icons.get(self.estado, '📋')
 
@@ -255,17 +261,19 @@ class Solicitud(models.Model):
 # ── Resena ─────────────────────────────────────────────────────────────────────
 class Resena(models.Model):
     trabajo     = models.ForeignKey(Trabajo, on_delete=models.CASCADE, related_name='resenas', null=True, blank=True)
+    solicitud   = models.ForeignKey(Solicitud, on_delete=models.SET_NULL, null=True, blank=True, related_name='resenas')
     autor       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='resenas_dadas')
     destinatario= models.ForeignKey(User, on_delete=models.CASCADE, related_name='resenas_recibidas')
     calificacion= models.IntegerField(default=5)
     comentario  = models.TextField()
+    etiquetas   = models.CharField(max_length=255, blank=True, help_text="Etiquetas separadas por comas")
     creado      = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-creado']
 
     def __str__(self):
-        return f"Reseña de {self.autor} para {self.destinatario}"
+        return f"Reseña de {self.autor} para {self.destinatario} ({self.calificacion}★)"
 
     @property
     def estrellas(self):
@@ -283,6 +291,7 @@ class Resena(models.Model):
 class GaleriaItem(models.Model):
     trabajador = models.ForeignKey(User, on_delete=models.CASCADE, related_name='galeria')
     titulo     = models.CharField(max_length=100)
+    descripcion= models.TextField(blank=True)
     categoria  = models.CharField(max_length=50, blank=True)
     imagen     = models.ImageField(upload_to='galeria/', null=True, blank=True)
     creado     = models.DateTimeField(auto_now_add=True)

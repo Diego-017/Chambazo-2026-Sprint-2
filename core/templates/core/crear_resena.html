@@ -1,0 +1,144 @@
+{% extends 'core/base.html' %}
+{% block title %}Calificar trabajo{% endblock %}
+
+{% block body %}
+{% if request.user.profile.rol == 'contratista' %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
+
+<div class="content-container" style="max-width:700px;margin:0 auto;padding:24px 16px;">
+  <div class="card" style="padding:28px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.06);background:#fff;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <span style="font-size:2.5rem;display:inline-block;margin-bottom:8px;">⭐</span>
+      <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:6px;color:#1e293b;">Calificar experiencia</h2>
+      <p style="color:#64748b;font-size:0.95rem;">
+        Tu opinión ayuda a construir confianza y reputación en la comunidad de <strong>Chambazo</strong>.
+      </p>
+    </div>
+
+    <!-- Info del trabajo y contraparte -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:24px;display:flex;align-items:center;gap:16px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;color:#334155;overflow:hidden;flex-shrink:0;">
+        {% if destinatario.profile.foto %}
+          <img src="{{ destinatario.profile.foto.url }}" alt="{{ destinatario.get_full_name }}" style="width:100%;height:100%;object-fit:cover;">
+        {% else %}
+          {{ destinatario.first_name|default:destinatario.username|slice:":1"|upper }}
+        {% endif %}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:1.05rem;color:#0f172a;">{{ destinatario.profile.nombre_display }}</div>
+        <div style="color:#64748b;font-size:0.85rem;">Trabajo: <strong>{{ solicitud.trabajo.titulo }}</strong></div>
+        <div style="font-size:0.8rem;color:#10b981;font-weight:600;margin-top:2px;">
+          <i class="bi bi-shield-check"></i> Contratación verificada
+        </div>
+      </div>
+    </div>
+
+    <form method="POST">
+      {% csrf_token %}
+      
+      <!-- Calificación por estrellas interactiva -->
+      <div style="text-align:center;margin-bottom:24px;">
+        <label style="display:block;font-weight:700;margin-bottom:8px;color:#334155;">Selecciona tu puntuación:</label>
+        <div id="starRating" style="font-size:2.2rem;cursor:pointer;display:inline-flex;gap:8px;color:#cbd5e1;">
+          <span class="star-btn" data-val="1">★</span>
+          <span class="star-btn" data-val="2">★</span>
+          <span class="star-btn" data-val="3">★</span>
+          <span class="star-btn" data-val="4">★</span>
+          <span class="star-btn" data-val="5">★</span>
+        </div>
+        <input type="hidden" name="calificacion" id="calificacionInput" value="5">
+        <div id="ratingText" style="font-weight:700;color:#f59e0b;margin-top:6px;font-size:0.95rem;">Excelente (5/5)</div>
+      </div>
+
+      <!-- Etiquetas destacadas -->
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-weight:700;margin-bottom:8px;color:#334155;">¿Qué aspectos destacarías?</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;" id="tagContainer">
+          {% for valor, etiqueta in etiquetas_opciones %}
+          <button type="button" class="tag-chip" onclick="toggleTag(this, '{{ valor }}')"
+                  style="border:1px solid #cbd5e1;background:#fff;border-radius:20px;padding:6px 14px;font-size:0.85rem;color:#475569;cursor:pointer;transition:all 0.2s;">
+            + {{ etiqueta }}
+          </button>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="etiquetas" id="etiquetasInput" value="">
+      </div>
+
+      <!-- Comentario -->
+      <div style="margin-bottom:24px;">
+        <label style="display:block;font-weight:700;margin-bottom:8px;color:#334155;">Comentario detallado:</label>
+        {{ form.comentario }}
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <a href="{% if request.user.profile.rol == 'contratista' %}{% url 'candidatos_general' %}{% else %}{% url 'mis_solicitudes' %}{% endif %}" 
+           class="btn btn-secondary" style="padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;background:#e2e8f0;color:#334155;font-weight:600;">
+          Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary" style="padding:10px 24px;border-radius:8px;background:#1FA35A;border:none;color:#fff;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          <i class="bi bi-send-fill"></i> Publicar reseña
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+
+<script>
+  const starBtns = document.querySelectorAll('.star-btn');
+  const califInput = document.getElementById('calificacionInput');
+  const ratingText = document.getElementById('ratingText');
+  const descriptions = {
+    1: 'Deficiente (1/5)',
+    2: 'Regular (2/5)',
+    3: 'Bueno (3/5)',
+    4: 'Muy bueno (4/5)',
+    5: 'Excelente (5/5)'
+  };
+
+  function updateStars(val) {
+    califInput.value = val;
+    ratingText.innerText = descriptions[val] || (val + '/5');
+    starBtns.forEach((btn, idx) => {
+      if (idx < val) {
+        btn.style.color = '#f59e0b';
+      } else {
+        btn.style.color = '#cbd5e1';
+      }
+    });
+  }
+
+  starBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = parseInt(btn.getAttribute('data-val'));
+      updateStars(val);
+    });
+  });
+
+  updateStars(5);
+
+  const selectedTags = new Set();
+  const etiquetasInput = document.getElementById('etiquetasInput');
+
+  function toggleTag(el, tag) {
+    if (selectedTags.has(tag)) {
+      selectedTags.delete(tag);
+      el.style.background = '#fff';
+      el.style.borderColor = '#cbd5e1';
+      el.style.color = '#475569';
+      el.innerText = '+ ' + tag;
+    } else {
+      selectedTags.add(tag);
+      el.style.background = '#1FA35A';
+      el.style.borderColor = '#1FA35A';
+      el.style.color = '#fff';
+      el.innerText = '✓ ' + tag;
+    }
+    etiquetasInput.value = Array.from(selectedTags).join(', ');
+  }
+</script>
+{% endblock %}

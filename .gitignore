@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3-journal
+media/
+.env
+.DS_Store
+Thumbs.db

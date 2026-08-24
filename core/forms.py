@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import UserProfile, Trabajo, SKILL_CHOICES
+from .models import UserProfile, Trabajo, SKILL_CHOICES, Resena, GaleriaItem
 
 
 class LoginForm(forms.Form):
@@ -90,3 +90,38 @@ class EditarPerfilForm(forms.ModelForm):
             del self.fields['tarifa_hora']
             del self.fields['experiencia_anos']
             del self.fields['portfolio_url']
+
+
+class ResenaForm(forms.ModelForm):
+    ETIQUETAS_OPCIONES = [
+        ('Puntualidad', 'Puntualidad'),
+        ('Calidad de trabajo', 'Calidad de trabajo'),
+        ('Excelente comunicación', 'Excelente comunicación'),
+        ('Profesionalismo', 'Profesionalismo'),
+        ('Pago oportuno', 'Pago oportuno'),
+        ('Trato respetuoso', 'Trato respetuoso'),
+    ]
+
+    calificacion = forms.IntegerField(min_value=1, max_value=5, initial=5,
+        widget=forms.HiddenInput())
+    comentario = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': '4',
+                                     'placeholder': 'Describe tu experiencia de trabajo, aspectos destacados o recomendaciones...'}),
+        label='Tu reseña')
+
+    class Meta:
+        model = Resena
+        fields = ['calificacion', 'comentario']
+
+
+class GaleriaItemForm(forms.ModelForm):
+    class Meta:
+        model = GaleriaItem
+        fields = ['titulo', 'categoria', 'descripcion', 'imagen']
+        widgets = {
+            'titulo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Instalación de panel eléctrico'}),
+            'categoria': forms.Select(choices=SKILL_CHOICES, attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': '3', 'placeholder': 'Detalles del trabajo realizado, materiales o técnicas...'}),
+            'imagen': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+

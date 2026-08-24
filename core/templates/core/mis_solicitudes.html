@@ -13,26 +13,40 @@
   <a href="?estado=en_revision" class="btn {% if request.GET.estado == 'en_revision' %}btn-g{% else %}btn-outline{% endif %} btn-xs">En revisión</a>
   <a href="?estado=aceptado" class="btn {% if request.GET.estado == 'aceptado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Aceptadas</a>
   <a href="?estado=contratado" class="btn {% if request.GET.estado == 'contratado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Contratado</a>
+  <a href="?estado=en_progreso" class="btn {% if request.GET.estado == 'en_progreso' %}btn-g{% else %}btn-outline{% endif %} btn-xs">En progreso</a>
+  <a href="?estado=completado" class="btn {% if request.GET.estado == 'completado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Completado</a>
   <a href="?estado=rechazado" class="btn {% if request.GET.estado == 'rechazado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Rechazadas</a>
 </div>
 
 {% if solicitudes %}
 <table class="data-table">
-  <thead><tr><th>Trabajo</th><th>Empresa</th><th>Tarifa propuesta</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
+  <thead><tr><th>Trabajo</th><th>Empresa</th><th>Tarifa pactada</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
   <tbody>
     {% for sol in solicitudes %}
     <tr>
       <td>
         <div class="dt-title">{{ sol.trabajo.titulo }}</div>
-        {% if sol.estado == 'aceptado' or sol.estado == 'contratado' %}
-        <div class="dt-sub"><a href="{% url 'mensajes_chat' sol.pk %}" class="t-blue" style="color:#1d4ed8;"><i class="bi bi-chat-dots"></i> Nuevo mensaje</a></div>
+        {% if sol.estado in 'aceptado contratado en_progreso completado' %}
+        <div class="dt-sub" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+          <a href="{% url 'mensajes_chat' sol.pk %}" class="t-blue" style="color:#1d4ed8;font-size:0.75rem;text-decoration:none;"><i class="bi bi-chat-dots"></i> Chat</a>
+          <a href="{% url 'comprobante_contrato' sol.pk %}" style="color:#059669;font-size:0.75rem;text-decoration:none;font-weight:600;"><i class="bi bi-file-earmark-text"></i> Contrato</a>
+        </div>
         {% endif %}
       </td>
       <td>{{ sol.trabajo.contratista.profile.nombre_display }}</td>
-      <td class="fw-700 t-green">{% if sol.tarifa_propuesta %}${{ sol.tarifa_propuesta }}{% else %}—{% endif %}</td>
+      <td class="fw-700 t-green">{% if sol.tarifa_propuesta %}${{ sol.tarifa_propuesta }}{% else %}${{ sol.trabajo.presupuesto }}{% endif %}</td>
       <td class="t-muted">{{ sol.creado|date:"d/m/Y" }}</td>
       <td><span class="est-badge est-{{ sol.estado }}">{{ sol.estado_label }}</span></td>
-      <td><a href="{% url 'trabajo_detalle' sol.trabajo.pk %}" class="t-green fw-700 t-xs">Ver detalle <i class="bi bi-chevron-right"></i></a></td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <a href="{% url 'trabajo_detalle' sol.trabajo.pk %}" class="t-green fw-700 t-xs" style="text-decoration:none;">Ver detalle <i class="bi bi-chevron-right"></i></a>
+          {% if sol.estado in 'contratado en_progreso completado' %}
+            <a href="{% url 'crear_resena_solicitud' sol.pk %}" style="color:#f59e0b;font-weight:700;font-size:0.75rem;text-decoration:none;">
+              ⭐ Calificar empleador
+            </a>
+          {% endif %}
+        </div>
+      </td>
     </tr>
     {% endfor %}
   </tbody>
