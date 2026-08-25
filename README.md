@@ -1,5 +1,5 @@
 
-# Chambazo-2026-Version 2 Sprint 20 Julio - 16 Agosto 2026 #
+# Chambazo Version 2 Sprint 20 Jul- 16 Agos  2026 #
 
 <img width="958" height="407" alt="image" src="https://github.com/user-attachments/assets/33d5f9a0-e7d6-4e1d-a55d-74fc7b840acb" />
 <img width="959" height="404" alt="image" src="https://github.com/user-attachments/assets/d2943d0d-42e2-4b49-a868-d4f56b7fac68" />
@@ -7,28 +7,28 @@
 
 ## Historias de Usuario implementadas (15 HUs del Sprint 1)
 
-| HU    | Descripción                          | Estado  |
-|-------|--------------------------------------|---------|
-| HU001 | Registro de usuario (flujo 3 pasos)  | ✅ Done |
-| HU002 | Inicio de sesión por rol             | ✅ Done |
-| HU003 | Recuperar contraseña (token)         | ✅ Done |
-| HU004 | Cerrar sesión                        | ✅ Done |
-| HU005 | Registro como Trabajador             | ✅ Done |
-| HU006 | Registro como Contratista            | ✅ Done |
-| HU007 | Selección de rol en registro         | ✅ Done |
-| HU008 | Crear / completar perfil profesional | ✅ Done |
-| HU009 | Selección de habilidades             | ✅ Done |
-| HU010 | Actualizar perfil e imagen           | ✅ Done |
-| HU011 | Visualizar perfil propio             | ✅ Done |
-| HU012 | Buscar ofertas de trabajo            | ✅ Done |
-| HU013 | Filtrar por categoría, zona, precio  | ✅ Done |
-| HU014 | Ver detalles completos de oferta     | ✅ Done |
-| HU015 | Notificaciones del sistema           | ✅ Done |
-| HU016 | Aplicar a vacante con mensaje        | ✅ Done |
-| HU017 | Aplicación rápida (1 clic)           | ✅ Done |
-| HU018 | Confirmación de postulación          | ✅ Done |
-| HU019 | Historial de solicitudes + timeline  | ✅ Done |
-| HU020 | Estado de vacante (disp/proceso/ocup)| ✅ Done |
+| HU    | Descripción                        | Estado |
+|-------|--------------------------------------|------|
+| HU001 | Registro de usuario (flujo 3 pasos)  | Done |
+| HU002 | Inicio de sesión por rol             | Done |
+| HU003 | Recuperar contraseña (token)         | Done |
+| HU004 | Cerrar sesión                        | Done |
+| HU005 | Registro como Trabajador             | Done |
+| HU006 | Registro como Contratista            | Done |
+| HU007 | Selección de rol en registro         | Done |
+| HU008 | Crear / completar perfil profesional | Done |
+| HU009 | Selección de habilidades             | Done |
+| HU010 | Actualizar perfil e imagen           | Done |
+| HU011 | Visualizar perfil propio             | Done |
+| HU012 | Buscar ofertas de trabajo            | Done |
+| HU013 | Filtrar por categoría, zona, precio  | Done |
+| HU014 | Ver detalles completos de oferta     | Done |
+| HU015 | Notificaciones del sistema           | Done |
+| HU016 | Aplicar a vacante con mensaje        | Done |
+| HU017 | Aplicación rápida (1 clic)           | Done |
+| HU018 | Confirmación de postulación          | Done |
+| HU019 | Historial de solicitudes + timeline  | Done |
+| HU020 | Estado de vacante (disp/proceso/ocup)| Done |
 
 ## Instalar y correr
 
@@ -82,9 +82,6 @@ Abrir → http://127.0.0.1:8000
 
 Cuentas de prueba
 Rol	Email	Contraseña
-Trabajador	carlos@demo.com	demo123
-Empleador	(usuario) constructora_sv	demo123
-Admin	admin	admin123
 Qué cambió en esta vuelta
 
 Layout de dashboard con sidebar oscuro (navy) — ya no es mobile con bottom-nav
@@ -95,10 +92,7 @@ Todas las páginas nuevas del PDF: Guardados, Mensajes, Ganancias, Logros, Estad
 
 Google Maps con direcciones aleatorias reales:
 
-Mapa interactivo en "Buscar empleos" con buscador, filtro urgentes, vista satélite
-Mapa en cada detalle de trabajo con círculo de radio aproximado
-Selector de ubicación (click en mapa) al publicar una vacante
-Los trabajos se generan con coordenadas aleatorias reales de 20 ciudades de El Salvador
+Mapa interactivo en "Buscar empleos" con buscador, filtro urgentes, vista satélite Mapa en cada detalle de trabajo con círculo de radio aproximado Selector de ubicación (click en mapa) al publicar una vacante. Los trabajos se generan con coordenadas aleatorias reales de 20 ciudades de El Salvador
 
 Términos y Política de Privacidad — página completa para ambos roles (trabajador/empleador), con botón "He leído y acepto"
 
