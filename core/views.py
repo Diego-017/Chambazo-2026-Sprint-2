@@ -71,12 +71,7 @@ def verificar_logros(user):
 
 # ── Auth ───────────────────────────────────────────────────────────────────────
 def home(request):
-    if request.user.is_authenticated:
-        try:
-            rol = request.user.profile.rol
-            return redirect('panel_contratista' if rol == 'contratista' else 'home_trabajador')
-        except UserProfile.DoesNotExist:
-            pass
+    # Ya no redirigimos automáticamente. La landing page será lo primero que vean.
     return render(request, 'core/landing.html')
 
 

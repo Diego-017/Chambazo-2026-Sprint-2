@@ -34,7 +34,9 @@
     <!-- Script de Mapa Compartido -->
     <script>
     function initAplicarMap() {
-      const pos = { lat: parseFloat("{{ trabajo.lat|escapejs }}"), lng: parseFloat("{{ trabajo.lng|escapejs }}") };
+      const latStr = "{{ trabajo.lat|escapejs }}".replace(',', '.');
+      const lngStr = "{{ trabajo.lng|escapejs }}".replace(',', '.');
+      const pos = { lat: parseFloat(latStr), lng: parseFloat(lngStr) };
       
       const map = L.map('mapaAplicar').setView([pos.lat, pos.lng], 14);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);

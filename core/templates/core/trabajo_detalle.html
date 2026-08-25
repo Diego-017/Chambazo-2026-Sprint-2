@@ -117,7 +117,7 @@
     </div></div>
     <script>
     function initDetalleMap(){
-      const pos = { lat: {{ trabajo.lat }}, lng: {{ trabajo.lng }} };
+      const pos = { lat: parseFloat("{{ trabajo.lat|escapejs }}".replace(',', '.')), lng: parseFloat("{{ trabajo.lng|escapejs }}".replace(',', '.')) };
       const mapDiv = document.getElementById('mapaDetalle');
       if (!mapDiv) return;
 

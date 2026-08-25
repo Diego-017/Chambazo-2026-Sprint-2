@@ -235,8 +235,10 @@ function initMapPicker() {
   const mapDiv = document.getElementById('mapPicker');
   if (!mapDiv) return;
 
-  const defaultLat = parseFloat("{{ form.instance.lat|default:'13.6929' }}");
-  const defaultLng = parseFloat("{{ form.instance.lng|default:'-89.2182' }}");
+  const latStr = "{{ form.instance.lat|default:'13.6929'|escapejs }}".replace(',', '.');
+  const lngStr = "{{ form.instance.lng|default:'-89.2182'|escapejs }}".replace(',', '.');
+  const defaultLat = parseFloat(latStr);
+  const defaultLng = parseFloat(lngStr);
 
   // Usar exclusivamente Leaflet OpenStreetMap
   const map = L.map('mapPicker').setView([defaultLat, defaultLng], 12);
