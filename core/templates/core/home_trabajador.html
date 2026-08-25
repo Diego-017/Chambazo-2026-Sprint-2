@@ -49,8 +49,25 @@
       <div class="mini-stat-row"><span class="lbl">Ganado este mes</span><span class="val t-green">${{ stats.ganado_mes }}</span></div>
     </div>
 
+    <!-- Novedad: Widgets de Gamificación y Motivación -->
+    <div class="filter-card" style="background:linear-gradient(135deg, #064e3b, #047857); color:#fff; border:none; box-shadow:0 10px 25px rgba(4,120,87,0.2);">
+      <h4 style="color:#fff; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:8px; margin-bottom:12px;">🏆 Tu Progreso</h4>
+      <div style="font-size:0.85rem; margin-bottom:12px; opacity:0.9;">¡Estás a solo <strong>50 puntos</strong> de alcanzar el nivel <em>Pro Worker</em>! Sigue así.</div>
+      <div style="background:rgba(255,255,255,0.2); height:8px; border-radius:4px; overflow:hidden; margin-bottom:12px;">
+        <div style="width:75%; background:#10b981; height:100%; border-radius:4px;"></div>
+      </div>
+      <a href="{% url 'logros' %}" class="btn" style="background:#fff; color:#064e3b; width:100%; font-size:0.8rem; padding:6px; font-weight:700;">Ver mis logros →</a>
+    </div>
+
+    <div class="filter-card" style="background:#f0fdf4; border:1px solid #bbf7d0; text-align:center; padding:20px 16px;">
+      <i class="bi bi-quote" style="font-size:2rem; color:#34d399; line-height:1;"></i>
+      <p style="font-size:0.85rem; color:#065f46; font-weight:600; font-style:italic; margin:8px 0 0;">
+        "El éxito es la suma de pequeños esfuerzos repetidos día tras día."
+      </p>
+    </div>
+
     <!-- Mapa toggle -->
-    <button onclick="toggleMap()" class="btn btn-outline btn-full" id="mapToggleBtn">
+    <button onclick="toggleMap()" class="btn btn-outline btn-full" id="mapToggleBtn" style="margin-top:16px;">
       <i class="bi bi-map"></i> Ver mapa de empleos
     </button>
   </div>

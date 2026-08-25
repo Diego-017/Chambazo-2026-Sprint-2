@@ -43,7 +43,7 @@ def enviar_codigo_verificacion(user, codigo):
       </p>
     </div>
     """
-    _enviar_html(asunto, html, [user.email])
+    return _enviar_html(asunto, html, [user.email])
 
 
 def enviar_bienvenida(user):
@@ -70,7 +70,7 @@ def enviar_bienvenida(user):
       </p>
     </div>
     """
-    _enviar_html(asunto, html, [user.email])
+    return _enviar_html(asunto, html, [user.email])
 
 
 def enviar_reset_password(user, token, request=None):
@@ -106,7 +106,7 @@ def enviar_reset_password(user, token, request=None):
       </div>
     </div>
     """
-    _enviar_html(asunto, html, [user.email])
+    return _enviar_html(asunto, html, [user.email])
 
 
 def enviar_notif_nueva_solicitud(contratista, solicitud):

@@ -42,6 +42,45 @@ function toggleSidebar(){
   document.getElementById('appSidebar')?.classList.toggle('open');
   document.getElementById('sidebarOverlay')?.classList.toggle('open');
 }
+
+// ── SISTEMA DE NOTIFICACIONES PUSH (SIMULADAS EN APP) ──
+function showPushNotification(icon, title, message, delay) {
+  setTimeout(() => {
+    const container = document.getElementById('toastContainer') || (() => {
+      const c = document.createElement('div');
+      c.id = 'toastContainer';
+      c.className = 'toast-wrap';
+      document.body.appendChild(c);
+      return c;
+    })();
+
+    const toast = document.createElement('div');
+    toast.className = 'toast success';
+    toast.innerHTML = `<i class="bi ${icon}"></i> <div><strong>${title}</strong><br><span style="font-size:0.85em;font-weight:500;">${message}</span></div>`;
+    
+    container.appendChild(toast);
+    
+    // Auto remove
+    setTimeout(() => toast.style.opacity='0', 5000);
+    setTimeout(() => toast.remove(), 5300);
+  }, delay);
+}
+
+// Lanzar notificaciones motivacionales/logros si el usuario está logueado
+{% if user.is_authenticated %}
+  window.addEventListener('load', () => {
+    // Si no es su primera vez en la sesión actual
+    if (!sessionStorage.getItem('push_shown')) {
+      sessionStorage.setItem('push_shown', 'true');
+      
+      // Notificación 1: Frase motivacional a los 3 segundos
+      showPushNotification('bi-lightning-charge-fill', '¡Nuevo día, nueva chamba!', 'Te deseamos éxito en tus labores de hoy.', 3000);
+      
+      // Notificación 2: Recordatorio de puntos a los 8 segundos
+      showPushNotification('bi-trophy-fill', 'Cerca de un nuevo logro', 'Solo te faltan 50 puntos para el nivel Pro Worker.', 8000);
+    }
+  });
+{% endif %}
 </script>
 {% block extra_js %}{% endblock %}
 </body>
