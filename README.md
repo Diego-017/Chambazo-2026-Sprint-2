@@ -1,5 +1,5 @@
 
-# Chambazo Version 2 Sprint 20 Jul- 16 Agos  2026 #
+# Chambazo Version 2 Sprint 20 Jul- 22 Agos  2026 #
 
 <img width="958" height="407" alt="image" src="https://github.com/user-attachments/assets/33d5f9a0-e7d6-4e1d-a55d-74fc7b840acb" />
 <img width="959" height="404" alt="image" src="https://github.com/user-attachments/assets/d2943d0d-42e2-4b49-a868-d4f56b7fac68" />
