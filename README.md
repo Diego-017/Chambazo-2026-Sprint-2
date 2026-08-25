@@ -3,9 +3,6 @@
 <img width="959" height="398" alt="image" src="https://github.com/user-attachments/assets/d94009da-eecf-41e4-a07e-80e3d62a2627" />
 <img width="959" height="384" alt="image" src="https://github.com/user-attachments/assets/0c718176-5189-4f66-a4d6-c5d2f81a21b0" />
 
-<img width="958" height="407" alt="image" src="https://github.com/user-attachments/assets/33d5f9a0-e7d6-4e1d-a55d-74fc7b840acb" />
-
-<img width="959" height="404" alt="image" src="https://github.com/user-attachments/assets/d2943d0d-42e2-4b49-a868-d4f56b7fac68" />
 
 
 ## Historias de Usuario implementadas (15 HUs del Sprint 1)
