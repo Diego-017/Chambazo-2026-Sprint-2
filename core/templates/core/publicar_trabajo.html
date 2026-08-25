@@ -238,53 +238,7 @@ function initMapPicker() {
   const defaultLat = parseFloat("{{ form.instance.lat|default:'13.6929' }}");
   const defaultLng = parseFloat("{{ form.instance.lng|default:'-89.2182' }}");
 
-  if (window.google && window.google.maps) {
-    try {
-      pickerMap = new google.maps.Map(mapDiv, {
-        center: { lat: defaultLat, lng: defaultLng },
-        zoom: 12,
-        disableDefaultUI: false,
-        zoomControl: true
-      });
-
-      pickerMarker = new google.maps.Marker({
-        position: { lat: defaultLat, lng: defaultLng },
-        map: pickerMap,
-        draggable: true,
-        animation: google.maps.Animation.DROP
-      });
-
-      pickerMarker.addListener('dragend', function(e) {
-        ponerPin(e.latLng.lat(), e.latLng.lng());
-      });
-
-      pickerMap.addListener('click', function(e) {
-        pickerMarker.setPosition(e.latLng);
-        ponerPin(e.latLng.lat(), e.latLng.lng());
-      });
-
-      const searchInput = document.getElementById('pickerSearch');
-      if (searchInput && google.maps.places) {
-        const ac = new google.maps.places.Autocomplete(searchInput, {
-          componentRestrictions: { country: 'sv' }
-        });
-        ac.addListener('place_changed', function() {
-          const place = ac.getPlace();
-          if (place.geometry) {
-            pickerMap.setCenter(place.geometry.location);
-            pickerMap.setZoom(15);
-            pickerMarker.setPosition(place.geometry.location);
-            ponerPin(place.geometry.location.lat(), place.geometry.location.lng(), place.name);
-          }
-        });
-      }
-      return;
-    } catch(err) {
-      console.warn("Google Maps fallback to Leaflet:", err);
-    }
-  }
-
-  // Fallback con Leaflet OpenStreetMap
+  // Usar exclusivamente Leaflet OpenStreetMap
   const map = L.map('mapPicker').setView([defaultLat, defaultLng], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'

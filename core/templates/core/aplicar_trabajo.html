@@ -35,14 +35,7 @@
     <script>
     function initAplicarMap() {
       const pos = { lat: parseFloat("{{ trabajo.lat|escapejs }}"), lng: parseFloat("{{ trabajo.lng|escapejs }}") };
-      if(window.google && window.google.maps) {
-        try {
-          const map = new google.maps.Map(document.getElementById('mapaAplicar'), { zoom: 14, center: pos, disableDefaultUI: true });
-          new google.maps.Marker({ position: pos, map: map, icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' });
-          new google.maps.Circle({ map: map, center: pos, radius: 500, strokeColor: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}', strokeOpacity: 0.8, fillOpacity: 0.2, fillColor: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}' });
-          return;
-        } catch(e) {}
-      }
+      
       const map = L.map('mapaAplicar').setView([pos.lat, pos.lng], 14);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
       L.marker([pos.lat, pos.lng]).addTo(map);
