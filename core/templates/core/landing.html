@@ -44,7 +44,7 @@ body { background:#f8fafc; margin:0; }
 
 .hero-section {
   position:relative;
-  background-image: url('{% static "img/hero_chambazo.png" %}');
+  background-image: url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1600&q=80');
   background-size:cover;
   background-position:center top;
   min-height:420px;
@@ -67,7 +67,7 @@ body { background:#f8fafc; margin:0; }
 .cat-pill i { font-size:1.3rem; }
 .cat-pill:hover { border-color:var(--green); color:var(--green); background:#f0fdf4; }
 
-.main-grid { display:grid; grid-template-columns:230px 1fr 270px; gap:24px; padding:32px 5%; }
+.main-grid { display:grid; grid-template-columns:240px minmax(0, 750px) 280px; justify-content:center; gap:32px; padding:40px 5%; }
 
 .filter-box { background:#fff; border-radius:12px; padding:16px; border:1px solid #e2e8f0; }
 .filter-label { font-size:0.72rem; font-weight:700; color:#64748b; margin-bottom:6px; display:block; text-transform:uppercase; letter-spacing:0.5px; }
@@ -115,7 +115,7 @@ body { background:#f8fafc; margin:0; }
 .test-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
 .test-card { background:#fff; border:1px solid #e2e8f0; border-radius:14px; overflow:hidden; transition:0.2s; }
 .test-card:hover { box-shadow:0 6px 20px rgba(0,0,0,0.08); transform:translateY(-2px); }
-.test-img { width:100%; height:150px; object-fit:cover; display:block; background:#e2e8f0; }
+.test-img { width:100%; height:200px; object-fit:cover; object-position:center center; display:block; background:#e2e8f0; }
 .test-body { padding:18px; }
 .stars { color:#f59e0b; margin-bottom:8px; }
 
@@ -193,34 +193,46 @@ body { background:#f8fafc; margin:0; }
 
   <!-- CENTER Job Feed -->
   <div>
+    <h2 class="section-title">Chambas Destacadas</h2>
+    
     <div class="job-card">
-      <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=80" style="width:100%;height:130px;object-fit:cover;" alt="Electricista">
+      <img src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80" style="width:100%;height:220px;object-fit:cover;object-position:center center;" alt="Electricista">
       <div class="job-card-body">
         <h3 style="font-size:1.05rem;font-weight:800;margin:0 0 4px;color:#0f172a;">Electricista para Cortocircuito</h3>
         <div class="job-meta"><i class="bi bi-geo-alt-fill" style="color:var(--green);"></i> San Salvador</div>
-        <p style="font-size:0.85rem;color:#64748b;margin:0 0 10px;line-height:1.5;">Electricista para cortocircuito en conjunto residencial. Posibilidad de trabajo continuo.</p>
-        <div class="posted-time"><i class="bi bi-clock"></i> Postado: 19 amigos</div>
-        <a href="{% url 'login' %}" class="btn btn-g btn-sm" style="margin-top:12px;width:100%;justify-content:center;">Ver detalles</a>
+        <p style="font-size:0.85rem;color:#475569;margin:8px 0 12px;line-height:1.5;">Electricista para cortocircuito en conjunto residencial. Posibilidad de trabajo continuo.</p>
+        <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:12px;"><i class="bi bi-clock"></i> Postado: 10 hrs ago</div>
+        <a href="{% url 'login' %}" class="btn btn-g btn-full" style="padding:10px;">Ver detalles</a>
       </div>
     </div>
+
+    <div style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); border-radius:12px; padding:24px; color:#fff; display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+      <div>
+        <h4 style="font-size:1.1rem; font-weight:800; margin:0 0 6px;">¿No encuentras lo que buscas?</h4>
+        <p style="font-size:0.85rem; margin:0; opacity:0.9;">Crea una alerta y te avisaremos cuando haya nuevas chambas para ti.</p>
+      </div>
+      <a href="{% url 'login' %}" class="btn" style="background:#fff; color:var(--green-dark); font-weight:700; padding:10px 20px; border-radius:8px; text-decoration:none;">Crear Alerta <i class="bi bi-bell-fill"></i></a>
+    </div>
+
     <div class="job-card">
-      <img src="https://images.unsplash.com/photo-1581579205462-89241517f8cb?auto=format&fit=crop&w=800&q=80" style="width:100%;height:130px;object-fit:cover;" alt="Limpieza">
+      <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80" style="width:100%;height:220px;object-fit:cover;object-position:center center;" alt="Limpieza">
       <div class="job-card-body">
         <h3 style="font-size:1.05rem;font-weight:800;margin:0 0 4px;color:#0f172a;">Limpieza de Oficinas</h3>
         <div class="job-meta"><i class="bi bi-geo-alt-fill" style="color:var(--green);"></i> Santa Tecla</div>
-        <p style="font-size:0.85rem;color:#64748b;margin:0 0 10px;line-height:1.5;">Limpieza de inodoros y mantener el orden diario de oficinas. Pago inmediato.</p>
-        <div class="posted-time"><i class="bi bi-clock"></i> Postado: 15 amigos</div>
-        <a href="{% url 'login' %}" class="btn btn-g btn-sm" style="margin-top:12px;width:100%;justify-content:center;">Ver detalles</a>
+        <p style="font-size:0.85rem;color:#475569;margin:8px 0 12px;line-height:1.5;">Limpieza de inodoros y mantener el orden diario de oficinas. Pago inmediato.</p>
+        <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:12px;"><i class="bi bi-clock"></i> Postado: 15 hrs ago</div>
+        <a href="{% url 'login' %}" class="btn btn-g btn-full" style="padding:10px;">Ver detalles</a>
       </div>
     </div>
+
     <div class="job-card">
-      <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80" style="width:100%;height:130px;object-fit:cover;" alt="Jardinería">
+      <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80" style="width:100%;height:220px;object-fit:cover;object-position:center center;" alt="Jardinería">
       <div class="job-card-body">
         <h3 style="font-size:1.05rem;font-weight:800;margin:0 0 4px;color:#0f172a;">Jardinero Residencial</h3>
         <div class="job-meta"><i class="bi bi-geo-alt-fill" style="color:var(--green);"></i> Santa Tecla</div>
-        <p style="font-size:0.85rem;color:#64748b;margin:0 0 10px;line-height:1.5;">Jardinero Residencial con experiencia en poda y mantenimiento general de jardines.</p>
-        <div class="posted-time"><i class="bi bi-clock"></i> Postado: 22 amigos</div>
-        <a href="{% url 'login' %}" class="btn btn-g btn-sm" style="margin-top:12px;width:100%;justify-content:center;">Ver detalles</a>
+        <p style="font-size:0.85rem;color:#475569;margin:8px 0 12px;line-height:1.5;">Jardinero Residencial con experiencia en poda y mantenimiento general de jardines.</p>
+        <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:12px;"><i class="bi bi-clock"></i> Postado: 22 hrs ago</div>
+        <a href="{% url 'login' %}" class="btn btn-g btn-full" style="padding:10px;">Ver detalles</a>
       </div>
     </div>
   </div>
@@ -408,11 +420,24 @@ body { background:#f8fafc; margin:0; }
   <div>
     <h2 class="section-title">Lo Más Buscado</h2>
     <div style="margin-bottom:24px;">
-      {% for item in "Auxiliar Contable,Motociclista,Ayudante de Albañil,Panadero,Mecánico,Limpiadora".split(',') %}
       <a href="{% url 'login' %}" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;text-decoration:none;color:#334155;font-size:0.85rem;font-weight:600;transition:0.15s;" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#334155'">
-        {{ item }} <i class="bi bi-arrow-right" style="font-size:0.75rem;"></i>
+        Auxiliar Contable <i class="bi bi-arrow-right" style="font-size:0.75rem;"></i>
       </a>
-      {% endfor %}
+      <a href="{% url 'login' %}" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;text-decoration:none;color:#334155;font-size:0.85rem;font-weight:600;transition:0.15s;" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#334155'">
+        Motociclista <i class="bi bi-arrow-right" style="font-size:0.75rem;"></i>
+      </a>
+      <a href="{% url 'login' %}" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;text-decoration:none;color:#334155;font-size:0.85rem;font-weight:600;transition:0.15s;" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#334155'">
+        Ayudante de Albañil <i class="bi bi-arrow-right" style="font-size:0.75rem;"></i>
+      </a>
+      <a href="{% url 'login' %}" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;text-decoration:none;color:#334155;font-size:0.85rem;font-weight:600;transition:0.15s;" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#334155'">
+        Panadero <i class="bi bi-arrow-right" style="font-size:0.75rem;"></i>
+      </a>
+      <a href="{% url 'login' %}" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;text-decoration:none;color:#334155;font-size:0.85rem;font-weight:600;transition:0.15s;" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#334155'">
+        Mecánico <i class="bi bi-arrow-right" style="font-size:0.75rem;"></i>
+      </a>
+      <a href="{% url 'login' %}" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;text-decoration:none;color:#334155;font-size:0.85rem;font-weight:600;transition:0.15s;" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#334155'">
+        Limpiadora <i class="bi bi-arrow-right" style="font-size:0.75rem;"></i>
+      </a>
     </div>
     <h3 style="font-size:0.95rem;font-weight:800;margin-bottom:10px;">Testimonio</h3>
     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
@@ -468,7 +493,7 @@ body { background:#f8fafc; margin:0; }
   </div>
   <div class="test-grid">
     <div class="test-card">
-      <img class="test-img" src="https://images.unsplash.com/photo-1581579205462-89241517f8cb?auto=format&fit=crop&w=800&q=90" alt="María G.">
+      <img class="test-img" src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80" alt="María G.">
       <div class="test-body">
         <div class="stars">★★★★★</div>
         <h4 style="font-weight:800;margin:0 0 4px;font-size:0.95rem;">María G. | San Salvador</h4>
@@ -477,7 +502,7 @@ body { background:#f8fafc; margin:0; }
       </div>
     </div>
     <div class="test-card">
-      <img class="test-img" src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=90" alt="Juan C.">
+      <img class="test-img" src="https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?auto=format&fit=crop&w=800&q=80" alt="Juan C.">
       <div class="test-body">
         <div class="stars">★★★★★</div>
         <h4 style="font-weight:800;margin:0 0 4px;font-size:0.95rem;">Juan C. | Santa Ana</h4>
@@ -486,7 +511,7 @@ body { background:#f8fafc; margin:0; }
       </div>
     </div>
     <div class="test-card">
-      <img class="test-img" src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=800&q=90" alt="Luis M.">
+      <img class="test-img" src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80" alt="Luis M.">
       <div class="test-body">
         <div class="stars">★★★★★</div>
         <h4 style="font-weight:800;margin:0 0 4px;font-size:0.95rem;">Luis M. | Santa Tecla</h4>
