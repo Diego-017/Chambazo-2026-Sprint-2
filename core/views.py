@@ -15,6 +15,7 @@ from .models import (
     UserProfile, Trabajo, Solicitud, Notificacion,
     Resena, GaleriaItem, Mensaje, PasswordResetToken,
     TrabajoGuardado, Logro, LogroObtenido, AceptacionTerminos,
+    EmailVerificationToken,
     SKILL_CHOICES, SKILL_ICONS, SKILL_COLORS
 )
 from .forms import (
@@ -111,16 +112,26 @@ def logout_view(request):
 
 def recuperar_password(request):
     msg = None
+    error = None
     if request.method == 'POST':
-        email = request.POST.get('email', '')
+        email = request.POST.get('email', '').strip()
         try:
             user = User.objects.get(email=email)
+            # Invalida tokens anteriores
+            PasswordResetToken.objects.filter(user=user, usado=False).update(usado=True)
             token = ''.join(random.choices(string.ascii_letters + string.digits, k=40))
             PasswordResetToken.objects.create(user=user, token=token)
-            msg = f'Instrucciones enviadas. (Demo token: {token})'
+            # Enviar email real
+            from .email_utils import enviar_reset_password
+            enviado = enviar_reset_password(user, token, request)
+            if enviado:
+                msg = '✅ Te enviamos un enlace a tu correo. Revisa tu bandeja de entrada (y spam).'
+            else:
+                msg = '⚠️ Hubo un error enviando el correo. Intenta de nuevo más tarde.'
         except User.DoesNotExist:
-            msg = 'Si el correo existe, recibirás instrucciones.'
-    return render(request, 'core/recuperar_password.html', {'msg': msg})
+            # Por seguridad, no revelamos si el correo existe o no
+            msg = '✅ Si ese correo está registrado, recibirás instrucciones en breve.'
+    return render(request, 'core/recuperar_password.html', {'msg': msg, 'error': error})
 
 
 def reset_password(request, token):
@@ -185,9 +196,11 @@ def registro_step3(request):
             partes = nombre_completo.split(' ', 1)
             first_name = partes[0] if partes else ''
             last_name = partes[1] if len(partes) > 1 else ''
+            # Crear usuario desactivado hasta que verifique su correo
             user = User.objects.create_user(
                 username=username, email=data['email'], password=data['password'],
                 first_name=first_name, last_name=last_name,
+                is_active=False,   # ← inactivo hasta verificación
             )
             habilidades = request.POST.getlist('habilidades') if rol == 'trabajador' else []
             UserProfile.objects.create(
@@ -196,13 +209,78 @@ def registro_step3(request):
                 empresa=data.get('empresa', ''), habilidades=habilidades,
             )
             AceptacionTerminos.objects.create(usuario=user, aceptado=True)
-            login(request, user)
-            messages.success(request, f'¡Bienvenido a Chambazo, {user.first_name or user.username}! 🎉')
-            return redirect('panel_contratista' if rol == 'contratista' else 'home_trabajador')
+            # Generar y enviar código de 6 dígitos
+            from .email_utils import generar_codigo_6, enviar_codigo_verificacion
+            codigo = generar_codigo_6()
+            EmailVerificationToken.objects.create(user=user, token=codigo)
+            enviar_codigo_verificacion(user, codigo)
+            # Guardar user_id en sesión para la pantalla de verificación
+            request.session['verificacion_user_id'] = user.pk
+            request.session['verificacion_email'] = user.email
+            return redirect('verificar_email')
     else:
         form = RegistroStep3Form(rol=rol)
     return render(request, 'core/registro_step3.html',
                   {'form': form, 'rol': rol, 'skills': SKILL_CHOICES})
+
+
+def verificar_email(request):
+    """Pantalla donde el usuario ingresa el código de 6 dígitos enviado a su correo."""
+    user_id = request.session.get('verificacion_user_id')
+    email = request.session.get('verificacion_email', '')
+    if not user_id:
+        return redirect('registro_step1')
+
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return redirect('registro_step1')
+
+    error = None
+    if request.method == 'POST':
+        accion = request.POST.get('accion', 'verificar')
+
+        if accion == 'reenviar':
+            # Invalida anteriores y genera nuevo código
+            EmailVerificationToken.objects.filter(user=user, usado=False).update(usado=True)
+            from .email_utils import generar_codigo_6, enviar_codigo_verificacion
+            codigo = generar_codigo_6()
+            EmailVerificationToken.objects.create(user=user, token=codigo)
+            enviado = enviar_codigo_verificacion(user, codigo)
+            if enviado:
+                messages.success(request, '✅ Nuevo código enviado. Revisa tu bandeja de entrada.')
+            else:
+                messages.error(request, '⚠️ Error al reenviar. Intenta de nuevo.')
+            return redirect('verificar_email')
+
+        codigo_ingresado = request.POST.get('codigo', '').strip()
+        token_obj = EmailVerificationToken.objects.filter(
+            user=user, token=codigo_ingresado, usado=False
+        ).last()
+
+        if token_obj and token_obj.is_valid():
+            # Marcar token como usado y activar el usuario
+            token_obj.usado = True
+            token_obj.save()
+            user.is_active = True
+            user.save()
+            # Limpiar sesión de verificación
+            request.session.pop('verificacion_user_id', None)
+            request.session.pop('verificacion_email', None)
+            # Enviar correo de bienvenida
+            from .email_utils import enviar_bienvenida
+            enviar_bienvenida(user)
+            # Iniciar sesión
+            login(request, user)
+            messages.success(request, f'¡Bienvenido a Chambazo, {user.first_name or user.username}! 🎉')
+            return redirect('panel_contratista' if user.profile.rol == 'contratista' else 'home_trabajador')
+        elif token_obj and not token_obj.is_valid():
+            error = '⏱️ El código expiró. Solicita uno nuevo.'
+        else:
+            error = '❌ Código incorrecto. Verifica e inténtalo de nuevo.'
+
+    return render(request, 'core/verificar_email.html', {'email': email, 'error': error})
+
 
 
 # ── Buscar empleos (Home Trabajador) ────────────────────────────────────────────

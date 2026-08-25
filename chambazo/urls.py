@@ -24,6 +24,7 @@ urlpatterns = [
     path('registro/', views.registro_step1, name='registro_step1'),
     path('registro/paso2/', views.registro_step2, name='registro_step2'),
     path('registro/paso3/', views.registro_step3, name='registro_step3'),
+    path('registro/verificar-email/', views.verificar_email, name='verificar_email'),
     # Home / trabajador
     path('', views.home, name='home'),
     path('inicio/', views.home_trabajador, name='home_trabajador'),

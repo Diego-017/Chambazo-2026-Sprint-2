@@ -1,4 +1,5 @@
 from pathlib import Path
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-chambazo-sprint2-2026'
 DEBUG = True
@@ -54,29 +55,44 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
-# Sprint 2 — Google Maps (key pública; en prod usar variable de entorno)
+# Sprint 2 — Google Maps
 GOOGLE_MAPS_API_KEY = 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNQ8'
 
-# Ubicaciones reales de El Salvador para demo
+# Ubicaciones reales de El Salvador
 SV_LOCATIONS = [
     {"nombre": "San Salvador Centro", "lat": 13.6929, "lng": -89.2182},
-    {"nombre": "Santa Tecla", "lat": 13.6740, "lng": -89.2797},
-    {"nombre": "Soyapango", "lat": 13.7105, "lng": -89.1520},
-    {"nombre": "San Miguel", "lat": 13.4800, "lng": -88.1800},
-    {"nombre": "Santa Ana", "lat": 13.9933, "lng": -89.5597},
-    {"nombre": "Mejicanos", "lat": 13.7313, "lng": -89.2174},
-    {"nombre": "Apopa", "lat": 13.8060, "lng": -89.1790},
-    {"nombre": "Delgado", "lat": 13.7239, "lng": -89.1680},
-    {"nombre": "Usulután", "lat": 13.3500, "lng": -88.4500},
-    {"nombre": "Zacatecoluca", "lat": 13.5000, "lng": -88.8667},
-    {"nombre": "La Libertad", "lat": 13.4833, "lng": -89.3167},
-    {"nombre": "Cojutepeque", "lat": 13.7167, "lng": -88.9333},
-    {"nombre": "Antiguo Cuscatlán", "lat": 13.6751, "lng": -89.2491},
-    {"nombre": "San Marcos", "lat": 13.6667, "lng": -89.1833},
-    {"nombre": "Ilopango", "lat": 13.7000, "lng": -89.1167},
-    {"nombre": "Sonsonante", "lat": 13.7194, "lng": -89.7244},
-    {"nombre": "Ahuachapán", "lat": 13.9219, "lng": -89.8453},
-    {"nombre": "Chalatenango", "lat": 14.0333, "lng": -88.9333},
-    {"nombre": "San Vicente", "lat": 13.6419, "lng": -88.7836},
-    {"nombre": "La Unión", "lat": 13.3361, "lng": -87.8436},
+    {"nombre": "Santa Tecla",         "lat": 13.6740, "lng": -89.2797},
+    {"nombre": "Soyapango",           "lat": 13.7105, "lng": -89.1520},
+    {"nombre": "San Miguel",          "lat": 13.4800, "lng": -88.1800},
+    {"nombre": "Santa Ana",           "lat": 13.9933, "lng": -89.5597},
+    {"nombre": "Mejicanos",           "lat": 13.7313, "lng": -89.2174},
+    {"nombre": "Apopa",               "lat": 13.8060, "lng": -89.1790},
+    {"nombre": "Delgado",             "lat": 13.7239, "lng": -89.1680},
+    {"nombre": "Usulután",            "lat": 13.3500, "lng": -88.4500},
+    {"nombre": "Zacatecoluca",        "lat": 13.5000, "lng": -88.8667},
+    {"nombre": "La Libertad",         "lat": 13.4833, "lng": -89.3167},
+    {"nombre": "Cojutepeque",         "lat": 13.7167, "lng": -88.9333},
+    {"nombre": "Antiguo Cuscatlán",   "lat": 13.6751, "lng": -89.2491},
+    {"nombre": "San Marcos",          "lat": 13.6667, "lng": -89.1833},
+    {"nombre": "Ilopango",            "lat": 13.7000, "lng": -89.1167},
+    {"nombre": "Sonsonante",          "lat": 13.7194, "lng": -89.7244},
+    {"nombre": "Ahuachapán",          "lat": 13.9219, "lng": -89.8453},
+    {"nombre": "Chalatenango",        "lat": 14.0333, "lng": -88.9333},
+    {"nombre": "San Vicente",         "lat": 13.6419, "lng": -88.7836},
+    {"nombre": "La Unión",            "lat": 13.3361, "lng": -87.8436},
 ]
+
+# ── Correo Gmail (chambazosv@gmail.com) ────────────────────────────────────────
+# IMPORTANTE: Usa una "App Password" de Google, NO tu contraseña normal.
+# Cómo obtenerla:
+#   1. Ve a myaccount.google.com → Seguridad
+#   2. Activa "Verificación en 2 pasos"
+#   3. Busca "Contraseñas de aplicación" → Selecciona "Correo" + "Otro"
+#   4. Google genera 16 caracteres → cópialos aquí abajo (sin espacios)
+EMAIL_BACKEND      = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST         = 'smtp.gmail.com'
+EMAIL_PORT         = 587
+EMAIL_USE_TLS      = True
+EMAIL_HOST_USER    = 'chambazosv@gmail.com'
+EMAIL_HOST_PASSWORD = 'TU_APP_PASSWORD_AQUI'   # <-- Reemplaza con tu App Password
+DEFAULT_FROM_EMAIL = 'Chambazo SV <chambazosv@gmail.com>'

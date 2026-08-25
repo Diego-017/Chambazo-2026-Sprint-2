@@ -512,3 +512,20 @@ class AceptacionTerminos(models.Model):
     version  = models.CharField(max_length=20, default='2026.1')
     aceptado = models.BooleanField(default=False)
     fecha    = models.DateTimeField(auto_now=True)
+
+
+# ── EmailVerificationToken ──────────────────────────────────────────────────────
+class EmailVerificationToken(models.Model):
+    """Token de 6 dígitos para verificar el correo al registrarse."""
+    user      = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_tokens')
+    token     = models.CharField(max_length=6)
+    creado    = models.DateTimeField(auto_now_add=True)
+    usado     = models.BooleanField(default=False)
+
+    def is_valid(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        return not self.usado and (timezone.now() - self.creado) < timedelta(minutes=15)
+
+    def __str__(self):
+        return f"EmailToken({self.user.email} → {self.token})"

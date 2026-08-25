@@ -1,0 +1,234 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Verificar correo — Chambazo{% endblock %}
+
+{% block body %}
+<style>
+  body { background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #065f46 100%); min-height: 100vh; display:flex; align-items:center; justify-content:center; }
+  .verify-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 48px 40px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+    text-align: center;
+    animation: slideUp 0.4s ease;
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform:translateY(30px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .icon-circle {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    border: 3px solid #10b981;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 20px;
+  }
+  .verify-card h1 { font-size:1.6rem; font-weight:900; color:#0f172a; margin:0 0 8px; }
+  .email-badge {
+    display: inline-block;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #065f46;
+    font-size: 0.88rem;
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    word-break: break-all;
+  }
+  .subtitle { color: #64748b; font-size: 0.92rem; line-height: 1.6; margin-bottom: 28px; }
+
+  /* Código OTP */
+  .otp-inputs {
+    display: flex; gap: 10px; justify-content: center; margin-bottom: 24px;
+  }
+  .otp-inputs input {
+    width: 52px; height: 60px;
+    text-align: center;
+    font-size: 1.6rem; font-weight: 800;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    outline: none;
+    color: #0f172a;
+    transition: 0.15s;
+    background: #f8fafc;
+    -moz-appearance: textfield;
+  }
+  .otp-inputs input::-webkit-outer-spin-button,
+  .otp-inputs input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .otp-inputs input:focus { border-color: #10b981; background: #f0fdf4; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+  .otp-inputs input.filled { border-color: #10b981; background: #ecfdf5; }
+
+  .btn-verify {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #064e3b, #047857);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-bottom: 16px;
+    letter-spacing: 0.3px;
+  }
+  .btn-verify:hover { opacity: 0.92; transform: translateY(-1px); }
+  .btn-verify:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .resend-form { margin-top: 8px; }
+  .btn-resend {
+    background: none; border: none;
+    color: #10b981; font-weight: 700;
+    font-size: 0.88rem; cursor: pointer;
+    text-decoration: underline;
+    transition: 0.15s;
+  }
+  .btn-resend:hover { color: #047857; }
+
+  .error-msg {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+  .timer-text { font-size: 0.78rem; color: #94a3b8; margin-top: 8px; }
+</style>
+
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
+  <div class="verify-card">
+
+    <div class="icon-circle">📧</div>
+    <h1>Verifica tu correo</h1>
+    <p class="subtitle">Te enviamos un código de <strong>6 dígitos</strong> a:</p>
+    <div class="email-badge">{{ email }}</div>
+    <p class="subtitle" style="margin-bottom:20px;">Ingresa el código aquí abajo para activar tu cuenta.</p>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div style="background:{% if message.tags == 'error' %}#fef2f2;border-color:#fecaca;color:#dc2626{% else %}#f0fdf4;border-color:#bbf7d0;color:#065f46{% endif %};
+                    border:1px solid;border-radius:10px;padding:12px 16px;font-size:0.88rem;font-weight:600;margin-bottom:16px;text-align:left;">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if error %}
+      <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" id="verifyForm">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="verificar">
+      <!-- Input hidden que recibe el código combinado -->
+      <input type="hidden" name="codigo" id="codigoHidden">
+
+      <div class="otp-inputs" id="otpInputs">
+        <input type="number" class="otp-digit" maxlength="1" min="0" max="9" autocomplete="off" inputmode="numeric">
+        <input type="number" class="otp-digit" maxlength="1" min="0" max="9" autocomplete="off" inputmode="numeric">
+        <input type="number" class="otp-digit" maxlength="1" min="0" max="9" autocomplete="off" inputmode="numeric">
+        <input type="number" class="otp-digit" maxlength="1" min="0" max="9" autocomplete="off" inputmode="numeric">
+        <input type="number" class="otp-digit" maxlength="1" min="0" max="9" autocomplete="off" inputmode="numeric">
+        <input type="number" class="otp-digit" maxlength="1" min="0" max="9" autocomplete="off" inputmode="numeric">
+      </div>
+
+      <button type="submit" class="btn-verify" id="btnVerify" disabled>
+        ✅ Verificar Cuenta
+      </button>
+    </form>
+
+    <div class="resend-form">
+      <p class="timer-text" id="timerText">¿No llegó el código? Espera <span id="countdown">60</span> segundos...</p>
+      <form method="post" id="resendForm" style="display:none;">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="reenviar">
+        <button type="submit" class="btn-resend">↺ Reenviar código</button>
+      </form>
+    </div>
+
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f1f5f9;">
+      <a href="{% url 'registro_step1' %}" style="color:#94a3b8;font-size:0.82rem;text-decoration:none;">← Volver al registro</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── OTP input behavior ──────────────────────────────────────────
+  const digits = document.querySelectorAll('.otp-digit');
+  const codigoHidden = document.getElementById('codigoHidden');
+  const btnVerify = document.getElementById('btnVerify');
+
+  digits.forEach((input, index) => {
+    input.addEventListener('input', (e) => {
+      // Solo tomar el último dígito ingresado
+      const val = e.target.value.toString().slice(-1);
+      e.target.value = val;
+      if (val) {
+        e.target.classList.add('filled');
+        if (index < digits.length - 1) digits[index + 1].focus();
+      } else {
+        e.target.classList.remove('filled');
+      }
+      checkComplete();
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && index > 0) {
+        digits[index - 1].focus();
+        digits[index - 1].value = '';
+        digits[index - 1].classList.remove('filled');
+        checkComplete();
+      }
+    });
+
+    // Pegar código completo
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'');
+      text.split('').slice(0, 6).forEach((ch, i) => {
+        if (digits[i]) {
+          digits[i].value = ch;
+          digits[i].classList.add('filled');
+        }
+      });
+      checkComplete();
+    });
+  });
+
+  function checkComplete() {
+    const codigo = Array.from(digits).map(d => d.value).join('');
+    codigoHidden.value = codigo;
+    btnVerify.disabled = codigo.length < 6;
+  }
+
+  // Autofocus al primer campo
+  digits[0].focus();
+
+  // ── Countdown reenvío ───────────────────────────────────────────
+  let seconds = 60;
+  const countdownEl = document.getElementById('countdown');
+  const timerText = document.getElementById('timerText');
+  const resendForm = document.getElementById('resendForm');
+
+  const interval = setInterval(() => {
+    seconds--;
+    countdownEl.textContent = seconds;
+    if (seconds <= 0) {
+      clearInterval(interval);
+      timerText.style.display = 'none';
+      resendForm.style.display = 'block';
+    }
+  }, 1000);
+</script>
+{% endblock %}
