@@ -311,8 +311,7 @@
       document.getElementById('lngInputChat').value = lng;
       document.getElementById('ubicacionNombreInputChat').value = 'Ubicación actual';
       
-      document.getElementById('attachmentIndicator').style.display = 'block';
-      document.getElementById('attachmentText').innerText = `📍 Ubicación GPS lista. Haz clic en Enviar.`;
+      document.getElementById('chatForm').submit();
     }, function(err) {
       alert("No se pudo obtener la ubicación: " + err.message);
     });
