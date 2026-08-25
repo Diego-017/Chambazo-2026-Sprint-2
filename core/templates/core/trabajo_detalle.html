@@ -1,11 +1,7 @@
 {% extends 'core/base.html' %}
 {% block title %}{{ trabajo.titulo }}{% endblock %}
 {% block extra_head %}
-<!-- Google Maps & Leaflet Fallback -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>function initMap(){window._mapReady=true;}</script>
-<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_KEY }}&callback=initMap" async defer></script>
+<!-- Leaflet ya se carga en base.html, pero si se necesitara CSS adicional iría aquí -->
 {% endblock %}
 
 {% block body %}
@@ -107,8 +103,8 @@
     <div class="card mb-16"><div class="card-body">
       <div class="flex-bc mb-10">
         <h3 class="t-h3"><i class="bi bi-geo-alt-fill t-green"></i> Ubicación exacta del trabajo</h3>
-        <a href="https://www.google.com/maps/dir/?api=1&destination={{ trabajo.lat }},{{ trabajo.lng }}" target="_blank" class="btn btn-outline btn-xs" style="color:var(--green);font-weight:700;">
-          <i class="bi bi-cursor-fill"></i> Cómo llegar en Google Maps
+        <a href="https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=;{{ trabajo.lat }},{{ trabajo.lng }}" target="_blank" class="btn btn-outline btn-xs" style="color:var(--green);font-weight:700;">
+          <i class="bi bi-cursor-fill"></i> Ver ruta en mapa
         </a>
       </div>
       <div class="map-wrap" style="border-radius:12px;overflow:hidden;border:1px solid #cbd5e1;">
@@ -125,37 +121,6 @@
       const mapDiv = document.getElementById('mapaDetalle');
       if (!mapDiv) return;
 
-      if (window.google && window.google.maps) {
-        try {
-          const map = new google.maps.Map(mapDiv, {
-            center: pos,
-            zoom: 14,
-            disableDefaultUI: false,
-            zoomControl: true
-          });
-          new google.maps.Marker({
-            position: pos,
-            map: map,
-            title: "{{ trabajo.titulo }}",
-            animation: google.maps.Animation.DROP
-          });
-          new google.maps.Circle({
-            strokeColor: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}',
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            fillColor: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}',
-            fillOpacity: 0.15,
-            map: map,
-            center: pos,
-            radius: 500
-          });
-          return;
-        } catch(err) {
-          console.warn("Google Maps error, fallback to Leaflet:", err);
-        }
-      }
-
-      // Fallback con Leaflet
       const map = L.map('mapaDetalle').setView([pos.lat, pos.lng], 14);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
       L.marker([pos.lat, pos.lng]).addTo(map).bindPopup("<strong>{{ trabajo.titulo }}</strong><br>{{ trabajo.ubicacion }}").openPopup();
