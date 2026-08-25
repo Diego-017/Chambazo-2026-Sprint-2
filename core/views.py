@@ -77,7 +77,7 @@ def home(request):
             return redirect('panel_contratista' if rol == 'contratista' else 'home_trabajador')
         except UserProfile.DoesNotExist:
             pass
-    return redirect('login')
+    return render(request, 'core/landing.html')
 
 
 def login_view(request):
@@ -321,18 +321,41 @@ def aplicar_trabajo(request, pk):
     if request.method == 'POST':
         mensaje = request.POST.get('mensaje', '')
         tarifa = request.POST.get('tarifa_propuesta') or None
-        Solicitud.objects.create(
+        solicitud = Solicitud.objects.create(
             trabajo=trabajo, trabajador=request.user, mensaje=mensaje,
             tarifa_propuesta=Decimal(tarifa) if tarifa else None,
+            pagado=False, total_a_pagar=Decimal('1.50')
         )
-        crear_notif(trabajo.contratista, 'solicitud', f'Nueva solicitud — {trabajo.titulo}',
-                    f'{request.user.get_full_name() or request.user.username} aplicó a tu vacante.',
-                    f'/contratista/trabajo/{trabajo.pk}/candidatos/')
-        return redirect('solicitud_enviada', pk=trabajo.pk)
+        return redirect('pagar_solicitud', pk=solicitud.pk)
 
     ctx = ctx_base(request)
     ctx.update({'trabajo': trabajo, 'match_score': match_score, 'active': 'buscar'})
     return render(request, 'core/aplicar_trabajo.html', ctx)
+
+@login_required
+def pagar_solicitud(request, pk):
+    solicitud = get_object_or_404(Solicitud, pk=pk, trabajador=request.user)
+    if solicitud.pagado:
+        return redirect('solicitud_enviada', pk=solicitud.trabajo.pk)
+
+    if request.method == 'POST':
+        form = PagoTarjetaForm(request.POST)
+        if form.is_valid():
+            # Simular pago
+            import uuid
+            solicitud.pagado = True
+            solicitud.metodo_pago_id = str(uuid.uuid4()).split('-')[0].upper()
+            solicitud.save()
+            crear_notif(solicitud.trabajo.contratista, 'solicitud', f'Nueva solicitud — {solicitud.trabajo.titulo}',
+                        f'{request.user.get_full_name() or request.user.username} aplicó a tu vacante.',
+                        f'/contratista/trabajo/{solicitud.trabajo.pk}/candidatos/')
+            return redirect('solicitud_enviada', pk=solicitud.trabajo.pk)
+    else:
+        form = PagoTarjetaForm()
+    
+    ctx = ctx_base(request)
+    ctx.update({'solicitud': solicitud, 'form': form, 'active': 'buscar'})
+    return render(request, 'core/pagar_solicitud.html', ctx)
 
 
 @login_required
@@ -349,11 +372,8 @@ def aplicar_rapido(request, pk):
     if Solicitud.objects.filter(trabajo=trabajo, trabajador=request.user).exists():
         messages.warning(request, 'Ya aplicaste a este trabajo.')
         return redirect('trabajo_detalle', pk=pk)
-    Solicitud.objects.create(trabajo=trabajo, trabajador=request.user, rapida=True)
-    crear_notif(trabajo.contratista, 'solicitud', f'Solicitud rápida — {trabajo.titulo}',
-                f'{request.user.get_full_name() or request.user.username} aplicó rápidamente.',
-                f'/contratista/trabajo/{trabajo.pk}/candidatos/')
-    return redirect('solicitud_enviada', pk=trabajo.pk)
+    solicitud = Solicitud.objects.create(trabajo=trabajo, trabajador=request.user, rapida=True, pagado=False, total_a_pagar=Decimal('1.50'))
+    return redirect('pagar_solicitud', pk=solicitud.pk)
 
 
 # ── Mis solicitudes (tabla) ─────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 {% extends 'core/base.html' %}
-{% block title %}Mensajes · Chambazo Pro{% endblock %}
+{% block title %}Mensajes · Chambazo{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -14,7 +14,7 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.08);
   }
   .bubble-me-wa {
-    background: #fef08a;
+    background: #dcf8c6;
     color: #111827;
     margin-left: auto;
     border-top-right-radius: 2px;
@@ -42,9 +42,13 @@
 {% endblock %}
 
 {% block body %}
-{% include 'core/_sidebar_contratista.html' %}
+{% if request.user.profile.rol == 'contratista' %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
 
-<div class="page-hd"><div><h1>💬 Mensajes & Chat Directo</h1><p>Comunicación en tiempo real con candidatos y trabajadores</p></div></div>
+<div class="page-hd"><div><h1>💬 Mensajes & Chat Directo</h1><p>Comunicación en tiempo real con confirmación de lectura</p></div></div>
 
 <div class="msg-shell" style="height: calc(100vh - 180px); min-height: 520px; display: flex; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
   <!-- Lista de conversaciones -->
@@ -73,14 +77,14 @@
           <div class="conv-preview" style="font-size: 0.8rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.ultimo_msg }}</div>
         </div>
         {% if c.no_leidos > 0 %}
-          <span class="sidebar-badge" style="background: #F2B90D; color: #000; border-radius: 12px; padding: 2px 7px; font-size: 0.75rem; font-weight: 700;">{{ c.no_leidos }}</span>
+          <span class="sidebar-badge" style="background: #1FA35A; color: #fff; border-radius: 12px; padding: 2px 7px; font-size: 0.75rem; font-weight: 700;">{{ c.no_leidos }}</span>
         {% endif %}
       </a>
       {% empty %}
       <div class="empty-state" style="padding: 40px 16px; text-align: center;">
         <div class="empty-icon" style="font-size: 2.5rem; margin-bottom: 8px;">💬</div>
         <div class="empty-title" style="font-weight: 700; font-size: 0.95rem; color: #334155;">Sin conversaciones</div>
-        <div class="empty-sub" style="font-size: 0.8rem; color: #94a3b8;">Aparecen cuando recibes postulaciones a tus vacantes.</div>
+        <div class="empty-sub" style="font-size: 0.8rem; color: #94a3b8;">Se activan cuando postulas o aceptas una oferta.</div>
       </div>
       {% endfor %}
     </div>
@@ -102,14 +106,14 @@
         </div>
         <div>
           <div class="fw-700 t-sm" style="color: #0f172a;">{{ otro_user.profile.nombre_display }}</div>
-          <div class="t-xxs t-muted" style="color: #b45309; font-weight: 600;">
+          <div class="t-xxs t-muted" style="color: #1FA35A; font-weight: 600;">
             <i class="bi bi-briefcase"></i> {{ sol_activa.trabajo.titulo }} ({{ sol_activa.get_estado_display }})
           </div>
         </div>
       </div>
       <div style="display: flex; gap: 8px;">
-        <a href="{% url 'candidatos' sol_activa.trabajo.pk %}" class="btn btn-outline btn-xs" style="background:#fff;border-radius:8px;font-weight:600;">
-          <i class="bi bi-people"></i> Candidatos
+        <a href="{% url 'trabajo_detalle' sol_activa.trabajo.pk %}" class="btn btn-outline btn-xs" style="background:#fff;border-radius:8px;font-weight:600;">
+          <i class="bi bi-eye"></i> Ver oferta
         </a>
         <a href="{% url 'comprobante_contrato' sol_activa.pk %}" class="btn btn-outline btn-xs" style="background:#fff;border-radius:8px;font-weight:600;color:#10b981;">
           <i class="bi bi-file-text"></i> Contrato
@@ -185,7 +189,7 @@
       <div class="empty-state" style="margin: auto; text-align: center; background: rgba(255,255,255,0.8); padding: 24px; border-radius: 12px; border: 1px dashed #cbd5e1;">
         <div class="empty-icon" style="font-size: 2.2rem; margin-bottom: 6px;">💬</div>
         <div class="empty-title" style="font-weight: 700; color: #334155;">Inicia la conversación directa</div>
-        <div class="empty-sub" style="font-size: 0.8rem; color: #64748b;">Coordina detalles, envía fotos o comparte tu ubicación.</div>
+        <div class="empty-sub" style="font-size: 0.8rem; color: #64748b;">Coordina detalles, envía fotos de avance o comparte tu ubicación.</div>
       </div>
       {% endfor %}
     </div>
@@ -228,7 +232,7 @@
       </button>
 
       <!-- Botón de Nota de Voz / Audio -->
-      <button type="button" onclick="document.getElementById('audioInput').click()" title="Subir nota de voz / audio" style="background: none; border: none; font-size: 1.2rem; color: #3b82f6; cursor: pointer; padding: 4px;">
+      <button type="button" id="btnRecordAudio" title="Mantener presionado para grabar audio" style="background: none; border: none; font-size: 1.2rem; color: #3b82f6; cursor: pointer; padding: 4px; touch-action: none; transition: all 0.2s;">
         <i class="bi bi-mic-fill"></i>
       </button>
 
@@ -236,7 +240,7 @@
       <input type="text" name="texto" id="chatTextInput" class="chat-input" placeholder="Escribe un mensaje..." autocomplete="off" style="flex: 1; padding: 10px 16px; border-radius: 24px; border: 1px solid #cbd5e1; outline: none; background: #fff; font-size: 0.9rem;">
 
       <!-- Botón de Enviar -->
-      <button type="submit" class="btn btn-y btn-icon-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #F2B90D; color: #000; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(242,185,13,0.3);">
+      <button type="submit" class="btn btn-g btn-icon-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #1FA35A; color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(31,163,90,0.3);">
         <i class="bi bi-send-fill"></i>
       </button>
     </form>
@@ -251,7 +255,7 @@
     <div class="empty-state" style="margin: auto; text-align: center;">
       <div class="empty-icon" style="font-size: 3rem; margin-bottom: 8px;">💬</div>
       <div class="empty-title" style="font-size: 1.2rem; font-weight: 700; color: #334155;">Selecciona una conversación</div>
-      <div class="empty-sub" style="font-size: 0.9rem; color: #94a3b8;">Elige un candidato para coordinar el trabajo.</div>
+      <div class="empty-sub" style="font-size: 0.9rem; color: #94a3b8;">Elige un contacto del menú izquierdo para chatear.</div>
     </div>
     {% endif %}
   </div>
@@ -305,14 +309,71 @@
       const lng = pos.coords.longitude;
       document.getElementById('latInputChat').value = lat;
       document.getElementById('lngInputChat').value = lng;
-      document.getElementById('ubicacionNombreInputChat').value = 'Mi ubicación actual en El Salvador';
+      document.getElementById('ubicacionNombreInputChat').value = 'Ubicación actual';
       
       document.getElementById('attachmentIndicator').style.display = 'block';
-      document.getElementById('attachmentText').innerText = `📍 Ubicación GPS lista: Lat ${lat.toFixed(4)}, Lng ${lng.toFixed(4)}`;
-      document.getElementById('chatTextInput').placeholder = 'Presiona Enviar para compartir tu ubicación...';
+      document.getElementById('attachmentText').innerText = `📍 Ubicación GPS lista. Haz clic en Enviar.`;
     }, function(err) {
       alert("No se pudo obtener la ubicación: " + err.message);
     });
   }
+
+  // Audio Recording (WhatsApp style)
+  let mediaRecorder;
+  let audioChunks = [];
+  let isRecording = false;
+  let recordingInterval;
+  let startTime;
+
+  const btnRecord = document.getElementById('btnRecordAudio');
+  const chatForm = document.getElementById('chatForm');
+  const txtInput = document.getElementById('chatTextInput');
+
+  btnRecord?.addEventListener('pointerdown', async (e) => {
+    e.preventDefault();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Grabación de audio no soportada en este navegador.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const file = new File([audioBlob], 'audio_record.webm', { type: 'audio/webm', lastModified: new Date().getTime() });
+        const container = new DataTransfer();
+        container.items.add(file);
+        document.getElementById('audioInput').files = container.files;
+        chatForm.submit(); // Send immediately like WhatsApp
+      };
+      
+      mediaRecorder.start();
+      isRecording = true;
+      btnRecord.style.color = '#ef4444'; // turn red
+      btnRecord.style.transform = 'scale(1.2)';
+      txtInput.placeholder = '🎙️ Grabando... (suelta para enviar)';
+      txtInput.disabled = true;
+      
+    } catch (err) {
+      console.error("No se pudo acceder al micrófono:", err);
+    }
+  });
+
+  const stopRecording = (e) => {
+    if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      isRecording = false;
+      btnRecord.style.color = '#3b82f6';
+      btnRecord.style.transform = 'scale(1)';
+      txtInput.placeholder = 'Escribe un mensaje...';
+      txtInput.disabled = false;
+    }
+  };
+
+  btnRecord?.addEventListener('pointerup', stopRecording);
+  btnRecord?.addEventListener('pointerleave', stopRecording);
 </script>
 {% endblock %}

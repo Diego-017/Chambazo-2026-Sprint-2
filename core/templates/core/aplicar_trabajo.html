@@ -21,6 +21,38 @@
     {% endif %}
   </div></div>
 
+  <!-- Mapa Preview -->
+  {% if trabajo.lat and trabajo.lng %}
+  <div class="card mb-16"><div class="card-body" style="padding:0;overflow:hidden;border-radius:16px;">
+    <div id="mapaAplicar" style="height:250px;width:100%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;">
+      <i class="bi bi-geo-alt" style="font-size:2rem;color:#94a3b8;"></i>
+    </div>
+    <div style="padding:12px;background:#f8fafc;font-size:0.85rem;color:#64748b;display:flex;justify-content:space-between;align-items:center;">
+      <span><i class="bi bi-geo-alt-fill t-green"></i> {{ trabajo.ubicacion }}</span>
+      <a href="https://www.google.com/maps/search/?api=1&query={{ trabajo.lat }},{{ trabajo.lng }}" target="_blank" style="color:var(--blue);text-decoration:none;font-weight:700;"><i class="bi bi-box-arrow-up-right"></i> Ver en Maps</a>
+    </div>
+    <!-- Script de Mapa Compartido -->
+    <script>
+    function initAplicarMap() {
+      const pos = { lat: parseFloat("{{ trabajo.lat|escapejs }}"), lng: parseFloat("{{ trabajo.lng|escapejs }}") };
+      if(window.google && window.google.maps) {
+        try {
+          const map = new google.maps.Map(document.getElementById('mapaAplicar'), { zoom: 14, center: pos, disableDefaultUI: true });
+          new google.maps.Marker({ position: pos, map: map, icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' });
+          new google.maps.Circle({ map: map, center: pos, radius: 500, strokeColor: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}', strokeOpacity: 0.8, fillOpacity: 0.2, fillColor: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}' });
+          return;
+        } catch(e) {}
+      }
+      const map = L.map('mapaAplicar').setView([pos.lat, pos.lng], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      L.marker([pos.lat, pos.lng]).addTo(map);
+      L.circle([pos.lat, pos.lng], { radius: 500, color: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}' }).addTo(map);
+    }
+    window.addEventListener('DOMContentLoaded', () => setTimeout(initAplicarMap, 500));
+    </script>
+  </div></div>
+  {% endif %}
+
   <div class="card"><div class="card-body">
     <form method="post">
       {% csrf_token %}

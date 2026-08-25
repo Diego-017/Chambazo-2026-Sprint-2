@@ -97,6 +97,9 @@ class UserProfile(models.Model):
         ('tecnico', 'Técnico Vocacional'),
         ('universitario', 'Universitario / Superior')
     ], default='media')
+    idiomas = models.CharField(max_length=150, blank=True, help_text='Ej: Inglés (Básico), Español (Nativo)')
+    referencias_personales = models.TextField(blank=True, help_text='Nombres y teléfonos de referencias')
+    expectativa_salarial = models.CharField(max_length=50, blank=True, help_text='Ej: $400 - $600 mensual')
 
     # Nuevos campos para Contratista / Empresa
     nit_nrc     = models.CharField(max_length=30, blank=True, help_text='NIT o NRC fiscal')
@@ -105,6 +108,19 @@ class UserProfile(models.Model):
     redes_sociales = models.CharField(max_length=255, blank=True, help_text='LinkedIn / Instagram / Facebook')
     contacto_cargo = models.CharField(max_length=100, blank=True, help_text='Cargo o departamento de contacto')
     anos_operacion = models.PositiveIntegerField(default=0, help_text='Años de operar en el mercado')
+    cantidad_empleados = models.CharField(max_length=50, blank=True, choices=[
+        ('1-10', '1 a 10 empleados'),
+        ('11-50', '11 a 50 empleados'),
+        ('51-200', '51 a 200 empleados'),
+        ('200+', 'Más de 200 empleados')
+    ], default='1-10')
+    tipo_empresa = models.CharField(max_length=50, blank=True, choices=[
+        ('privada', 'Empresa Privada'),
+        ('publica', 'Institución Pública'),
+        ('ong', 'ONG / Sin fines de lucro'),
+        ('independiente', 'Profesional Independiente')
+    ], default='privada')
+    registro_fiscal = models.FileField(upload_to='documentos_fiscales/', blank=True, null=True, help_text='Sube una copia del registro de la empresa')
 
     def __str__(self):
         return f"{self.user.get_full_name()} ({self.rol})"
@@ -291,6 +307,9 @@ class Solicitud(models.Model):
     mensaje   = models.TextField(blank=True)
     rapida    = models.BooleanField(default=False)
     tarifa_propuesta = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    pagado = models.BooleanField(default=False)
+    total_a_pagar = models.DecimalField(max_digits=10, decimal_places=2, default=1.50)
+    metodo_pago_id = models.CharField(max_length=100, blank=True)
     creado    = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 

@@ -30,6 +30,7 @@ urlpatterns = [
     path('trabajo/<int:pk>/', views.trabajo_detalle, name='trabajo_detalle'),
     path('trabajo/<int:pk>/aplicar/', views.aplicar_trabajo, name='aplicar_trabajo'),
     path('trabajo/<int:pk>/aplicar-rapido/', views.aplicar_rapido, name='aplicar_rapido'),
+    path('solicitud/<int:pk>/pagar/', views.pagar_solicitud, name='pagar_solicitud'),
     path('trabajo/<int:pk>/enviada/', views.solicitud_enviada, name='solicitud_enviada'),
     path('trabajo/<int:pk>/guardar/', views.toggle_guardado, name='toggle_guardado'),
     path('trabajos/urgentes/', views.trabajos_urgentes, name='trabajos_urgentes'),

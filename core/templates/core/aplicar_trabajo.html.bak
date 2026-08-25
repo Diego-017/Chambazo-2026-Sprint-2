@@ -1,0 +1,44 @@
+{% extends 'core/base.html' %}
+{% block title %}Aplicar — {{ trabajo.titulo }}{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_trabajador.html' %}
+
+<div class="page-hd"><div><h1>Postularme</h1><p>{{ trabajo.titulo }}</p></div>
+  <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div style="max-width:560px;">
+  <div class="card mb-16"><div class="card-body">
+    <div class="flex-bc mb-12">
+      <div><div class="fw-800 t-h2">{{ trabajo.titulo }}</div><div class="t-sm t-muted">{{ trabajo.contratista.profile.nombre_display }}</div></div>
+      <div class="job-row-price">${{ trabajo.presupuesto }}</div>
+    </div>
+    {% if match_score > 0 %}
+    <div style="background:var(--green-light);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:10px;">
+      <i class="bi bi-bullseye t-green" style="font-size:18px;"></i>
+      <div><div class="fw-700 t-green t-sm">{{ match_score }}% de compatibilidad</div><div class="t-xxs t-mid">Tu perfil encaja con este trabajo</div></div>
+    </div>
+    {% endif %}
+  </div></div>
+
+  <div class="card"><div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Propone tu tarifa (opcional)</label>
+        <div class="input-icon-wrap">
+          <i class="bi bi-currency-dollar"></i>
+          <input type="number" name="tarifa_propuesta" step="0.01" class="form-control" placeholder="{{ trabajo.presupuesto }}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mensaje al empleador (opcional)</label>
+        <textarea name="mensaje" class="form-control" rows="5" placeholder="Cuéntale por qué eres el candidato ideal..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-g btn-full btn-lg"><i class="bi bi-send"></i> Enviar solicitud</button>
+    </form>
+  </div></div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

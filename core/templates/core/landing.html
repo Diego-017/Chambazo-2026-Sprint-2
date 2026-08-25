@@ -1,0 +1,222 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Chambazo - Chamba que impulsa tu futuro{% endblock %}
+
+{% block header %}
+<header style="padding:16px 32px;display:flex;justify-content:space-between;align-items:center;background:#fff;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:50;">
+  <div style="font-size:1.8rem;font-weight:900;color:var(--green-dark);display:flex;align-items:center;gap:8px;">
+    <i class="bi bi-wrench-adjustable-circle-fill"></i> Chambazo
+  </div>
+  <nav style="display:flex;gap:24px;font-weight:600;color:#334155;align-items:center;">
+    <a href="#" style="color:var(--green);text-decoration:none;">Inicio</a>
+    <a href="{% url 'login' %}" style="text-decoration:none;color:inherit;">Buscar chambas</a>
+    <a href="#como-funciona" style="text-decoration:none;color:inherit;">Cómo funciona</a>
+    <a href="#consejos" style="text-decoration:none;color:inherit;">Consejos</a>
+    <div style="width:1px;height:24px;background:#cbd5e1;margin:0 8px;"></div>
+    <a href="{% url 'login' %}" class="btn btn-outline">Iniciar sesión</a>
+    <a href="{% url 'registro_step1' %}" class="btn btn-g">Registrarse</a>
+  </nav>
+</header>
+{% endblock %}
+
+{% block body %}
+<style>
+  body { background: #f8fafc; margin: 0; padding: 0; }
+  .hero-section {
+    position: relative;
+    width: 100%;
+    min-height: 500px;
+    background-image: url('{% static "img/hero_chambazo.png" %}');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    padding: 60px 5%;
+  }
+  .hero-content {
+    background: rgba(255,255,255,0.92);
+    padding: 40px;
+    border-radius: 20px;
+    max-width: 550px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+  }
+  .hero-title { font-size: 3.2rem; font-weight: 900; color: #064e3b; line-height: 1.1; margin-bottom: 20px; letter-spacing: -1px; }
+  .hero-subtitle { font-size: 1.1rem; color: #334155; line-height: 1.6; margin-bottom: 30px; }
+  .search-box {
+    display: flex; background: #fff; padding: 10px; border-radius: 12px;
+    border: 1px solid #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.05); gap: 10px;
+  }
+  .search-input { border: none; padding: 10px; flex: 1; outline: none; font-size: 0.95rem; }
+  .features-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+    background: #fff; padding: 30px 5%; border-bottom: 1px solid #e2e8f0;
+  }
+  .feature-item { text-align: center; color: #334155; }
+  .feature-item i { font-size: 2rem; color: var(--green); margin-bottom: 10px; display: block; }
+  
+  .content-section { padding: 60px 5%; max-width: 1280px; margin: 0 auto; }
+  .section-title { font-size: 2rem; font-weight: 800; color: #0f172a; margin-bottom: 30px; }
+  
+  .cats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
+  .cat-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; text-align:center; transition:all 0.2s; text-decoration:none; color:inherit; }
+  .cat-card:hover { transform:translateY(-5px); box-shadow:0 10px 20px rgba(0,0,0,0.05); border-color:var(--green); }
+  .cat-card i { font-size:2.5rem; color:var(--green); margin-bottom:12px; display:block; }
+  
+  .jobs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+  
+  .steps-container { display:flex; gap:30px; margin-top:40px; }
+  .step-box { flex:1; background:#fff; padding:30px; border-radius:16px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #f1f5f9; }
+  .step-num { width:50px; height:50px; background:var(--green-light); color:var(--green-dark); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; margin:0 auto 20px auto; }
+  
+  .footer { background: #0f172a; color: #94a3b8; padding: 60px 5% 30px 5%; margin-top: 60px; }
+</style>
+
+<!-- HERO SECTION -->
+<div class="hero-section">
+  <div class="hero-content">
+    <h1 class="hero-title">Chamba que impulsa tu futuro.</h1>
+    <p class="hero-subtitle">
+      Encuentra oportunidades de trabajo confiables en El Salvador.<br>
+      Busca y postula a chambas en tu comunidad de manera fácil y rápida.
+    </p>
+    <form class="search-box" action="{% url 'login' %}">
+      <div style="flex:1;display:flex;align-items:center;border-right:1px solid #e2e8f0;padding-right:10px;">
+        <i class="bi bi-search text-muted ml-2"></i>
+        <input type="text" class="search-input" placeholder="Habilidad (ej. Electricidad)">
+      </div>
+      <div style="flex:1;display:flex;align-items:center;">
+        <i class="bi bi-geo-alt text-muted ml-2"></i>
+        <input type="text" class="search-input" placeholder="Ubicación (ej. San Salvador)">
+      </div>
+      <button type="submit" class="btn btn-g" style="padding:0 24px;font-size:1.05rem;">Buscar chamba</button>
+    </form>
+  </div>
+</div>
+
+<!-- FEATURES BAR -->
+<div class="features-bar">
+  <div class="feature-item"><i class="bi bi-lightning-charge-fill text-yellow-500"></i><div class="fw-700">Fácil y rápido</div><div class="t-sm">Encuentra y postula en minutos</div></div>
+  <div class="feature-item"><i class="bi bi-shield-check" style="color:#0ea5e9;"></i><div class="fw-700">Confiable</div><div class="t-sm">Perfiles verificados y pago seguro</div></div>
+  <div class="feature-item"><i class="bi bi-bell-fill text-red-500"></i><div class="fw-700">Notificaciones</div><div class="t-sm">Alertas de nuevas chambas al instante</div></div>
+  <div class="feature-item"><i class="bi bi-people-fill text-purple-500"></i><div class="fw-700">Para todos</div><div class="t-sm">Trabajadores y profesionales unidos</div></div>
+</div>
+
+<div class="content-section">
+  <h2 class="section-title">Explora por categorías</h2>
+  <div class="cats-grid">
+    <a href="{% url 'login' %}" class="cat-card"><i class="bi bi-grid-fill" style="color:#64748b;"></i><div class="fw-700">Todas</div></a>
+    <a href="{% url 'login' %}" class="cat-card"><i class="bi bi-lightning-fill text-yellow-500"></i><div class="fw-700">Electricidad</div></a>
+    <a href="{% url 'login' %}" class="cat-card"><i class="bi bi-droplet-fill text-blue-500"></i><div class="fw-700">Plomería</div></a>
+    <a href="{% url 'login' %}" class="cat-card"><i class="bi bi-hammer text-orange-600"></i><div class="fw-700">Carpintería</div></a>
+    <a href="{% url 'login' %}" class="cat-card"><i class="bi bi-paint-bucket text-red-400"></i><div class="fw-700">Pintura</div></a>
+    <a href="{% url 'login' %}" class="cat-card"><i class="bi bi-stars text-cyan-500"></i><div class="fw-700">Limpieza</div></a>
+    <a href="{% url 'login' %}" class="cat-card"><i class="bi bi-tree-fill text-green-600"></i><div class="fw-700">Jardinería</div></a>
+  </div>
+</div>
+
+<div class="content-section" style="background:#f1f5f9;border-radius:24px;padding:60px 40px;margin-top:20px;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:30px;">
+    <h2 class="section-title" style="margin:0;">Chambas destacadas</h2>
+    <a href="{% url 'login' %}" class="btn btn-outline" style="border-radius:20px;">Ver más chambas</a>
+  </div>
+  
+  <div class="jobs-grid">
+    <!-- Mockup Card 1 -->
+    <div class="card p-16" style="border-radius:16px;">
+      <div class="flex-bc mb-12">
+        <span class="badge" style="background:#fef2f2;color:#dc2626;font-weight:800;">Urgente</span>
+        <span class="t-xs fw-700" style="color:#1FA35A;"><i class="bi bi-bullseye"></i> 95% Compatibilidad</span>
+      </div>
+      <div class="fw-800 t-h4 mb-4">Electricista para cortocircuito</div>
+      <div class="t-sm text-muted mb-12">Construcciones S.A.</div>
+      <div class="t-xs flex-c gap-4 mb-16"><i class="bi bi-geo-alt-fill text-red-500"></i> San Salvador, El Salvador</div>
+      <a href="{% url 'login' %}" class="btn btn-g btn-full" style="justify-content:center;">Ver detalles</a>
+    </div>
+    <!-- Mockup Card 2 -->
+    <div class="card p-16" style="border-radius:16px;">
+      <div class="flex-bc mb-12">
+        <span class="badge bg-green text-white" style="font-weight:800;">Destacado</span>
+        <span class="t-xs fw-700" style="color:#1FA35A;"><i class="bi bi-bullseye"></i> 88% Compatibilidad</span>
+      </div>
+      <div class="fw-800 t-h4 mb-4">Reparación de tuberías</div>
+      <div class="t-sm text-muted mb-12">Residencial Los Sueños</div>
+      <div class="t-xs flex-c gap-4 mb-16"><i class="bi bi-geo-alt-fill text-red-500"></i> Santa Tecla, La Libertad</div>
+      <a href="{% url 'login' %}" class="btn btn-g btn-full" style="justify-content:center;">Ver detalles</a>
+    </div>
+    <!-- Mockup Card 3 -->
+    <div class="card p-16" style="border-radius:16px;">
+      <div class="flex-bc mb-12">
+        <span class="badge" style="background:#fef2f2;color:#dc2626;font-weight:800;">Urgente</span>
+      </div>
+      <div class="fw-800 t-h4 mb-4">Mantenimiento de Jardín Grande</div>
+      <div class="t-sm text-muted mb-12">Condominios Las Palmas</div>
+      <div class="t-xs flex-c gap-4 mb-16"><i class="bi bi-geo-alt-fill text-red-500"></i> Antiguo Cuscatlán</div>
+      <a href="{% url 'login' %}" class="btn btn-g btn-full" style="justify-content:center;">Ver detalles</a>
+    </div>
+  </div>
+</div>
+
+<div class="content-section" id="como-funciona">
+  <div style="text-align:center;margin-bottom:40px;">
+    <h2 class="section-title">¿Cómo funciona Chambazo?</h2>
+    <p class="text-muted" style="font-size:1.1rem;">Conectamos el talento salvadoreño de forma rápida y segura.</p>
+  </div>
+  <div class="steps-container">
+    <div class="step-box">
+      <div class="step-num">1</div>
+      <h3 class="fw-800 t-h4 mb-8">Crea tu perfil</h3>
+      <p class="text-muted t-sm">Regístrate como trabajador o contratista, añade tus habilidades, fotos y certificaciones.</p>
+    </div>
+    <div class="step-box">
+      <div class="step-num">2</div>
+      <h3 class="fw-800 t-h4 mb-8">Encuentra o Publica</h3>
+      <p class="text-muted t-sm">Busca chambas cerca de ti mediante el mapa interactivo o publica vacantes si necesitas ayuda.</p>
+    </div>
+    <div class="step-box">
+      <div class="step-num">3</div>
+      <h3 class="fw-800 t-h4 mb-8">Conecta y Trabaja</h3>
+      <p class="text-muted t-sm">Chatea, envía audios, fotos, ubícate por GPS y cierra el trato de forma 100% segura.</p>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="content-section" style="padding:0;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px;">
+    <div>
+      <div style="font-size:1.8rem;font-weight:900;color:#fff;margin-bottom:16px;">
+        <i class="bi bi-wrench-adjustable-circle-fill text-green-500"></i> Chambazo
+      </div>
+      <p style="font-size:0.9rem;line-height:1.6;">
+        La plataforma líder en El Salvador para conectar trabajadores independientes con oportunidades reales de empleo. <br>Impulsando el desarrollo local, una chamba a la vez.
+      </p>
+    </div>
+    <div>
+      <h4 style="color:#fff;font-weight:700;margin-bottom:16px;">Plataforma</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:0.9rem;">
+        <a href="{% url 'login' %}" style="color:inherit;text-decoration:none;">Buscar trabajo</a>
+        <a href="{% url 'login' %}" style="color:inherit;text-decoration:none;">Publicar trabajo</a>
+        <a href="{% url 'registro_step1' %}" style="color:inherit;text-decoration:none;">Crear cuenta</a>
+      </div>
+    </div>
+    <div>
+      <h4 style="color:#fff;font-weight:700;margin-bottom:16px;">Soporte</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:0.9rem;">
+        <a href="#" style="color:inherit;text-decoration:none;">Preguntas Frecuentes</a>
+        <a href="#" style="color:inherit;text-decoration:none;">Centro de Ayuda</a>
+        <a href="#" style="color:inherit;text-decoration:none;">Contacto</a>
+      </div>
+    </div>
+    <div>
+      <h4 style="color:#fff;font-weight:700;margin-bottom:16px;">Legal</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:0.9rem;">
+        <a href="{% url 'terminos_condiciones' %}" style="color:inherit;text-decoration:none;">Términos y Condiciones</a>
+        <a href="{% url 'politica_privacidad' %}" style="color:inherit;text-decoration:none;">Política de Privacidad</a>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center;border-top:1px solid #334155;padding-top:20px;font-size:0.85rem;">
+    &copy; 2026 Chambazo El Salvador. Todos los derechos reservados.
+  </div>
+</footer>
+{% endblock %}

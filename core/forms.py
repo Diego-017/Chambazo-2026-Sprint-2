@@ -87,10 +87,10 @@ class EditarPerfilForm(forms.ModelForm):
             'empresa', 'tarifa_hora', 'experiencia_anos', 'portfolio_url',
             # Trabajador
             'dui', 'vehiculo', 'disponibilidad_horario', 'certificaciones',
-            'contacto_emergencia', 'nivel_educativo',
+            'contacto_emergencia', 'nivel_educativo', 'idiomas', 'referencias_personales', 'expectativa_salarial',
             # Contratista
             'nit_nrc', 'giro_comercial', 'sitio_web', 'redes_sociales',
-            'contacto_cargo', 'anos_operacion'
+            'contacto_cargo', 'anos_operacion', 'cantidad_empleados', 'tipo_empresa', 'registro_fiscal'
         ]
         widgets = {
             'foto':            forms.FileInput(attrs={'class':'form-control'}),
@@ -108,6 +108,9 @@ class EditarPerfilForm(forms.ModelForm):
             'certificaciones': forms.Textarea(attrs={'class':'form-control','rows':'2','placeholder':'Diplomas, licencias de conducir, cursos INSAFORP/universitarios'}),
             'contacto_emergencia': forms.TextInput(attrs={'class':'form-control','placeholder':'Nombre y teléfono de familiar/contacto'}),
             'nivel_educativo': forms.Select(attrs={'class':'form-control'}),
+            'idiomas': forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Inglés (Básico), Español (Nativo)'}),
+            'referencias_personales': forms.Textarea(attrs={'class':'form-control','rows':'2','placeholder':'Nombres y teléfonos de referencias'}),
+            'expectativa_salarial': forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: $400 - $600 mensual'}),
             # Contratista
             'nit_nrc':         forms.TextInput(attrs={'class':'form-control','placeholder':'0614-010190-001-1 / NRC 123456'}),
             'giro_comercial':  forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Construcción, remodelaciones y servicios residenciales'}),
@@ -115,6 +118,9 @@ class EditarPerfilForm(forms.ModelForm):
             'redes_sociales':  forms.TextInput(attrs={'class':'form-control','placeholder':'LinkedIn / Instagram / Facebook'}),
             'contacto_cargo':  forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Gerente de Operaciones'}),
             'anos_operacion':  forms.NumberInput(attrs={'class':'form-control','min':'0'}),
+            'cantidad_empleados': forms.Select(attrs={'class':'form-control'}),
+            'tipo_empresa': forms.Select(attrs={'class':'form-control'}),
+            'registro_fiscal': forms.FileInput(attrs={'class':'form-control'}),
         }
 
     def __init__(self, *args, rol='trabajador', **kwargs):
@@ -130,6 +136,9 @@ class EditarPerfilForm(forms.ModelForm):
             del self.fields['certificaciones']
             del self.fields['contacto_emergencia']
             del self.fields['nivel_educativo']
+            del self.fields['idiomas']
+            del self.fields['referencias_personales']
+            del self.fields['expectativa_salarial']
         else:
             del self.fields['empresa']
             del self.fields['nit_nrc']
@@ -138,6 +147,9 @@ class EditarPerfilForm(forms.ModelForm):
             del self.fields['redes_sociales']
             del self.fields['contacto_cargo']
             del self.fields['anos_operacion']
+            del self.fields['cantidad_empleados']
+            del self.fields['tipo_empresa']
+            del self.fields['registro_fiscal']
 
 
 class PagoTarjetaForm(forms.Form):

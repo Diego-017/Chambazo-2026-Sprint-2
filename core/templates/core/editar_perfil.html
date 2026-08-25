@@ -40,7 +40,12 @@
         <div class="form-group"><label class="form-label">Nivel Educativo</label>{{ form.nivel_educativo }}</div>
         <div class="form-group"><label class="form-label">Disponibilidad de Horario</label>{{ form.disponibilidad_horario }}</div>
       </div>
+      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Expectativa Salarial</label>{{ form.expectativa_salarial }}</div>
+        <div class="form-group"><label class="form-label">Idiomas</label>{{ form.idiomas }}</div>
+      </div>
       <div class="form-group"><label class="form-label">Certificaciones y Diplomas</label>{{ form.certificaciones }}</div>
+      <div class="form-group"><label class="form-label">Referencias Personales</label>{{ form.referencias_personales }}</div>
       <div class="form-group"><label class="form-label">Contacto de Emergencia</label>{{ form.contacto_emergencia }}</div>
       <div class="form-group"><label class="form-label">Enlace a Portfolio o Red Social</label>{{ form.portfolio_url }}</div>
     </div></div>
@@ -66,12 +71,17 @@
         <div class="form-group"><label class="form-label">NIT o Registro Fiscal (NRC)</label>{{ form.nit_nrc }}</div>
         <div class="form-group"><label class="form-label">Años de Operación</label>{{ form.anos_operacion }}</div>
       </div>
+      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">Tipo de Empresa</label>{{ form.tipo_empresa }}</div>
+        <div class="form-group"><label class="form-label">Cantidad de Empleados</label>{{ form.cantidad_empleados }}</div>
+      </div>
       <div class="form-group"><label class="form-label">Giro Comercial / Actividad Económica</label>{{ form.giro_comercial }}</div>
       <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group"><label class="form-label">Cargo de la Persona de Contacto</label>{{ form.contacto_cargo }}</div>
         <div class="form-group"><label class="form-label">Sitio Web Oficial</label>{{ form.sitio_web }}</div>
       </div>
       <div class="form-group"><label class="form-label">Redes Sociales (LinkedIn / Instagram / Facebook)</label>{{ form.redes_sociales }}</div>
+      <div class="form-group"><label class="form-label">Copia de Registro Fiscal (opcional)</label>{{ form.registro_fiscal }}</div>
     </div></div>
     {% endif %}
 

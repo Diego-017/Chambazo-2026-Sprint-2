@@ -232,7 +232,7 @@
       </button>
 
       <!-- Botón de Nota de Voz / Audio -->
-      <button type="button" onclick="document.getElementById('audioInput').click()" title="Subir nota de voz / audio" style="background: none; border: none; font-size: 1.2rem; color: #3b82f6; cursor: pointer; padding: 4px;">
+      <button type="button" id="btnRecordAudio" title="Mantener presionado para grabar audio" style="background: none; border: none; font-size: 1.2rem; color: #3b82f6; cursor: pointer; padding: 4px; touch-action: none; transition: all 0.2s;">
         <i class="bi bi-mic-fill"></i>
       </button>
 
@@ -309,14 +309,71 @@
       const lng = pos.coords.longitude;
       document.getElementById('latInputChat').value = lat;
       document.getElementById('lngInputChat').value = lng;
-      document.getElementById('ubicacionNombreInputChat').value = 'Mi ubicación actual en El Salvador';
+      document.getElementById('ubicacionNombreInputChat').value = 'Ubicación actual';
       
       document.getElementById('attachmentIndicator').style.display = 'block';
-      document.getElementById('attachmentText').innerText = `📍 Ubicación GPS lista: Lat ${lat.toFixed(4)}, Lng ${lng.toFixed(4)}`;
-      document.getElementById('chatTextInput').placeholder = 'Presiona Enviar para compartir tu ubicación...';
+      document.getElementById('attachmentText').innerText = `📍 Ubicación GPS lista. Haz clic en Enviar.`;
     }, function(err) {
       alert("No se pudo obtener la ubicación: " + err.message);
     });
   }
+
+  // Audio Recording (WhatsApp style)
+  let mediaRecorder;
+  let audioChunks = [];
+  let isRecording = false;
+  let recordingInterval;
+  let startTime;
+
+  const btnRecord = document.getElementById('btnRecordAudio');
+  const chatForm = document.getElementById('chatForm');
+  const txtInput = document.getElementById('chatTextInput');
+
+  btnRecord?.addEventListener('pointerdown', async (e) => {
+    e.preventDefault();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Grabación de audio no soportada en este navegador.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const file = new File([audioBlob], 'audio_record.webm', { type: 'audio/webm', lastModified: new Date().getTime() });
+        const container = new DataTransfer();
+        container.items.add(file);
+        document.getElementById('audioInput').files = container.files;
+        chatForm.submit(); // Send immediately like WhatsApp
+      };
+      
+      mediaRecorder.start();
+      isRecording = true;
+      btnRecord.style.color = '#ef4444'; // turn red
+      btnRecord.style.transform = 'scale(1.2)';
+      txtInput.placeholder = '🎙️ Grabando... (suelta para enviar)';
+      txtInput.disabled = true;
+      
+    } catch (err) {
+      console.error("No se pudo acceder al micrófono:", err);
+    }
+  });
+
+  const stopRecording = (e) => {
+    if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      isRecording = false;
+      btnRecord.style.color = '#3b82f6';
+      btnRecord.style.transform = 'scale(1)';
+      txtInput.placeholder = 'Escribe un mensaje...';
+      txtInput.disabled = false;
+    }
+  };
+
+  btnRecord?.addEventListener('pointerup', stopRecording);
+  btnRecord?.addEventListener('pointerleave', stopRecording);
 </script>
 {% endblock %}
