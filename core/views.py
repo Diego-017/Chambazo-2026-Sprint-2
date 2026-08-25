@@ -93,7 +93,8 @@ def login_view(request):
                 user = authenticate(request, username=user_obj.username, password=password)
                 if user:
                     login(request, user)
-                    return redirect('home')
+                    rol = getattr(user.profile, 'rol', 'trabajador')
+                    return redirect('panel_contratista' if rol == 'contratista' else 'home_trabajador')
                 else:
                     error = 'Contraseña incorrecta.'
             except User.DoesNotExist:
@@ -197,7 +198,7 @@ def registro_step3(request):
             AceptacionTerminos.objects.create(usuario=user, aceptado=True)
             login(request, user)
             messages.success(request, f'¡Bienvenido a Chambazo, {user.first_name or user.username}! 🎉')
-            return redirect('home')
+            return redirect('panel_contratista' if rol == 'contratista' else 'home_trabajador')
     else:
         form = RegistroStep3Form(rol=rol)
     return render(request, 'core/registro_step3.html',
