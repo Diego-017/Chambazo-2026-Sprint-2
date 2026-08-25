@@ -66,7 +66,12 @@ body { background: #f8fafc; }
 .tip-card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); text-align:center; }
 .grid-2col { display:grid; grid-template-columns: 2fr 1fr; gap:24px; padding:0 5% 40px; }
 .cat-box { border:1px solid #e2e8f0; background:#fff; padding:16px; border-radius:12px; display:flex; align-items:center; gap:12px; font-weight:700; color:#334155; }
-.faq-item { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin-bottom:8px; display:flex; justify-content:space-between; font-weight:600; cursor:pointer; }
+.faq-item { background:#fff; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:8px; overflow:hidden; }
+.faq-header { padding:16px; display:flex; justify-content:space-between; font-weight:600; cursor:pointer; align-items:center; }
+.faq-header i { transition:transform 0.3s; }
+.faq-body { padding:0 16px; max-height:0; overflow:hidden; transition:max-height 0.3s ease-out, padding 0.3s ease-out; font-size:0.95rem; color:#475569; }
+.faq-item.active .faq-body { max-height:200px; padding:0 16px 16px 16px; }
+.faq-item.active .faq-header i { transform:rotate(180deg); color:var(--green); }
 .testimonial-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; }
 .footer { background:#0f172a; color:#94a3b8; padding:40px 5%; display:grid; grid-template-columns:repeat(4, 1fr); gap:32px; font-size:0.9rem; }
 .footer h4 { color:#fff; font-weight:700; margin-bottom:16px; }
@@ -165,14 +170,14 @@ body { background: #f8fafc; }
     <h3 class="section-title" style="font-size:1.2rem;">Consejos para tu chamba</h3>
     
     <div class="adv-card">
-      <div style="background:#f1f5f9;background-image:url('https://images.unsplash.com/photo-1573164713988-8665fc963095?w=100&q=80');background-size:cover;width:50px;height:50px;border-radius:8px;min-width:50px;"></div>
+      <div style="background:#f1f5f9;background-image:url('https://images.unsplash.com/photo-1573164713988-8665fc963095?w=200&q=100');background-size:cover;width:50px;height:50px;border-radius:8px;min-width:50px;"></div>
       <div>
         <div style="font-size:0.9rem;font-weight:700;">Consejos para tu chamba</div>
         <div style="font-size:0.75rem;color:#64748b;">Trabajadores unidos para salir adelante.</div>
       </div>
     </div>
     <div class="adv-card">
-      <div style="background:#f1f5f9;background-image:url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=100&q=80');background-size:cover;width:50px;height:50px;border-radius:8px;min-width:50px;"></div>
+      <div style="background:#f1f5f9;background-image:url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=200&q=100');background-size:cover;width:50px;height:50px;border-radius:8px;min-width:50px;"></div>
       <div>
         <div style="font-size:0.9rem;font-weight:700;">Desarrolla tus skills</div>
         <div style="font-size:0.75rem;color:#64748b;">Aprende habilidades que demandan más.</div>
@@ -295,11 +300,31 @@ body { background: #f8fafc; }
 <!-- Preguntas Frecuentes (Acordeon Style) -->
 <div style="padding:20px 5%;max-width:900px;margin:0 auto 40px;" id="como-funciona">
   <h2 class="section-title text-center" style="text-align:center;margin-bottom:24px;">Preguntas Frecuentes</h2>
-  <div class="faq-item"><span>¿Cómo me postulo a una chamba?</span><i class="bi bi-chevron-down t-mid"></i></div>
-  <div class="faq-item"><span>¿Es seguro el pago?</span><i class="bi bi-chevron-down t-mid"></i></div>
-  <div class="faq-item"><span>¿Cómo creo mi perfil?</span><i class="bi bi-chevron-down t-mid"></i></div>
-  <div class="faq-item"><span>¿Qué pasa si el cliente no paga?</span><i class="bi bi-chevron-down t-mid"></i></div>
-  <div class="faq-item"><span>Soporte técnico</span><i class="bi bi-chevron-down t-mid"></i></div>
+  
+  <div class="faq-item" onclick="this.classList.toggle('active')">
+    <div class="faq-header"><span>¿Cómo me postulo a una chamba?</span><i class="bi bi-chevron-down t-mid"></i></div>
+    <div class="faq-body">Es muy sencillo. Regístrate como trabajador, completa tu perfil con tus habilidades, y podrás navegar por el mapa o las categorías para enviar tu postulación.</div>
+  </div>
+  
+  <div class="faq-item" onclick="this.classList.toggle('active')">
+    <div class="faq-header"><span>¿Es seguro el pago?</span><i class="bi bi-chevron-down t-mid"></i></div>
+    <div class="faq-body">Sí, Chambazo actúa como intermediario. El cliente deposita el dinero al contratarte, y nosotros te lo liberamos en tu cuenta en cuanto el trabajo se confirme como finalizado.</div>
+  </div>
+  
+  <div class="faq-item" onclick="this.classList.toggle('active')">
+    <div class="faq-header"><span>¿Cómo creo mi perfil?</span><i class="bi bi-chevron-down t-mid"></i></div>
+    <div class="faq-body">Haz clic en el botón "Registrarse", selecciona tu rol como Trabajador, y sigue los pasos para añadir tus datos personales, foto, habilidades y ubicación.</div>
+  </div>
+  
+  <div class="faq-item" onclick="this.classList.toggle('active')">
+    <div class="faq-header"><span>¿Qué pasa si el cliente no paga?</span><i class="bi bi-chevron-down t-mid"></i></div>
+    <div class="faq-body">No te preocupes. Al usar nuestra función de pago protegido, el cliente debe pagar por adelantado a Chambazo. Si realizaste el trabajo correctamente, tu pago está garantizado.</div>
+  </div>
+  
+  <div class="faq-item" onclick="this.classList.toggle('active')">
+    <div class="faq-header"><span>Soporte técnico</span><i class="bi bi-chevron-down t-mid"></i></div>
+    <div class="faq-body">Si tienes algún problema con la plataforma o necesitas ayuda con un contrato, puedes contactar a nuestro equipo de soporte técnico 24/7 desde la pestaña de "Ayuda".</div>
+  </div>
 </div>
 
 <!-- Oportunidades Destacadas de la Semana -->
@@ -384,7 +409,7 @@ body { background: #f8fafc; }
   <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:24px;margin-bottom:32px;">
     <!-- Testimonial 1 -->
     <div class="job-card" style="flex-direction:column;padding:0;overflow:hidden;">
-      <div style="height:140px;background:#cbd5e1;background-image:url('https://images.unsplash.com/photo-1581579205462-89241517f8cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');background-size:cover;background-position:center;"></div>
+      <div style="height:140px;background:#cbd5e1;background-image:url('https://images.unsplash.com/photo-1581579205462-89241517f8cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=100');background-size:cover;background-position:center;"></div>
       <div style="padding:20px;">
         <h4 style="font-weight:800;margin:0 0 8px 0;">María G. | San Salvador</h4>
         <div style="font-size:0.85rem;color:#64748b;margin-bottom:12px;">Limpieza Residencial</div>
@@ -393,22 +418,22 @@ body { background: #f8fafc; }
     </div>
     <!-- Testimonial 2 -->
     <div class="job-card" style="flex-direction:column;padding:0;overflow:hidden;">
-      <div style="height:140px;background:#cbd5e1;background-image:url('https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');background-size:cover;background-position:center;"></div>
+      <div style="height:140px;background:#cbd5e1;background-image:url('https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=100');background-size:cover;background-position:center;"></div>
       <div style="padding:20px;">
         <h4 style="font-weight:800;margin:0 0 16px 0;">Historias de Éxito Multiprofesional</h4>
         <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;">
-          <div style="width:32px;height:32px;border-radius:16px;background:var(--blue-light);flex-shrink:0;"></div>
+          <div style="width:32px;height:32px;border-radius:16px;background:url('https://images.unsplash.com/photo-1573164713988-8665fc963095?w=200&q=100') center/cover;flex-shrink:0;"></div>
           <div style="font-size:0.8rem;color:#334155;"><strong>Juan C., Cocinero:</strong> "Increíble para conseguir chambas extras."</div>
         </div>
         <div style="display:flex;gap:12px;align-items:flex-start;">
-          <div style="width:32px;height:32px;border-radius:16px;background:var(--red-light);flex-shrink:0;"></div>
+          <div style="width:32px;height:32px;border-radius:16px;background:url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=200&q=100') center/cover;flex-shrink:0;"></div>
           <div style="font-size:0.8rem;color:#334155;"><strong>Andrea P., Auxiliar:</strong> "Un trato justo y pagos seguros."</div>
         </div>
       </div>
     </div>
     <!-- Testimonial 3 -->
     <div class="job-card" style="flex-direction:column;padding:0;overflow:hidden;">
-      <div style="height:140px;background:#cbd5e1;background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');background-size:cover;background-position:center;"></div>
+      <div style="height:140px;background:#cbd5e1;background-image:url('https://images.unsplash.com/photo-1621905252507-b35492cc74b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=100');background-size:cover;background-position:center;"></div>
       <div style="padding:20px;">
         <h4 style="font-weight:800;margin:0 0 8px 0;">Luis M. | Santa Tecla</h4>
         <div style="font-size:0.85rem;color:#64748b;margin-bottom:12px;">Electricidad y Reparaciones</div>
