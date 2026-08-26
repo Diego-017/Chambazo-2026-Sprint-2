@@ -166,6 +166,65 @@ def enviar_notif_estado_solicitud(trabajador, solicitud):
     _enviar_html(asunto, html, [trabajador.email])
 
 
+def enviar_notif_trabajo_publicado(trabajo):
+    """Notifica al contratista que su trabajo se publicó con éxito."""
+    user = trabajo.contratista
+    asunto = f'✅ Oferta Publicada: {trabajo.titulo}'
+    html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;background:#f8fafc;padding:32px;border-radius:16px;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <h1 style="color:#064e3b;font-size:2rem;margin:0;">🔧 Chambazo</h1>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:28px;border:1px solid #e2e8f0;">
+        <h2 style="color:#0f172a;font-size:1.2rem;margin:0 0 16px;">¡Tu oferta ya está en vivo!</h2>
+        <p style="color:#475569;">Hola {user.first_name or user.username}, los trabajadores ya pueden ver tu oferta:</p>
+        <div style="background:#f0fdf4;border-radius:8px;padding:14px;margin:16px 0;border-left:4px solid #10b981;">
+          <p style="margin:0;color:#065f46;font-weight:700;font-size:1.05rem;">{trabajo.titulo}</p>
+        </div>
+        <p style="color:#475569;">Te notificaremos en cuanto recibas nuevas aplicaciones.</p>
+        <div style="text-align:center;margin-top:20px;">
+          <a href="http://127.0.0.1:8000/contratista/candidatos/" style="background:#064e3b;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;">Ir a mi Panel →</a>
+        </div>
+      </div>
+    </div>
+    """
+    return _enviar_html(asunto, html, [user.email])
+
+def enviar_notif_trabajo_completado_exito(solicitud, transaccion):
+    """Notifica que el trabajo se finalizó y el pago se liberó, enviando recibo."""
+    c = solicitud.trabajo.contratista
+    w = solicitud.trabajador
+    # Correo para el Trabajador
+    asunto_w = f'💸 ¡Pago liberado! Trabajo completado'
+    html_w = f"""
+    <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;background:#f8fafc;padding:32px;border-radius:16px;">
+      <div style="text-align:center;margin-bottom:24px;"><h1 style="color:#064e3b;font-size:2rem;margin:0;">🔧 Chambazo</h1></div>
+      <div style="background:#fff;border-radius:12px;padding:28px;border:1px solid #e2e8f0;">
+        <h2 style="color:#0f172a;font-size:1.2rem;">¡Felicidades {w.username}!</h2>
+        <p style="color:#475569;">El contratista ha confirmado la finalización del trabajo <strong>{solicitud.trabajo.titulo}</strong>.</p>
+        <div style="background:#ecfdf5;border-radius:8px;padding:14px;margin:16px 0;border:left:4px solid #10b981;">
+          <p style="margin:0;color:#065f46;font-weight:700;font-size:1.05rem;">Los fondos (${transaccion.monto}) han sido liberados a tu cuenta.</p>
+        </div>
+      </div>
+    </div>
+    """
+    _enviar_html(asunto_w, html_w, [w.email])
+
+    # Correo para el Contratista
+    asunto_c = f'✅ Trabajo Completado y Pagado'
+    html_c = f"""
+    <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;background:#f8fafc;padding:32px;border-radius:16px;">
+      <div style="text-align:center;margin-bottom:24px;"><h1 style="color:#064e3b;font-size:2rem;margin:0;">🔧 Chambazo</h1></div>
+      <div style="background:#fff;border-radius:12px;padding:28px;border:1px solid #e2e8f0;">
+        <h2 style="color:#0f172a;font-size:1.2rem;">Trabajo Finalizado</h2>
+        <p style="color:#475569;">Has confirmado la entrega de <strong>{solicitud.trabajo.titulo}</strong> y liberado el pago de ${transaccion.monto}.</p>
+        <p style="color:#475569;">Puedes descargar el comprobante en PDF desde la plataforma.</p>
+      </div>
+    </div>
+    """
+    _enviar_html(asunto_c, html_c, [c.email])
+
+
 def _enviar_html(asunto, html_content, destinatarios):
     """Helper interno: envía un correo con cuerpo HTML + texto plano de fallback."""
     texto_plano = strip_tags(html_content)

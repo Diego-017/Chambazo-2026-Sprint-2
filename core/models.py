@@ -529,3 +529,46 @@ class EmailVerificationToken(models.Model):
 
     def __str__(self):
         return f"EmailToken({self.user.email} → {self.token})"
+
+
+# ── Transacciones y Evidencias (Job Lifecycle) ──────────────────────────────────
+class TransaccionEscrow(models.Model):
+    ESTADO_PAGO = [
+        ('retenido', 'Retenido en Escrow'),
+        ('liberado', 'Liberado al Trabajador'),
+        ('reembolsado', 'Reembolsado al Contratista'),
+        ('en_disputa', 'En Disputa'),
+    ]
+    solicitud = models.OneToOneField(Solicitud, on_delete=models.CASCADE, related_name='escrow')
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    estado = models.CharField(max_length=20, choices=ESTADO_PAGO, default='retenido')
+    metodo_pago_simulado = models.CharField(max_length=100, blank=True)
+    comprobante_pdf = models.FileField(upload_to='comprobantes/', null=True, blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-creado']
+
+    def __str__(self):
+        return f"Escrow {self.id} - {self.solicitud.trabajo.titulo} ({self.estado})"
+
+
+class EvidenciaTrabajo(models.Model):
+    TIPO_USUARIO = [
+        ('contratista', 'Contratista'),
+        ('trabajador', 'Trabajador'),
+    ]
+    solicitud = models.ForeignKey(Solicitud, on_delete=models.CASCADE, related_name='evidencias')
+    subido_por = models.ForeignKey(User, on_delete=models.CASCADE)
+    tipo = models.CharField(max_length=20, choices=TIPO_USUARIO)
+    imagen = models.ImageField(upload_to='evidencias/')
+    descripcion = models.TextField(blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['creado']
+
+    def __str__(self):
+        return f"Evidencia de {self.subido_por.username} para Solicitud {self.solicitud.id}"
+

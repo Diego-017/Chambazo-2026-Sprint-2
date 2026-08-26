@@ -1,0 +1,107 @@
+{% extends 'core/base.html' %}
+{% block title %}Gestión de Trabajo en Progreso{% endblock %}
+{% block body %}
+{% if request.user == solicitud.trabajo.contratista %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
+
+<div class="page-hd">
+  <div>
+    <h1>Gestión de Trabajo</h1>
+    <p><strong>{{ solicitud.trabajo.titulo }}</strong></p>
+  </div>
+  <div style="text-align:right;">
+    <div class="est-badge est-{{ solicitud.estado }}" style="font-size:1rem;padding:6px 12px;">{{ solicitud.get_estado_display }}</div>
+    <div class="t-xs fw-700 mt-4" style="color:#10b981;">
+      <i class="bi bi-shield-lock-fill"></i> Fondos retenidos: ${{ escrow.monto }}
+    </div>
+  </div>
+</div>
+
+<div class="layout-2col">
+  <!-- Columna Izquierda: Información y Acciones -->
+  <div>
+    <div class="filter-card">
+      <h3 style="margin-top:0;">Detalles del Acuerdo</h3>
+      <div class="mini-stat-row">
+        <span class="lbl">Contraparte</span>
+        <span class="val">
+          {% if request.user == solicitud.trabajo.contratista %}
+            {{ solicitud.trabajador.get_full_name|default:solicitud.trabajador.username }} (Trabajador)
+          {% else %}
+            {{ solicitud.trabajo.contratista.get_full_name|default:solicitud.trabajo.contratista.username }} (Cliente)
+          {% endif %}
+        </span>
+      </div>
+      <div class="mini-stat-row">
+        <span class="lbl">Ubicación</span>
+        <span class="val">{{ solicitud.trabajo.ubicacion }}</span>
+      </div>
+      
+      <div style="margin-top:20px; display:flex; gap:10px;">
+        <a href="{% url 'mensajes_chat' solicitud.pk %}" class="btn btn-outline" style="flex:1; justify-content:center;">
+          <i class="bi bi-chat-dots"></i> Abrir Chat
+        </a>
+      </div>
+    </div>
+
+    <!-- Contratista: Liberar Fondos -->
+    {% if request.user == solicitud.trabajo.contratista %}
+      <div class="filter-card" style="background:#f0fdf4; border:1px solid #10b981;">
+        <h3 style="margin-top:0; color:#065f46;"><i class="bi bi-check-circle-fill"></i> Finalizar y Liberar Pago</h3>
+        <p class="t-sm" style="color:#064e3b; margin-bottom:16px;">
+          ¿El trabajo fue realizado correctamente? Al confirmar, liberarás los <strong>${{ escrow.monto }}</strong> al trabajador y se generará tu comprobante de factura.
+        </p>
+        <form method="post" action="{% url 'liberar_fondos_escrow' solicitud.pk %}" onsubmit="return confirm('¿Estás seguro de liberar los fondos? Esta acción no se puede deshacer.');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-g btn-full" style="padding:14px;">✅ Liberar Fondos</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Columna Derecha: Evidencias Fotográficas -->
+  <div>
+    <div class="filter-card">
+      <h3 style="margin-top:0;"><i class="bi bi-camera-fill"></i> Evidencias del Trabajo</h3>
+      <p class="t-xs t-muted mb-16">Sube fotos del antes/después o del trabajo completado para mayor seguridad.</p>
+      
+      <!-- Lista de Evidencias -->
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+        {% for ev in evidencias %}
+          <div style="border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; gap:12px;">
+            <img src="{{ ev.imagen.url }}" style="width:80px; height:80px; object-fit:cover; border-radius:4px;">
+            <div>
+              <div class="fw-700 t-sm">{{ ev.subido_por.get_full_name|default:ev.subido_por.username }} <span class="t-xs t-muted">({{ ev.tipo|title }})</span></div>
+              <div class="t-xs t-muted mt-4">{{ ev.creado|date:"d M Y, h:i a" }}</div>
+              {% if ev.descripcion %}<div class="t-sm mt-4">{{ ev.descripcion }}</div>{% endif %}
+            </div>
+          </div>
+        {% empty %}
+          <div class="t-sm t-muted" style="text-align:center; padding:20px; background:#f8fafc; border-radius:8px;">
+            Aún no hay evidencias subidas.
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Formulario Subir Evidencia -->
+      <hr style="margin:20px 0;">
+      <h4 style="margin-bottom:12px;">Subir nueva evidencia</h4>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+          <input type="file" name="imagen" class="form-control" accept="image/*" required>
+        </div>
+        <div class="form-group">
+          <input type="text" name="descripcion" class="form-control" placeholder="Ej: Trabajo terminado (Opcional)">
+        </div>
+        <button type="submit" class="btn btn-outline" style="width:100%;"><i class="bi bi-upload"></i> Subir Foto</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

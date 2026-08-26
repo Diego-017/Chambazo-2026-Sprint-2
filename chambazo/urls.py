@@ -32,6 +32,11 @@ urlpatterns = [
     path('trabajo/<int:pk>/aplicar/', views.aplicar_trabajo, name='aplicar_trabajo'),
     path('trabajo/<int:pk>/aplicar-rapido/', views.aplicar_rapido, name='aplicar_rapido'),
     path('solicitud/<int:pk>/pagar/', views.pagar_solicitud, name='pagar_solicitud'),
+    # Escrow y Gestión del Trabajo Activo
+    path('solicitud/<int:sol_pk>/escrow/', views.depositar_escrow, name='depositar_escrow'),
+    path('solicitud/<int:sol_pk>/gestionar/', views.gestionar_trabajo, name='gestionar_trabajo'),
+    path('solicitud/<int:sol_pk>/liberar-pago/', views.liberar_fondos_escrow, name='liberar_fondos_escrow'),
+    path('escrow/<int:pk>/pdf/', views.descargar_comprobante_pdf, name='descargar_comprobante_pdf'),
     path('trabajo/<int:pk>/enviada/', views.solicitud_enviada, name='solicitud_enviada'),
     path('trabajo/<int:pk>/guardar/', views.toggle_guardado, name='toggle_guardado'),
     path('trabajos/urgentes/', views.trabajos_urgentes, name='trabajos_urgentes'),

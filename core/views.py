@@ -691,6 +691,8 @@ def pagar_trabajo(request, pk):
                 f'Tu oferta "{trabajo.titulo}" ha sido activada y ya está disponible para los trabajadores. Comprobante: {trabajo.metodo_pago_id}',
                 f'/trabajo/{trabajo.pk}/'
             )
+            from .email_utils import enviar_notif_trabajo_publicado
+            enviar_notif_trabajo_publicado(trabajo)
             messages.success(request, f'✅ ¡Pago de ${trabajo.total_a_pagar} USD aprobado con éxito! Tu vacante ya está activa.')
             return redirect('candidatos', pk=trabajo.pk)
         else:
@@ -1249,3 +1251,149 @@ def asistente_responder(request):
         return JsonResponse({'respuesta': 'Escribe tu pregunta y con gusto te ayudo.'})
     respuesta = _generar_respuesta_asistente(request, texto)
     return JsonResponse({'respuesta': respuesta})
+
+
+# ── NUEVO: GESTIÓN DE ESCROW Y EVIDENCIAS DE TRABAJO ───────────────────────────
+from .models import TransaccionEscrow, EvidenciaTrabajo
+import uuid
+
+@login_required
+def depositar_escrow(request, sol_pk):
+    """Vista para que el contratista deposite fondos en Escrow y contrate formalmente."""
+    solicitud = get_object_or_404(Solicitud, pk=sol_pk, trabajo__contratista=request.user)
+    
+    # Validar que esté en un estado contratable
+    if solicitud.estado not in ['aceptado', 'pendiente', 'en_revision']:
+        messages.error(request, 'Esta solicitud ya está procesada o no es válida.')
+        return redirect('candidatos', pk=solicitud.trabajo.pk)
+
+    if request.method == 'POST':
+        tarjeta = request.POST.get('tarjeta', '').replace(' ', '')
+        if not tarjeta:
+            messages.error(request, 'Ingresa una tarjeta válida.')
+            return redirect('depositar_escrow', sol_pk=sol_pk)
+
+        # Simular transacción exitosa
+        monto = solicitud.tarifa_propuesta if solicitud.tarifa_propuesta else solicitud.trabajo.presupuesto
+        last4 = tarjeta[-4:] if len(tarjeta) >= 4 else 'XXXX'
+        tx_id = f"CHZ-ESCROW-{uuid.uuid4().hex[:8].upper()}"
+
+        TransaccionEscrow.objects.create(
+            solicitud=solicitud,
+            monto=monto,
+            estado='retenido',
+            metodo_pago_simulado=f"****{last4} - {tx_id}"
+        )
+        
+        # Cambiar estado a contratado
+        solicitud.estado = 'contratado'
+        solicitud.save()
+        
+        solicitud.trabajo.estado_vacante = 'ocupada'
+        solicitud.trabajo.save(update_fields=['estado_vacante'])
+
+        # Notificar al trabajador
+        from .email_utils import enviar_notif_estado_solicitud
+        enviar_notif_estado_solicitud(solicitud.trabajador, solicitud)
+
+        messages.success(request, f'✅ Fondos retenidos en Escrow. Has contratado a {solicitud.trabajador.first_name or solicitud.trabajador.username}.')
+        return redirect('gestionar_trabajo', sol_pk=sol_pk)
+
+    ctx = ctx_base(request)
+    ctx['solicitud'] = solicitud
+    ctx['active'] = 'candidatos'
+    return render(request, 'core/depositar_escrow.html', ctx)
+
+
+@login_required
+def gestionar_trabajo(request, sol_pk):
+    """Consola para ver el estado del Escrow y subir evidencias fotográficas."""
+    solicitud = get_object_or_404(Solicitud, pk=sol_pk)
+    # Validar acceso
+    if request.user != solicitud.trabajo.contratista and request.user != solicitud.trabajador:
+        messages.error(request, 'No tienes permiso para ver este trabajo.')
+        return redirect('home')
+
+    if request.method == 'POST':
+        imagen = request.FILES.get('imagen')
+        descripcion = request.POST.get('descripcion', '')
+        if imagen:
+            EvidenciaTrabajo.objects.create(
+                solicitud=solicitud,
+                subido_por=request.user,
+                tipo='contratista' if request.user == solicitud.trabajo.contratista else 'trabajador',
+                imagen=imagen,
+                descripcion=descripcion
+            )
+            messages.success(request, '📸 Evidencia subida correctamente.')
+        return redirect('gestionar_trabajo', sol_pk=sol_pk)
+
+    escrow = getattr(solicitud, 'escrow', None)
+    evidencias = solicitud.evidencias.all()
+
+    ctx = ctx_base(request)
+    ctx.update({
+        'solicitud': solicitud,
+        'escrow': escrow,
+        'evidencias': evidencias,
+        'active': 'candidatos' if request.user == solicitud.trabajo.contratista else 'solicitudes'
+    })
+    return render(request, 'core/gestionar_trabajo.html', ctx)
+
+
+@login_required
+def liberar_fondos_escrow(request, sol_pk):
+    """El contratista aprueba la finalización del trabajo y libera el pago."""
+    solicitud = get_object_or_404(Solicitud, pk=sol_pk, trabajo__contratista=request.user)
+    if not hasattr(solicitud, 'escrow') or solicitud.escrow.estado != 'retenido':
+        messages.error(request, 'Esta transacción no está retenida en Escrow.')
+        return redirect('gestionar_trabajo', sol_pk=sol_pk)
+
+    if request.method == 'POST':
+        escrow = solicitud.escrow
+        escrow.estado = 'liberado'
+        escrow.save()
+
+        solicitud.estado = 'completado'
+        solicitud.save()
+
+        # Generar comprobante
+        from .pdf_utils import generar_comprobante_pdf
+        pdf_path = generar_comprobante_pdf(solicitud, escrow)
+        if pdf_path:
+            escrow.comprobante_pdf.name = pdf_path
+            escrow.save()
+
+        # Notificar por correo
+        from .email_utils import enviar_notif_trabajo_completado_exito
+        enviar_notif_trabajo_completado_exito(solicitud, escrow)
+
+        messages.success(request, '✨ Trabajo completado y fondos liberados. ¡No olvides dejar tu reseña!')
+        return redirect('crear_resena_solicitud', sol_pk=sol_pk)
+
+    return redirect('gestionar_trabajo', sol_pk=sol_pk)
+
+
+@login_required
+def descargar_comprobante_pdf(request, pk):
+    """Descarga el comprobante PDF de una transacción en Escrow."""
+    escrow = get_object_or_404(TransaccionEscrow, pk=pk)
+    solicitud = escrow.solicitud
+    if request.user != solicitud.trabajo.contratista and request.user != solicitud.trabajador:
+        messages.error(request, 'No autorizado.')
+        return redirect('home')
+
+    if not escrow.comprobante_pdf:
+        messages.error(request, 'El comprobante aún no ha sido generado.')
+        return redirect('gestionar_trabajo', sol_pk=solicitud.pk)
+
+    from django.http import HttpResponse, Http404
+    from django.conf import settings
+    import os
+    file_path = os.path.join(settings.MEDIA_ROOT, escrow.comprobante_pdf.name)
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as fh:
+            response = HttpResponse(fh.read(), content_type="application/pdf")
+            response['Content-Disposition'] = f'inline; filename="Chambazo_Recibo_{escrow.id}.pdf"'
+            return response
+    raise Http404("Comprobante no encontrado")
