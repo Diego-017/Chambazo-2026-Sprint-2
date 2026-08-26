@@ -1491,3 +1491,111 @@ def firmar_contrato(request, sol_pk):
     ctx['active'] = 'solicitudes'
     return render(request, 'core/firmar_contrato.html', ctx)
 
+
+# ── NUEVO: DISPUTAS Y MEDIACIÓN ────────────────────────────────────────────────
+from .models import Disputa
+
+@login_required
+def abrir_disputa(request, sol_pk):
+    """Permite al contratista o trabajador abrir una disputa y bloquear los fondos."""
+    solicitud = get_object_or_404(Solicitud, pk=sol_pk)
+    if request.user != solicitud.trabajo.contratista and request.user != solicitud.trabajador:
+        messages.error(request, 'No autorizado.')
+        return redirect('home')
+
+    if hasattr(solicitud, 'disputa'):
+        messages.warning(request, 'Ya existe un reclamo abierto para este trabajo.')
+        return redirect('gestionar_trabajo', sol_pk=sol_pk)
+
+    if request.method == 'POST':
+        motivo = request.POST.get('motivo')
+        evidencia = request.FILES.get('evidencia_imagen')
+        
+        disputa = Disputa.objects.create(
+            solicitud=solicitud,
+            creado_por=request.user,
+            motivo=motivo,
+            evidencia_imagen=evidencia,
+            estado='abierta'
+        )
+
+        # Bloquear fondos en Escrow
+        if hasattr(solicitud, 'escrow'):
+            solicitud.escrow.estado = 'en_disputa'
+            solicitud.escrow.save()
+
+        # Notificar a la contraparte
+        contraparte = solicitud.trabajador if request.user == solicitud.trabajo.contratista else solicitud.trabajo.contratista
+        crear_notif(
+            contraparte, 'sistema',
+            '⚠️ Disputa de Trabajo Abierta',
+            f'{request.user.profile.nombre_display} ha iniciado un reclamo de mediación sobre "{solicitud.trabajo.titulo}". Los fondos quedan congelados.',
+            f'/solicitud/{solicitud.pk}/gestionar/'
+        )
+
+        messages.success(request, '⚠️ Disputa abierta. Un mediador de Chambazo SV revisará el caso.')
+        return redirect('gestionar_trabajo', sol_pk=sol_pk)
+
+    ctx = ctx_base(request)
+    ctx['solicitud'] = solicitud
+    ctx['active'] = 'candidatos' if request.user == solicitud.trabajo.contratista else 'solicitudes'
+    return render(request, 'core/abrir_disputa.html', ctx)
+
+
+@login_required
+def resolver_disputa(request, disputa_pk):
+    """Simulación del dictamen del equipo de soporte (mediador)."""
+    # Para la demo, cualquier staff o superusuario (o cualquiera en el dashboard) puede dictaminar.
+    disputa = get_object_or_404(Disputa, pk=disputa_pk)
+    solicitud = disputa.solicitud
+    
+    if request.method == 'POST':
+        resolucion = request.POST.get('resolucion')
+        comentario = request.POST.get('resolucion_comentario', '')
+        
+        disputa.resolucion_comentario = comentario
+        
+        if resolucion == 'reembolso':
+            disputa.estado = 'resuelta_reembolso'
+            if hasattr(solicitud, 'escrow'):
+                solicitud.escrow.estado = 'reembolsado'
+                solicitud.escrow.save()
+            solicitud.estado = 'rechazado' # Cancelado
+            solicitud.save()
+            
+            # Notificaciones
+            crear_notif(solicitud.trabajo.contratista, 'sistema', '💸 Reembolso de Disputa Aprobado', f'Se ha resuelto a tu favor. Los fondos de {solicitud.trabajo.titulo} fueron reembolsados.', '/contratista/estadisticas/')
+            crear_notif(solicitud.trabajador, 'sistema', '⚠️ Disputa Resuelta (Reembolso)', f'El soporte de Chambazo reembolsó el depósito a {solicitud.trabajo.contratista.profile.nombre_display}.', '/inicio/')
+            
+        elif resolucion == 'liberar':
+            disputa.estado = 'resuelta_pago'
+            if hasattr(solicitud, 'escrow'):
+                solicitud.escrow.estado = 'liberado'
+                solicitud.escrow.save()
+            solicitud.estado = 'completado'
+            solicitud.save()
+            
+            # Notificaciones
+            crear_notif(solicitud.trabajador, 'sistema', '💸 Pago de Disputa Liberado', f'Se ha resuelto a tu favor. Se liberó el pago de {solicitud.trabajo.titulo} a tu cuenta.', '/inicio/')
+            crear_notif(solicitud.trabajo.contratista, 'sistema', '⚠️ Disputa Resuelta (Liberado)', f'El soporte de Chambazo liberó los fondos a favor del trabajador.', '/contratista/estadisticas/')
+
+        disputa.save()
+        messages.success(request, '⚖️ Disputa resuelta de forma exitosa y notificaciones enviadas.')
+        return redirect('mediacion_soporte')
+        
+    return redirect('mediacion_soporte')
+
+
+@login_required
+def mediacion_soporte(request):
+    """Consola del equipo de soporte para ver reclamos activos."""
+    # Obtenemos las disputas abiertas o en revisión
+    disputas = Disputa.objects.filter(estado__in=['abierta', 'en_revision']).select_related('solicitud__trabajo', 'creado_por')
+    ctx = ctx_base(request)
+    ctx.update({
+        'disputas': disputas,
+        'active': 'soporte'
+    })
+    return render(request, 'core/mediacion_soporte.html', ctx)
+
+

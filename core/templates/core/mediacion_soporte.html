@@ -1,0 +1,89 @@
+{% extends 'core/base.html' %}
+{% block title %}Consola de Mediación y Soporte{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_contratista.html' %} <!-- Renders correctly using sidebars layout -->
+
+<div class="page-hd">
+  <div>
+    <h1>Consola de Mediación — Chambazo SV</h1>
+    <p>Revisión y resolución de disputas comerciales activas</p>
+  </div>
+</div>
+
+<div class="content-container">
+  {% if disputas %}
+    <div style="display:flex; flex-direction:column; gap:20px;">
+      {% for d in disputas %}
+        <div class="card" style="padding:28px; border-radius:16px; border:1px solid #cbd5e1; background:#fff;">
+          <div class="flex-bc" style="margin-bottom:16px;">
+            <div>
+              <span class="pill" style="background:#fee2e2; color:#dc2626; font-weight:700;">Disputa #{{ d.id }}</span>
+              <strong style="margin-left:8px; font-size:1.1rem;">{{ d.solicitud.trabajo.titulo }}</strong>
+            </div>
+            <div class="t-xs t-muted">Creada el {{ d.creado|date:"d M Y, h:i a" }}</div>
+          </div>
+
+          <div class="layout-2col" style="gap:24px;">
+            <div>
+              <h4 style="margin-top:0;">Detalles del Conflicto</h4>
+              <div class="mini-stat-row"><span class="lbl">Iniciado por:</span><span class="val">{{ d.creado_por.get_full_name|default:d.creado_por.username }}</span></div>
+              <div class="mini-stat-row"><span class="lbl">Contratista:</span><span class="val">{{ d.solicitud.trabajo.contratista.get_full_name|default:d.solicitud.trabajo.contratista.username }}</span></div>
+              <div class="mini-stat-row"><span class="lbl">Trabajador:</span><span class="val">{{ d.solicitud.trabajador.get_full_name|default:d.solicitud.trabajador.username }}</span></div>
+              <div class="mini-stat-row"><span class="lbl">Monto en Escrow:</span><span class="val fw-700 t-green">${{ d.solicitud.escrow.monto }}</span></div>
+              
+              <div style="margin-top:16px; background:#f8fafc; padding:12px; border-radius:8px; border-left:4px solid #ef4444;">
+                <p class="t-sm" style="margin:0; font-weight:600; color:#334155;">Motivo del Reclamo:</p>
+                <p class="t-sm t-mid" style="margin:6px 0 0 0;">{{ d.motivo }}</p>
+              </div>
+            </div>
+
+            <div>
+              {% if d.evidencia_imagen %}
+                <h4 style="margin-top:0;">Evidencia Adjunta</h4>
+                <a href="{{ d.evidencia_imagen.url }}" target="_blank">
+                  <img src="{{ d.evidencia_imagen.url }}" style="width:100%; max-height:200px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
+                </a>
+              {% endif %}
+              
+              <!-- Fotos del trabajo en progreso -->
+              <h4 style="margin-top:12px;">Evidencias de la Consola</h4>
+              <div style="display:flex; gap:8px; overflow-x:auto;">
+                {% for ev in d.solicitud.evidencias.all %}
+                  <img src="{{ ev.imagen.url }}" style="width:60px; height:60px; object-fit:cover; border-radius:4px;" title="{{ ev.descripcion }}">
+                {% empty %}
+                  <span class="t-xs t-muted">No se subieron fotos en el chat de avances.</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Acciones de soporte -->
+          <hr style="margin:20px 0;">
+          <form method="post" action="{% url 'resolver_disputa' d.pk %}" style="display:flex; flex-direction:column; gap:12px;">
+            {% csrf_token %}
+            <div class="form-group">
+              <input type="text" name="resolucion_comentario" class="form-control" placeholder="Escribe el dictamen o explicación de la resolución..." required>
+            </div>
+            <div style="display:flex; gap:12px; justify-content:flex-end;">
+              <button type="submit" name="resolucion" value="reembolso" class="btn btn-sm" style="background:#ea580c; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer;">
+                💵 Reembolsar al Contratista
+              </button>
+              <button type="submit" name="resolucion" value="liberar" class="btn btn-g btn-sm" style="padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer;">
+                💸 Liberar al Trabajador
+              </button>
+            </div>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🛡️</div>
+      <div class="empty-title">Sin disputas activas</div>
+      <div class="empty-sub">Todo marcha de maravilla en la plataforma de Chambazo.</div>
+    </div>
+  {% endif %}
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

@@ -20,6 +20,24 @@
   </div>
 </div>
 
+{% if solicitud.disputa %}
+  <div style="background:#fef2f2; border:1px solid #fca5a5; padding:16px; border-radius:12px; margin-bottom:24px; color:#991b1b; display:flex; gap:12px;">
+    <span style="font-size:1.8rem;">⚠️</span>
+    <div>
+      <h4 style="margin:0 0 4px 0; font-weight:700;">Trabajo en Mediación (Disputa Activa)</h4>
+      <p class="t-xs" style="margin:0; line-height:1.5;">
+        Este trabajo ha sido reportado por <strong>{{ solicitud.disputa.creado_por.get_full_name|default:solicitud.disputa.creado_por.username }}</strong>. 
+        Motivo: "{{ solicitud.disputa.motivo }}". El dinero de la transacción está congelado temporalmente hasta que el equipo de soporte Chambazo emita una resolución.
+      </p>
+      {% if solicitud.disputa.resolucion_comentario %}
+        <div style="margin-top:8px; padding-top:8px; border-top:1px solid #fca5a5; font-size:0.85rem; color:#7f1d1d;">
+          <strong>Veredicto de Soporte:</strong> {{ solicitud.disputa.resolucion_comentario }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
 <div class="layout-2col">
   <!-- Columna Izquierda: Información y Acciones -->
   <div>
@@ -40,10 +58,15 @@
         <span class="val">{{ solicitud.trabajo.ubicacion }}</span>
       </div>
       
-      <div style="margin-top:20px; display:flex; gap:10px;">
-        <a href="{% url 'mensajes_chat' solicitud.pk %}" class="btn btn-outline" style="flex:1; justify-content:center;">
+      <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+        <a href="{% url 'mensajes_chat' solicitud.pk %}" class="btn btn-outline" style="width:100%; justify-content:center;">
           <i class="bi bi-chat-dots"></i> Abrir Chat
         </a>
+        {% if not solicitud.disputa and solicitud.estado == 'contratado' %}
+          <a href="{% url 'abrir_disputa' solicitud.pk %}" class="btn btn-sm" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; width:100%; justify-content:center; font-weight:600;">
+            <i class="bi bi-exclamation-triangle-fill"></i> Iniciar Disputa / Reportar
+          </a>
+        {% endif %}
       </div>
     </div>
 
@@ -96,10 +119,16 @@
         <p class="t-sm" style="color:#064e3b; margin-bottom:16px;">
           ¿El trabajo fue realizado correctamente? Al confirmar, liberarás los <strong>${{ escrow.monto }}</strong> al trabajador y se generará tu comprobante de factura.
         </p>
-        <form method="post" action="{% url 'liberar_fondos_escrow' solicitud.pk %}" onsubmit="return confirm('¿Estás seguro de liberar los fondos? Esta acción no se puede deshacer.');">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-g btn-full" style="padding:14px;">✅ Liberar Fondos</button>
-        </form>
+        {% if solicitud.disputa %}
+          <button class="btn btn-full" style="padding:14px; background:#94a3b8; color:#fff; border:none; cursor:not-allowed;" disabled>
+            🔒 Fondos Bloqueados en Disputa
+          </button>
+        {% else %}
+          <form method="post" action="{% url 'liberar_fondos_escrow' solicitud.pk %}" onsubmit="return confirm('¿Estás seguro de liberar los fondos? Esta acción no se puede deshacer.');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-g btn-full" style="padding:14px;">✅ Liberar Fondos</button>
+          </form>
+        {% endif %}
       </div>
     {% endif %}
   </div>

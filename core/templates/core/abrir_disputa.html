@@ -1,0 +1,54 @@
+{% extends 'core/base.html' %}
+{% block title %}Iniciar Disputa Formal{% endblock %}
+{% block body %}
+{% if request.user == solicitud.trabajo.contratista %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
+
+<div class="page-hd">
+  <div>
+    <h1>Iniciar Reclamo / Disputa</h1>
+    <p>Trabajo: <strong>{{ solicitud.trabajo.titulo }}</strong></p>
+  </div>
+</div>
+
+<div class="content-container" style="max-width:700px; margin:0 auto;">
+  <div class="card" style="padding:32px; border-radius:16px; border:1px solid #f87171; background:#fff;">
+    <div style="background:#fef2f2; border:1px solid #fee2e2; padding:16px; border-radius:12px; margin-bottom:24px; color:#991b1b; display:flex; gap:12px; align-items:flex-start;">
+      <span style="font-size:1.8rem;">⚠️</span>
+      <div>
+        <h4 style="margin:0 0 6px 0; font-weight:700;">¡Atención!</h4>
+        <p class="t-xs" style="margin:0; line-height:1.5;">
+          Al abrir una disputa, los fondos de la transacción en Escrow por <strong>${{ solicitud.escrow.monto }}</strong> serán congelados inmediatamente. El equipo de Chambazo SV revisará las evidencias fotográficas de ambas partes para dictar una resolución objetiva.
+        </p>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label class="form-label" style="font-weight:700;">Motivo de la disputa</label>
+        <textarea name="motivo" class="form-control" rows="6" placeholder="Describe a detalle lo ocurrido. Por qué consideras que el trabajo no fue terminado o si consideras que los términos pactados no se cumplieron..." required></textarea>
+      </div>
+
+      <div class="form-group" style="margin-bottom:24px;">
+        <label class="form-label" style="font-weight:700;">Adjuntar foto de evidencia (Opcional)</label>
+        <input type="file" name="evidencia_imagen" class="form-control" accept="image/*">
+        <span class="t-xs t-muted">Sube una captura de pantalla, foto técnica o comprobante que demuestre el reclamo.</span>
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <a href="{% url 'gestionar_trabajo' solicitud.pk %}" class="btn btn-outline">Cancelar</a>
+        <button type="submit" class="btn btn-full" style="background:#dc2626; color:#fff; border:none; padding:10px 24px; border-radius:8px; font-weight:700; cursor:pointer;">
+          ⚠️ Abrir Disputa
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

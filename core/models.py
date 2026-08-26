@@ -601,3 +601,28 @@ class ContratoDigital(models.Model):
         return f"Contrato {self.id} — {self.solicitud.trabajo.titulo}"
 
 
+# ── Disputas y Mediación ───────────────────────────────────────────────────────
+class Disputa(models.Model):
+    ESTADOS = [
+        ('abierta', 'Abierta / En Mediación'),
+        ('en_revision', 'En Revisión por Soporte'),
+        ('resuelta_reembolso', 'Resuelta (Reembolsado al Cliente)'),
+        ('resuelta_pago', 'Resuelta (Liberado al Trabajador)'),
+    ]
+    solicitud = models.OneToOneField(Solicitud, on_delete=models.CASCADE, related_name='disputa')
+    creado_por = models.ForeignKey(User, on_delete=models.CASCADE, related_name='disputas_creadas')
+    motivo = models.TextField()
+    evidencia_imagen = models.ImageField(upload_to='disputas/', null=True, blank=True)
+    estado = models.CharField(max_length=30, choices=ESTADOS, default='abierta')
+    resolucion_comentario = models.TextField(blank=True, help_text='Comentario del mediador de Chambazo')
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-creado']
+
+    def __str__(self):
+        return f"Disputa #{self.id} — Solicitud {self.solicitud.id} ({self.estado})"
+
+
+
