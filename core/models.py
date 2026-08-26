@@ -573,3 +573,31 @@ class EvidenciaTrabajo(models.Model):
     def __str__(self):
         return f"Evidencia de {self.subido_por.username} para Solicitud {self.solicitud.id}"
 
+
+# ── Contrato Digital ───────────────────────────────────────────────────────────
+class ContratoDigital(models.Model):
+    ESTADOS = [
+        ('pendiente', 'Pendiente de Firma'),
+        ('vigente', 'Vigente / Firmado'),
+        ('completado', 'Finalizado'),
+    ]
+    solicitud = models.OneToOneField(Solicitud, on_delete=models.CASCADE, related_name='contrato')
+    alcance_trabajo = models.TextField()
+    plazo_entrega = models.DateField()
+    costo_total = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Firmas
+    firma_contratista = models.CharField(max_length=150, blank=True)
+    firmado_contratista_at = models.DateTimeField(null=True, blank=True)
+    
+    firma_trabajador = models.CharField(max_length=150, blank=True)
+    firmado_trabajador_at = models.DateTimeField(null=True, blank=True)
+    
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='pendiente')
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Contrato {self.id} — {self.solicitud.trabajo.titulo}"
+
+

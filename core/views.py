@@ -1419,3 +1419,75 @@ def descargar_comprobante_pdf(request, pk):
             response['Content-Disposition'] = f'inline; filename="Chambazo_Recibo_{escrow.id}.pdf"'
             return response
     raise Http404("Comprobante no encontrado")
+
+
+# ── NUEVO: CONTRATO DIGITAL ───────────────────────────────────────────────────
+from .models import ContratoDigital
+
+@login_required
+def crear_contrato_digital(request, sol_pk):
+    """El contratista define el alcance, firma digitalmente e inicia la contratación."""
+    solicitud = get_object_or_404(Solicitud, pk=sol_pk, trabajo__contratista=request.user)
+    
+    if solicitud.estado not in ['aceptado', 'pendiente', 'en_revision']:
+        messages.error(request, 'Esta solicitud ya no se puede contratar.')
+        return redirect('candidatos', pk=solicitud.trabajo.pk)
+
+    if request.method == 'POST':
+        alcance = request.POST.get('alcance_trabajo')
+        plazo = request.POST.get('plazo_entrega')
+        firma = request.POST.get('firma_contratista')
+        
+        monto = solicitud.tarifa_propuesta if solicitud.tarifa_propuesta else solicitud.trabajo.presupuesto
+        
+        # Eliminar si existe previo por si acaso
+        ContratoDigital.objects.filter(solicitud=solicitud).delete()
+        
+        contrato = ContratoDigital.objects.create(
+            solicitud=solicitud,
+            alcance_trabajo=alcance,
+            plazo_entrega=plazo,
+            costo_total=monto,
+            firma_contratista=firma,
+            firmado_contratista_at=timezone.now(),
+            estado='pendiente'
+        )
+        
+        messages.info(request, '📝 Contrato digital firmado. Ahora procede al depósito en Escrow para activarlo.')
+        return redirect('depositar_escrow', sol_pk=solicitud.pk)
+
+    ctx = ctx_base(request)
+    ctx['solicitud'] = solicitud
+    ctx['active'] = 'candidatos'
+    return render(request, 'core/crear_contrato.html', ctx)
+
+
+@login_required
+def firmar_contrato(request, sol_pk):
+    """El trabajador visualiza las condiciones del contrato redactado y firma digitalmente."""
+    solicitud = get_object_or_404(Solicitud, pk=sol_pk, trabajador=request.user)
+    contrato = get_object_or_404(ContratoDigital, solicitud=solicitud)
+
+    if request.method == 'POST':
+        firma = request.POST.get('firma_trabajador')
+        contrato.firma_trabajador = firma
+        contrato.firmado_trabajador_at = timezone.now()
+        contrato.estado = 'vigente'
+        contrato.save()
+        
+        # Notificar al contratista que el contrato está activo
+        crear_notif(
+            solicitud.trabajo.contratista, 'sistema',
+            '✍️ Contrato Digital Firmado',
+            f'{request.user.profile.nombre_display} ha firmado el contrato digital para "{solicitud.trabajo.titulo}". El trabajo ya está vigente.',
+            f'/solicitud/{solicitud.pk}/gestionar/'
+        )
+        
+        messages.success(request, '📝 ¡Has firmado el contrato digital! El trabajo está ahora activo.')
+        return redirect('gestionar_trabajo', sol_pk=solicitud.pk)
+
+    ctx = ctx_base(request)
+    ctx['contrato'] = contrato
+    ctx['active'] = 'solicitudes'
+    return render(request, 'core/firmar_contrato.html', ctx)
+

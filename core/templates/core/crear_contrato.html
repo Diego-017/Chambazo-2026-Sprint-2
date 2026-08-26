@@ -1,0 +1,59 @@
+{% extends 'core/base.html' %}
+{% block title %}Crear Contrato Digital{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_contratista.html' %}
+
+<div class="page-hd">
+  <div>
+    <h1>Generar Contrato Digital</h1>
+    <p>Acuerdo de trabajo para <strong>{{ solicitud.trabajo.titulo }}</strong></p>
+  </div>
+</div>
+
+<div class="content-container" style="max-width:800px; margin:0 auto;">
+  <div class="card" style="padding:32px; border-radius:16px;">
+    <form method="post">
+      {% csrf_token %}
+      
+      <div style="background:#f8fafc; padding:20px; border-radius:12px; margin-bottom:24px; border:1px solid #e2e8f0;">
+        <h4 style="margin-top:0;">Información General</h4>
+        <div class="layout-2col" style="gap:16px;">
+          <div><strong>Trabajador:</strong> {{ solicitud.trabajador.get_full_name|default:solicitud.trabajador.username }}</div>
+          <div><strong>Monto Acordado:</strong> ${{ solicitud.tarifa_propuesta|default:solicitud.trabajo.presupuesto }}</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Alcance detallado del trabajo</label>
+        <textarea name="alcance_trabajo" class="form-control" rows="8" placeholder="Describe claramente qué incluye y qué NO incluye el servicio. Ej: Reparación de fuga de tubería en lavamanos, cambio de empaque de hule y limpieza del área. No incluye albañilería." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Fecha de entrega / plazo estimado</label>
+        <input type="date" name="plazo_entrega" class="form-control" required style="width:auto;">
+      </div>
+
+      <hr style="margin:24px 0;">
+
+      <div class="form-group" style="background:#ecfdf5; padding:20px; border-radius:12px; border:1px solid #10b981;">
+        <h4 style="margin-top:0; color:#065f46;"><i class="bi bi-pencil-fill"></i> Firma del Contratista (Tú)</h4>
+        <p class="t-xs t-muted" style="color:#064e3b; margin-bottom:12px;">Escribe tu nombre completo legal para firmar digitalmente este acuerdo comercial.</p>
+        <input type="text" name="firma_contratista" class="form-control" placeholder="Escribe tu nombre y apellido" required style="background:#fff;">
+        <div style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="acepto_terminos" required>
+          <label for="acepto_terminos" class="t-xs fw-600" style="color:#064e3b; cursor:pointer;">
+            Acepto que este documento sirve como acuerdo vinculante bajo los términos de Chambazo SV.
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:24px;">
+        <a href="{% url 'candidatos' solicitud.trabajo.pk %}" class="btn btn-outline">Cancelar</a>
+        <button type="submit" class="btn btn-g">📝 Firmar y Enviar Contrato</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

@@ -47,6 +47,48 @@
       </div>
     </div>
 
+    <!-- Contrato Digital Status Widget -->
+    {% if solicitud.contrato %}
+      <div class="filter-card" style="border: 1px solid #cbd5e1; background:#f8fafc;">
+        <h3 style="margin-top:0;"><i class="bi bi-file-earmark-text-fill"></i> Contrato Digital</h3>
+        
+        <div class="mini-stat-row">
+          <span class="lbl">Plazo Estimado:</span>
+          <span class="val fw-700">{{ solicitud.contrato.plazo_entrega|date:"d M Y" }}</span>
+        </div>
+        
+        <div class="mini-stat-row">
+          <span class="lbl">Firma Contratista:</span>
+          <span class="val" style="font-family:cursive;">/{{ solicitud.contrato.firma_contratista }}/</span>
+        </div>
+
+        <div class="mini-stat-row">
+          <span class="lbl">Firma Trabajador:</span>
+          <span class="val">
+            {% if solicitud.contrato.firma_trabajador %}
+              <span style="font-family:cursive;">/{{ solicitud.contrato.firma_trabajador }}/</span>
+            {% else %}
+              <span class="t-red fw-700">Pendiente de firma</span>
+            {% endif %}
+          </span>
+        </div>
+
+        <div style="margin-top:16px;">
+          {% if solicitud.contrato.firma_trabajador %}
+            <a href="{% url 'firmar_contrato' solicitud.pk %}" class="btn btn-outline btn-sm" style="width:100%; justify-content:center;">
+              <i class="bi bi-eye-fill"></i> Ver Acuerdo Completo
+            </a>
+          {% elif request.user == solicitud.trabajador %}
+            <a href="{% url 'firmar_contrato' solicitud.pk %}" class="btn btn-g btn-sm" style="width:100%; justify-content:center; animation: pulse 2s infinite;">
+              ✍️ Firmar Contrato Digital
+            </a>
+          {% else %}
+            <div class="t-xs t-muted" style="text-align:center;">Esperando firma del trabajador.</div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
     <!-- Contratista: Liberar Fondos -->
     {% if request.user == solicitud.trabajo.contratista %}
       <div class="filter-card" style="background:#f0fdf4; border:1px solid #10b981;">

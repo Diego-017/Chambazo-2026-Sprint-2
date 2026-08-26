@@ -1,0 +1,107 @@
+{% extends 'core/base.html' %}
+{% block title %}Revisar y Firmar Contrato Digital{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_trabajador.html' %}
+
+<div class="page-hd">
+  <div>
+    <h1>Acuerdo de Contrato Digital</h1>
+    <p>Revisión para el trabajo: <strong>{{ contrato.solicitud.trabajo.titulo }}</strong></p>
+  </div>
+</div>
+
+<div class="content-container" style="max-width:800px; margin:0 auto;">
+  <div class="card" style="padding:40px; border-radius:16px; border:1px solid #cbd5e1; background:#fff; box-shadow:0 10px 25px -5px rgba(0,0,0,0.05);">
+    
+    <!-- Diseño estilo Papel / Contrato Real -->
+    <div style="font-family:'Courier New', Courier, monospace; color:#334155; line-height:1.6;">
+      <div style="text-align:center; font-weight:bold; font-size:1.2rem; margin-bottom:20px; border-bottom:2px solid #334155; padding-bottom:10px;">
+        CONTRATO INDEPENDIENTE DE PRESTACIÓN DE SERVICIOS
+      </div>
+      
+      <p>
+        <strong>Fecha del documento:</strong> {{ contrato.creado|date:"d \d\e F \d\e Y" }} <br>
+        <strong>ID del Contrato:</strong> CHZ-CD-{{ contrato.id }}
+      </p>
+
+      <p>
+        Por una parte, <strong>{{ contrato.solicitud.trabajo.contratista.get_full_name|default:contrato.solicitud.trabajo.contratista.username }}</strong> (en adelante el "Contratista"), y por la otra parte, <strong>{{ contrato.solicitud.trabajador.get_full_name|default:contrato.solicitud.trabajador.username }}</strong> (en adelante el "Trabajador"), acuerdan de mutuo acuerdo celebrar el presente convenio sujeto a las siguientes cláusulas:
+      </p>
+
+      <div style="font-weight:bold; margin-top:20px;">CLÁUSULA PRIMERA: ALCANCE Y DESCRIPCIÓN DEL TRABAJO</div>
+      <div style="background:#f8fafc; border:1px dashed #cbd5e1; padding:15px; border-radius:4px; font-family:sans-serif; font-size:0.95rem; margin-top:5px; white-space:pre-wrap;">{{ contrato.alcance_trabajo }}</div>
+
+      <div style="font-weight:bold; margin-top:20px;">CLÁUSULA SEGUNDA: CONDICIONES ECONÓMICAS Y PAGO</div>
+      <p>
+        El costo total del servicio se fija en la cantidad de <strong>${{ contrato.costo_total }} USD</strong>. Los fondos han sido depositados exitosamente en la bóveda de custodia temporal (Escrow) de Chambazo y serán liberados única y exclusivamente tras la confirmación de finalización y entrega del servicio.
+      </p>
+
+      <div style="font-weight:bold; margin-top:20px;">CLÁUSULA TERCERA: PLAZOS Y ENTREGAS</div>
+      <p>
+        El Trabajador se compromete a entregar la totalidad de las tareas descritas en la Cláusula Primera a más tardar el día <strong>{{ contrato.plazo_entrega|date:"d \d\e F \d\e Y" }}</strong>.
+      </p>
+
+      <!-- Firmas -->
+      <div style="margin-top:40px; border-top:1px solid #cbd5e1; padding-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:40px; font-family:sans-serif;">
+        <div>
+          <div style="font-weight:700; font-size:0.85rem; color:#64748b;">FIRMA CONTRATISTA</div>
+          <div style="font-family:'Lucida Handwriting', cursive, Georgia, serif; font-size:1.2rem; padding:10px 0; color:#064e3b;">
+            /{{ contrato.firma_contratista }}/
+          </div>
+          <div style="font-size:0.75rem; color:#94a3b8;">
+            Firmado el {{ contrato.firmado_contratista_at|date:"d/m/Y H:i" }}<br>
+            IP registrada y autorizada por Chambazo SV.
+          </div>
+        </div>
+        
+        <div>
+          <div style="font-weight:700; font-size:0.85rem; color:#64748b;">FIRMA TRABAJADOR</div>
+          {% if contrato.firma_trabajador %}
+            <div style="font-family:'Lucida Handwriting', cursive, Georgia, serif; font-size:1.2rem; padding:10px 0; color:#064e3b;">
+              /{{ contrato.firma_trabajador }}/
+            </div>
+            <div style="font-size:0.75rem; color:#94a3b8;">
+              Firmado el {{ contrato.firmado_trabajador_at|date:"d/m/Y H:i" }}
+            </div>
+          {% else %}
+            <div style="color:#ef4444; font-size:0.85rem; font-weight:700; padding:10px 0;">
+              [PENDIENTE DE FIRMA]
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario de firma (solo si no ha firmado aún) -->
+    {% if not contrato.firma_trabajador %}
+      <hr style="margin:40px 0 24px;">
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group" style="background:#f0fdf4; padding:20px; border-radius:12px; border:1px solid #10b981;">
+          <h4 style="margin-top:0; color:#065f46;"><i class="bi bi-pencil-fill"></i> Firma del Trabajador (Tú)</h4>
+          <p class="t-xs t-muted" style="color:#064e3b; margin-bottom:12px;">Escribe tu nombre completo legal para firmar y validar este contrato de trabajo.</p>
+          <input type="text" name="firma_trabajador" class="form-control" placeholder="Escribe tu nombre y apellido" required style="background:#fff;">
+          <div style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" id="acepto_contrato" required>
+            <label for="acepto_contrato" class="t-xs fw-600" style="color:#064e3b; cursor:pointer;">
+              Confirmo que leí y acepto las especificaciones, plazos y montos plasmados en este acuerdo.
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:24px;">
+          <a href="{% url 'gestionar_trabajo' contrato.solicitud.pk %}" class="btn btn-outline">Volver</a>
+          <button type="submit" class="btn btn-g">📝 Validar y Firmar Contrato</button>
+        </div>
+      </form>
+    {% else %}
+      <div style="text-align:center; margin-top:40px;">
+        <a href="{% url 'gestionar_trabajo' contrato.solicitud.pk %}" class="btn btn-outline"><i class="bi bi-arrow-left"></i> Volver a la consola de gestión</a>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

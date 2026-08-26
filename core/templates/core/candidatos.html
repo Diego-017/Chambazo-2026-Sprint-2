@@ -50,7 +50,7 @@
             <a href="{% url 'cambiar_estado_solicitud' sol.pk 'rechazado' %}?next={{ request.path }}" class="btn-icon-circle" style="background:var(--red-light);color:var(--red);" title="Rechazar"><i class="bi bi-x-lg"></i></a>
           {% elif sol.estado == 'aceptado' %}
             <!-- Aceptado, listo para contratar (Escrow/Chat) -->
-            <a href="{% url 'cambiar_estado_solicitud' sol.pk 'contratado' %}?next={{ request.path }}" class="btn btn-g btn-xs" style="padding:4px 8px;font-size:11px;" title="Contratar Formalmente">🤝 Contratar</a>
+            <a href="{% url 'crear_contrato_digital' sol.pk %}" class="btn btn-g btn-xs" style="padding:4px 8px;font-size:11px;" title="Contratar Formalmente">🤝 Contratar</a>
             <a href="{% url 'mensajes_chat' sol.pk %}" class="btn-icon-circle" style="background:#e0f2fe;color:#0369a1;" title="Chat / Entrevista"><i class="bi bi-chat-dots"></i></a>
           {% elif sol.estado == 'contratado' or sol.estado == 'en_progreso' %}
             <!-- En progreso, gestionar trabajo -->
