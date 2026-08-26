@@ -70,6 +70,23 @@ class UserProfile(models.Model):
     empresa     = models.CharField(max_length=100, blank=True)
     foto        = models.ImageField(upload_to='fotos/', null=True, blank=True)
     verificado  = models.BooleanField(default=False)
+    
+    # KYC / Verificación de identidad
+    verificacion_estado = models.CharField(
+        max_length=20, 
+        default='no_iniciado', 
+        choices=[
+            ('no_iniciado', 'No Iniciado'),
+            ('pendiente', 'En Revisión'),
+            ('aprobado', 'Verificado'),
+            ('rechazado', 'Rechazado')
+        ]
+    )
+    doc_frontal = models.ImageField(upload_to='verificaciones/', null=True, blank=True)
+    doc_reverso = models.ImageField(upload_to='verificaciones/', null=True, blank=True)
+    selfie      = models.ImageField(upload_to='verificaciones/', null=True, blank=True)
+    comentario_verificacion = models.TextField(blank=True)
+
     calificacion= models.FloatField(default=0.0)
     total_trabajos = models.IntegerField(default=0)
     notif_email = models.BooleanField(default=True)

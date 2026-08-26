@@ -1,0 +1,95 @@
+{% extends 'core/base.html' %}
+{% block title %}Consola de Soporte y Validación KYC{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_contratista.html' %}
+
+<div class="page-hd">
+  <div>
+    <h1>Consola de Validación KYC — Chambazo SV</h1>
+    <p>Validación facial (Selfie) y documentos oficiales (DUI / NIT / CNR)</p>
+  </div>
+</div>
+
+<div class="content-container">
+  {% if solicitudes %}
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      {% for profile in solicitudes %}
+        <div class="card" style="padding:28px; border-radius:16px; border:1px solid #cbd5e1; background:#fff;">
+          <div class="flex-bc" style="margin-bottom:16px;">
+            <div>
+              <span class="pill pill-green" style="font-weight:700;">{{ profile.rol|title }}</span>
+              <strong style="margin-left:8px; font-size:1.1rem;">{{ profile.user.get_full_name|default:profile.user.username }}</strong>
+            </div>
+            <div class="t-xs t-muted">Email: {{ profile.user.email }}</div>
+          </div>
+
+          <div class="layout-2col" style="gap:24px;">
+            <!-- Izquierda: Documentos Oficiales -->
+            <div>
+              <h4 style="margin-top:0;">DUI / NIT Cargas</h4>
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div>
+                  <div class="t-xs fw-700 t-muted">FRENTE / NIT:</div>
+                  {% if profile.doc_frontal %}
+                    <a href="{{ profile.doc_frontal.url }}" target="_blank">
+                      <img src="{{ profile.doc_frontal.url }}" style="width:100%; max-height:180px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1; margin-top:4px;">
+                    </a>
+                  {% endif %}
+                </div>
+                {% if profile.doc_reverso %}
+                  <div>
+                    <div class="t-xs fw-700 t-muted">REVERSO:</div>
+                    <a href="{{ profile.doc_reverso.url }}" target="_blank">
+                      <img src="{{ profile.doc_reverso.url }}" style="width:100%; max-height:180px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1; margin-top:4px;">
+                    </a>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Derecha: Selfie Validacion Facial -->
+            <div>
+              <h4 style="margin-top:0;">Validación Facial (Selfie)</h4>
+              {% if profile.selfie %}
+                <div style="text-align:center;">
+                  <a href="{{ profile.selfie.url }}" target="_blank">
+                    <img src="{{ profile.selfie.url }}" style="width:200px; height:200px; object-fit:cover; border-radius:50%; border:4px solid #10b981; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                  </a>
+                  <p class="t-xs t-muted mt-8">Compara visualmente la selfie del usuario contra la foto del documento.</p>
+                </div>
+              {% else %}
+                <span class="t-xs t-muted">No se cargó selfie (perfil empresa contratista).</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Acciones KYC -->
+          <hr style="margin:20px 0;">
+          <form method="post" action="{% url 'resolver_verificacion' profile.user.pk %}" style="display:flex; flex-direction:column; gap:12px;">
+            {% csrf_token %}
+            <div class="form-group">
+              <input type="text" name="comentario_verificacion" class="form-control" placeholder="Razón del rechazo (solo si vas a denegar la solicitud)...">
+            </div>
+            <div style="display:flex; gap:12px; justify-content:flex-end;">
+              <button type="submit" name="accion" value="rechazar" class="btn btn-sm" style="background:#dc2626; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer;">
+                ❌ Denegar Verificación
+              </button>
+              <button type="submit" name="accion" value="aprobar" class="btn btn-g btn-sm" style="padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer;">
+                🛡️ Aprobar e Identidad Verificada
+              </button>
+            </div>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🛡️</div>
+      <div class="empty-title">Sin solicitudes de validación</div>
+      <div class="empty-sub">Todos los trabajadores y contratistas postulados ya están procesados.</div>
+    </div>
+  {% endif %}
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

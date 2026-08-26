@@ -1,0 +1,88 @@
+{% extends 'core/base.html' %}
+{% block title %}Verificar Identidad{% endblock %}
+{% block body %}
+{% if request.user.profile.rol == 'contratista' %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
+
+<div class="page-hd">
+  <div>
+    <h1>Verificar Identidad (KYC)</h1>
+    <p>Seguridad y confianza en Chambazo SV</p>
+  </div>
+</div>
+
+<div class="content-container" style="max-width:700px; margin:0 auto;">
+  <div class="card" style="padding:32px; border-radius:16px;">
+    
+    {% if profile.verificacion_estado == 'aprobado' %}
+      <div style="text-align:center; padding:24px 0;">
+        <span style="font-size:3rem; color:#10b981;">🛡️</span>
+        <h2 style="color:#065f46; font-weight:800; margin-top:12px;">¡Tu cuenta está Verificada!</h2>
+        <p class="t-sm t-muted" style="max-width:400px; margin:8px auto 0 auto;">
+          Ya cuentas con la insignia de confianza en tu perfil. Esto te ayudará a destacar en las ofertas y búsquedas de Chambazo.
+        </p>
+      </div>
+    
+    {% elif profile.verificacion_estado == 'pendiente' %}
+      <div style="text-align:center; padding:24px 0;">
+        <span style="font-size:3rem; color:#3b82f6; animation: spin 4s linear infinite;">⏳</span>
+        <h2 style="color:#1d4ed8; font-weight:800; margin-top:12px;">Verificación en revisión</h2>
+        <p class="t-sm t-muted" style="max-width:450px; margin:8px auto 0 auto;">
+          Hemos recibido tus documentos. Nuestro equipo de validación facial y documental de Chambazo está revisando tu solicitud. Te notificaremos pronto por correo.
+        </p>
+      </div>
+
+    {% else %}
+      {% if profile.verificacion_estado == 'rechazado' %}
+        <div style="background:#fef2f2; border:1px solid #fee2e2; padding:16px; border-radius:12px; margin-bottom:24px; color:#991b1b;">
+          <h4 style="margin:0 0 6px 0; font-weight:700;">Reclamo Rechazado</h4>
+          <p class="t-xs" style="margin:0;">
+            Razón del rechazo: <strong>{{ profile.comentario_verificacion|default:"Documentos borrosos o selfie ilegible." }}</strong>. Por favor, vuelve a subir los documentos con mejor iluminación.
+          </p>
+        </div>
+      {% endif %}
+
+      <p class="t-sm t-mid mb-24">
+        Para otorgarte la insignia de <strong>Perfil Verificado</strong>, por favor carga fotos claras de tus documentos oficiales.
+      </p>
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        {% if profile.rol == 'trabajador' %}
+          <!-- Trabajador: DUI frente, reverso, Selfie -->
+          <div class="form-group">
+            <label class="form-label" style="font-weight:700;">DUI Frente (Foto del documento de identidad)</label>
+            <input type="file" name="doc_frontal" class="form-control" accept="image/*" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-weight:700;">DUI Reverso</label>
+            <input type="file" name="doc_reverso" class="form-control" accept="image/*" required>
+          </div>
+          <div class="form-group" style="background:#f0fdf4; padding:20px; border-radius:12px; border:1px solid #86efac; margin-bottom:24px;">
+            <label class="form-label" style="font-weight:700; color:#166534;"><i class="bi bi-camera-fill"></i> Validación Facial (Selfie)</label>
+            <p class="t-xs" style="color:#166534; margin-top:0; margin-bottom:12px;">Sube una selfie sosteniendo tu DUI al lado de tu rostro o una selfie nítida con buena iluminación.</p>
+            <input type="file" name="selfie" class="form-control" accept="image/*" required style="background:#fff;">
+          </div>
+        {% else %}
+          <!-- Contratista: NIT/CNR -->
+          <div class="form-group">
+            <label class="form-label" style="font-weight:700;">Documento de la Empresa (DUI, NIT, CNR o Registro de IVA)</label>
+            <input type="file" name="doc_frontal" class="form-control" accept="image/*" required>
+            <span class="t-xs t-muted">Sube una foto legible de tu credencial fiscal.</span>
+          </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-g btn-full" style="padding:14px; font-size:1.05rem;">
+          🚀 Enviar Solicitud de Verificación
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

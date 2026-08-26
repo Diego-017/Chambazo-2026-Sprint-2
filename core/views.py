@@ -1599,3 +1599,85 @@ def mediacion_soporte(request):
     return render(request, 'core/mediacion_soporte.html', ctx)
 
 
+# ── NUEVO: VERIFICACIÓN AVANZADA DE IDENTIDAD (KYC) ────────────────────────────
+@login_required
+def solicitar_verificacion(request):
+    """Permite al usuario subir sus documentos (DUI, Selfie, NIT) para verificar su cuenta."""
+    profile = request.user.profile
+    if profile.verificacion_estado in ['pendiente', 'aprobado']:
+        # Ya está en curso o aprobado
+        pass
+
+    if request.method == 'POST':
+        doc_f = request.FILES.get('doc_frontal')
+        doc_r = request.FILES.get('doc_reverso')
+        selfie_f = request.FILES.get('selfie')
+        
+        if doc_f:
+            profile.doc_frontal = doc_f
+        if doc_r:
+            profile.doc_reverso = doc_r
+        if selfie_f:
+            profile.selfie = selfie_f
+            
+        profile.verificacion_estado = 'pendiente'
+        profile.save()
+        messages.success(request, '🚀 Documentos de identidad cargados con éxito. Tu cuenta está en proceso de revisión.')
+        return redirect('solicitar_verificacion')
+
+    ctx = ctx_base(request)
+    ctx.update({
+        'profile': profile,
+        'active': 'verificar_kyc'
+    })
+    return render(request, 'core/solicitar_verificacion.html', ctx)
+
+
+@login_required
+def resolver_verificacion(request, user_pk):
+    """Acción del soporte administrativo de Chambazo para Aprobar o Rechazar el KYC."""
+    target_user = get_object_or_404(User, pk=user_pk)
+    profile = target_user.profile
+    
+    if request.method == 'POST':
+        accion = request.POST.get('accion')
+        comentario = request.POST.get('comentario_verificacion', '')
+        
+        if accion == 'aprobar':
+            profile.verificacion_estado = 'aprobado'
+            profile.verificado = True
+            profile.comentario_verificacion = ''
+            profile.save()
+            
+            # Notificación y Logro
+            crear_notif(target_user, 'sistema', '🛡️ ¡Identidad Verificada!', 'Tu cuenta ha sido aprobada por nuestro soporte. Ya tienes tu insignia verde de confianza.', '/inicio/')
+            verificar_logros(target_user)
+            messages.success(request, f'🛡️ Cuenta de {target_user.username} verificada con éxito.')
+            
+        elif accion == 'rechazar':
+            profile.verificacion_estado = 'rechazado'
+            profile.verificado = False
+            profile.comentario_verificacion = comentario
+            profile.save()
+            
+            crear_notif(target_user, 'sistema', '❌ Verificación de Identidad Denegada', f'La validación de tus documentos fue rechazada. Motivo: {comentario}. Inténtalo de nuevo.', '/solicitar-verificacion/')
+            messages.warning(request, f'❌ Verificación de {target_user.username} rechazada.')
+            
+        return redirect('consola_verificacion_admin')
+        
+    return redirect('consola_verificacion_admin')
+
+
+@login_required
+def consola_verificacion_admin(request):
+    """Consola para que soporte valide visualmente las selfies e identidades."""
+    solicitudes = UserProfile.objects.filter(verificacion_estado='pendiente').select_related('user')
+    ctx = ctx_base(request)
+    ctx.update({
+        'solicitudes': solicitudes,
+        'active': 'kyc_admin'
+    })
+    return render(request, 'core/consola_verificacion_admin.html', ctx)
+
+
+

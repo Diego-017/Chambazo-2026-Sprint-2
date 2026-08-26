@@ -24,6 +24,20 @@
     <a href="{% url 'estadisticas' %}" class="sidebar-link {% if active == 'stats' %}active yellow{% endif %}">
       <i class="bi bi-bar-chart"></i> Estadísticas
     </a>
+    
+    <a href="{% url 'solicitar_verificacion' %}" class="sidebar-link {% if active == 'verificar_kyc' %}active yellow{% endif %}">
+      <i class="bi bi-shield-check"></i> Verificar Empresa
+    </a>
+
+    {% if request.user.is_staff %}
+      <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; padding: 12px 16px 4px 16px; font-weight: 700;">Administración</div>
+      <a href="{% url 'mediacion_soporte' %}" class="sidebar-link {% if active == 'soporte' %}active yellow{% endif %}" style="color:#fdba74;">
+        <i class="bi bi-shield-fill-exclamation"></i> Soporte: Mediación
+      </a>
+      <a href="{% url 'consola_verificacion_admin' %}" class="sidebar-link {% if active == 'kyc_admin' %}active yellow{% endif %}" style="color:#fdba74;">
+        <i class="bi bi-patch-check-fill"></i> Soporte: Validar KYC
+      </a>
+    {% endif %}
   </nav>
   <div class="sidebar-divider"></div>
   <div class="sidebar-bottom">

@@ -40,6 +40,10 @@ urlpatterns = [
     path('solicitud/<int:sol_pk>/disputa/', views.abrir_disputa, name='abrir_disputa'),
     path('disputa/<int:disputa_pk>/resolver/', views.resolver_disputa, name='resolver_disputa'),
     path('soporte/mediacion/', views.mediacion_soporte, name='mediacion_soporte'),
+    # KYC Verificación de Identidad
+    path('solicitar-verificacion/', views.solicitar_verificacion, name='solicitar_verificacion'),
+    path('soporte/verificar-kyc/', views.consola_verificacion_admin, name='consola_verificacion_admin'),
+    path('soporte/verificar-kyc/<int:user_pk>/resolver/', views.resolver_verificacion, name='resolver_verificacion'),
     path('solicitud/<int:sol_pk>/liberar-pago/', views.liberar_fondos_escrow, name='liberar_fondos_escrow'),
     path('escrow/<int:pk>/pdf/', views.descargar_comprobante_pdf, name='descargar_comprobante_pdf'),
     path('trabajo/<int:pk>/enviada/', views.solicitud_enviada, name='solicitud_enviada'),

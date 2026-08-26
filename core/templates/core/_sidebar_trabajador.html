@@ -41,6 +41,9 @@
     <a href="{% url 'galeria_gestionar' %}" class="sidebar-link {% if active == 'portafolio' %}active{% endif %}">
       <i class="bi bi-images"></i> Mi portafolio
     </a>
+    <a href="{% url 'solicitar_verificacion' %}" class="sidebar-link {% if active == 'verificar_kyc' %}active{% endif %}">
+      <i class="bi bi-shield-check"></i> Verificar Identidad (KYC)
+    </a>
     <a href="{% url 'notificaciones' %}" class="sidebar-link {% if active == 'notif' %}active{% endif %}">
       <i class="bi bi-bell"></i> Notificaciones
       {% if notif_count > 0 %}<span class="sidebar-badge">{{ notif_count }}</span>{% endif %}
