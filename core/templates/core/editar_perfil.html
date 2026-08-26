@@ -44,6 +44,13 @@
         <div class="form-group"><label class="form-label">Expectativa Salarial</label>{{ form.expectativa_salarial }}</div>
         <div class="form-group"><label class="form-label">Idiomas</label>{{ form.idiomas }}</div>
       </div>
+      <div class="form-group">
+        <label class="form-label">Currículum Vitae (PDF)</label>
+        {{ form.cv_pdf }}
+        {% if profile.cv_pdf %}
+          <div class="t-xs t-muted mt-4">Actual: <a href="{{ profile.cv_pdf.url }}" target="_blank">Ver archivo subido</a></div>
+        {% endif %}
+      </div>
       <div class="form-group"><label class="form-label">Certificaciones y Diplomas</label>{{ form.certificaciones }}</div>
       <div class="form-group"><label class="form-label">Referencias Personales</label>{{ form.referencias_personales }}</div>
       <div class="form-group"><label class="form-label">Contacto de Emergencia</label>{{ form.contacto_emergencia }}</div>

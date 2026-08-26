@@ -86,7 +86,7 @@ class EditarPerfilForm(forms.ModelForm):
             'foto', 'telefono', 'ubicacion', 'descripcion',
             'empresa', 'tarifa_hora', 'experiencia_anos', 'portfolio_url',
             # Trabajador
-            'dui', 'vehiculo', 'disponibilidad_horario', 'certificaciones',
+            'dui', 'vehiculo', 'disponibilidad_horario', 'certificaciones', 'cv_pdf',
             'contacto_emergencia', 'nivel_educativo', 'idiomas', 'referencias_personales', 'expectativa_salarial',
             # Contratista
             'nit_nrc', 'giro_comercial', 'sitio_web', 'redes_sociales',
@@ -94,6 +94,7 @@ class EditarPerfilForm(forms.ModelForm):
         ]
         widgets = {
             'foto':            forms.FileInput(attrs={'class':'form-control'}),
+            'cv_pdf':          forms.FileInput(attrs={'class':'form-control', 'accept': 'application/pdf'}),
             'telefono':        forms.TextInput(attrs={'class':'form-control','placeholder':'+503 7000-0000'}),
             'ubicacion':       forms.TextInput(attrs={'class':'form-control','placeholder':'Ciudad, departamento'}),
             'descripcion':     forms.Textarea(attrs={'class':'form-control','rows':'3','placeholder':'Cuéntanos sobre ti o tu empresa...'}),

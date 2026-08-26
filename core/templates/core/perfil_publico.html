@@ -13,7 +13,19 @@
     <div class="fw-800 t-h2">{{ profile.nombre_display }}</div>
     <div class="t-xs t-muted mb-8">{{ profile.ubicacion|default:"El Salvador" }}</div>
     {% if profile.calificacion > 0 %}<div class="flex-c gap-6" style="justify-content:center;"><span class="stars">{{ profile.estrellas }}</span><span class="fw-700 t-sm">{{ profile.calificacion }}</span></div>{% endif %}
-    {% if profile.verificado %}<span class="pill pill-green mt-8"><i class="bi bi-patch-check-fill"></i> Verificado</span>{% endif %}
+    <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-top:8px;">
+      {% if profile.verificado %}<span class="pill pill-green"><i class="bi bi-patch-check-fill"></i> Verificado</span>{% endif %}
+      {% if profile.calificacion >= 4.5 %}<span class="pill" style="background:#fef3c7;color:#d97706;border:1px solid #fbbf24;"><i class="bi bi-star-fill"></i> Top Rated</span>{% endif %}
+    </div>
+    
+    {% if profile.rol == 'trabajador' and profile.cv_pdf %}
+      <div style="margin-top:16px;">
+        <a href="{{ profile.cv_pdf.url }}" target="_blank" class="btn btn-outline btn-sm" style="width:100%; justify-content:center;">
+          <i class="bi bi-file-earmark-pdf-fill" style="color:#ef4444;"></i> Descargar CV
+        </a>
+      </div>
+    {% endif %}
+    
     <div class="divider"></div>
     <div class="mini-stat-row"><span class="lbl">Solicitudes</span><span class="val">{{ stats.aplicaciones }}</span></div>
     <div class="mini-stat-row"><span class="lbl">Contratados</span><span class="val">{{ stats.contratados }}</span></div>
@@ -27,12 +39,23 @@
       <div style="display:flex;flex-wrap:wrap;gap:6px;">{% for h in profile.habilidades %}<span class="skill-tag">{{ h }}</span>{% endfor %}</div>
     </div></div>
     {% endif %}
+    
+    {% if profile.certificaciones %}
+    <div class="card mb-16"><div class="card-body">
+      <h4 class="t-h3 mb-10"><i class="bi bi-award"></i> Certificaciones y Postgrados</h4>
+      <p class="t-sm t-mid" style="white-space:pre-wrap;">{{ profile.certificaciones }}</p>
+    </div></div>
+    {% endif %}
+    
     {% if profile.descripcion %}
-    <div class="card mb-16"><div class="card-body"><h4 class="t-h3 mb-10">Acerca de</h4><p class="t-sm t-mid">{{ profile.descripcion }}</p></div></div>
+    <div class="card mb-16"><div class="card-body">
+      <h4 class="t-h3 mb-10">Acerca de</h4>
+      <p class="t-sm t-mid">{{ profile.descripcion }}</p>
+    </div></div>
     {% endif %}
     {% if user_obj.galeria.exists %}
     <div class="card mb-16"><div class="card-body">
-      <h4 class="t-h3 mb-10"><i class="bi bi-images"></i> Portafolio de Trabajos</h4>
+      <h4 class="t-h3 mb-10"><i class="bi bi-images"></i> {% if profile.rol == 'contratista' %}Galería de Empresa{% else %}Portafolio de Trabajos{% endif %}</h4>
       <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:10px;">
         {% for item in user_obj.galeria.all %}
         <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border);background:#f8fafc;">

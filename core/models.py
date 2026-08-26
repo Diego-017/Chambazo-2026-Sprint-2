@@ -88,8 +88,9 @@ class UserProfile(models.Model):
         ('carro', 'Automóvil'),
         ('camioneta', 'Camioneta / Pick-up'),
     ], default='ninguno')
+    cv_pdf = models.FileField(upload_to='cvs/', null=True, blank=True, help_text='Curriculum Vitae (PDF u otro doc)')
+    certificaciones = models.TextField(blank=True, help_text='Postgrados, certificaciones o cursos realizados')
     disponibilidad_horario = models.CharField(max_length=100, blank=True, help_text='Ej: Lunes a Viernes, Fines de semana, Turno completo')
-    certificaciones = models.TextField(blank=True, help_text='Cursos, diplomas o licencias técnicas')
     contacto_emergencia = models.CharField(max_length=150, blank=True)
     nivel_educativo = models.CharField(max_length=50, blank=True, choices=[
         ('basica', 'Educación Básica'),
@@ -375,7 +376,7 @@ class Resena(models.Model):
 
 # ── GaleriaItem ────────────────────────────────────────────────────────────────
 class GaleriaItem(models.Model):
-    trabajador = models.ForeignKey(User, on_delete=models.CASCADE, related_name='galeria')
+    usuario    = models.ForeignKey(User, on_delete=models.CASCADE, related_name='galeria')
     titulo     = models.CharField(max_length=100)
     descripcion= models.TextField(blank=True)
     categoria  = models.CharField(max_length=50, blank=True)

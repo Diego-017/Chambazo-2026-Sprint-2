@@ -838,11 +838,29 @@ def crear_resena_solicitud(request, sol_pk):
         form = ResenaForm()
 
     ctx = ctx_base(request)
+    
+    if request.user.profile.rol == 'contratista':
+        tags = [
+            ('Puntualidad', 'Puntualidad'),
+            ('Calidad de trabajo', 'Calidad de trabajo'),
+            ('Excelente comunicación', 'Excelente comunicación'),
+            ('Profesionalismo', 'Profesionalismo'),
+            ('Rápido y eficiente', 'Rápido y eficiente'),
+        ]
+    else:
+        tags = [
+            ('Pago oportuno', 'Pago oportuno'),
+            ('Trato respetuoso', 'Trato respetuoso'),
+            ('Instrucciones claras', 'Instrucciones claras'),
+            ('Excelentes herramientas', 'Excelentes herramientas'),
+            ('Buen ambiente', 'Buen ambiente'),
+        ]
+
     ctx.update({
         'form': form,
         'solicitud': sol,
         'destinatario': destinatario,
-        'etiquetas_opciones': ResenaForm.ETIQUETAS_OPCIONES,
+        'etiquetas_opciones': tags,
         'active': 'resena'
     })
     return render(request, 'core/crear_resena.html', ctx)
@@ -864,21 +882,18 @@ def comprobante_contrato(request, sol_pk):
 # ── Portafolio y Galería (Trabajador) ───────────────────────────────────────────
 @login_required
 def galeria_gestionar(request):
-    if request.user.profile.rol != 'trabajador':
-        return redirect('home_trabajador')
-
     if request.method == 'POST':
         form = GaleriaItemForm(request.POST, request.FILES)
         if form.is_valid():
             item = form.save(commit=False)
-            item.trabajador = request.user
+            item.usuario = request.user
             item.save()
-            messages.success(request, '✅ Foto agregada al portafolio exitosamente.')
+            messages.success(request, '✅ Foto agregada a la galería exitosamente.')
             return redirect('galeria_gestionar')
     else:
         form = GaleriaItemForm()
 
-    items = GaleriaItem.objects.filter(trabajador=request.user)
+    items = GaleriaItem.objects.filter(usuario=request.user)
     ctx = ctx_base(request)
     ctx.update({'form': form, 'items': items, 'active': 'portafolio'})
     return render(request, 'core/galeria_gestionar.html', ctx)
@@ -886,10 +901,10 @@ def galeria_gestionar(request):
 
 @login_required
 def galeria_eliminar(request, pk):
-    item = get_object_or_404(GaleriaItem, pk=pk, trabajador=request.user)
+    item = get_object_or_404(GaleriaItem, pk=pk, usuario=request.user)
     if request.method == 'POST':
         item.delete()
-        messages.success(request, 'Imagen eliminada del portafolio.')
+        messages.success(request, 'Imagen eliminada de la galería.')
     return redirect('galeria_gestionar')
 
 
@@ -1367,6 +1382,13 @@ def liberar_fondos_escrow(request, sol_pk):
         # Notificar por correo
         from .email_utils import enviar_notif_trabajo_completado_exito
         enviar_notif_trabajo_completado_exito(solicitud, escrow)
+
+        crear_notif(
+            solicitud.trabajador, 'sistema',
+            '💸 Fondos Liberados & Califica a tu Contratista',
+            f'El pago de ${escrow.monto} ha sido liberado. ¡Haz clic para dejar una reseña sobre tu experiencia con {request.user.profile.nombre_display}!',
+            f'/resena/crear/{solicitud.pk}/'
+        )
 
         messages.success(request, '✨ Trabajo completado y fondos liberados. ¡No olvides dejar tu reseña!')
         return redirect('crear_resena_solicitud', sol_pk=sol_pk)
