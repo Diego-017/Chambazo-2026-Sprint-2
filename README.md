@@ -1,5 +1,5 @@
 
-# Chambazo Version 2 Sprint 20 Jul- 22 Agos  2026 #
+# Chambazo Version 2 Sprint 20 Jul- 26 Agos 2026 #
 
 
 ## Historias de Usuario implementadas (15 HUs del Sprint 1)
