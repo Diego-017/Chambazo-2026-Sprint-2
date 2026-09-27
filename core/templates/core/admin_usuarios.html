@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+{% block title %}Usuarios · Chambazo Admin{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_admin.html' %}
+
+<div class="page-hd">
+  <div><h1>Usuarios</h1><p>{{ perfiles|length }} resultado{{ perfiles|length|pluralize }}</p></div>
+</div>
+
+<form method="get" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+  <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Nombre, correo o empresa..." style="flex:1;min-width:220px;">
+  <select name="rol" class="form-control" style="max-width:180px;">
+    <option value="">Todos los roles</option>
+    <option value="trabajador" {% if request.GET.rol == 'trabajador' %}selected{% endif %}>Trabajador</option>
+    <option value="contratista" {% if request.GET.rol == 'contratista' %}selected{% endif %}>Contratista</option>
+  </select>
+  <select name="estado" class="form-control" style="max-width:180px;">
+    <option value="">Cualquier estado</option>
+    <option value="activo" {% if request.GET.estado == 'activo' %}selected{% endif %}>Activos</option>
+    <option value="suspendido" {% if request.GET.estado == 'suspendido' %}selected{% endif %}>Suspendidos</option>
+  </select>
+  <button type="submit" class="btn btn-g">Buscar</button>
+  {% if request.GET.q or request.GET.rol or request.GET.estado %}<a href="{% url 'admin_usuarios' %}" class="btn btn-outline">Limpiar</a>{% endif %}
+</form>
+
+{% if perfiles %}
+<table class="data-table">
+  <thead><tr><th>Usuario</th><th>Rol</th><th>Correo</th><th>Verificado</th><th>Estado</th><th>Registrado</th><th>Acciones</th></tr></thead>
+  <tbody>
+    {% for p in perfiles %}
+    <tr>
+      <td>
+        <div class="dt-title">{{ p.nombre_display }}</div>
+        {% if p.rol == 'contratista' and p.empresa %}<div class="dt-sub">{{ p.empresa }}</div>{% endif %}
+      </td>
+      <td style="text-transform:capitalize;">{{ p.rol }}</td>
+      <td class="t-muted t-sm">{{ p.user.email }}</td>
+      <td>{% if p.verificado %}<i class="bi bi-patch-check-fill t-green"></i>{% else %}<span class="t-muted t-xs">No</span>{% endif %}</td>
+      <td>
+        {% if p.user.is_active %}<span class="est-badge est-completado" style="background:var(--green-light);color:var(--green-dark);">Activo</span>
+        {% else %}<span class="est-badge" style="background:var(--red-light);color:var(--red);">Suspendido</span>{% endif %}
+      </td>
+      <td class="t-muted t-xs">{{ p.user.date_joined|date:"d/m/Y" }}</td>
+      <td>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <a href="{% url 'perfil_publico' p.user.pk %}" class="t-green fw-700 t-xs" target="_blank">Ver perfil</a>
+          <form method="post" action="{% url 'admin_toggle_usuario_activo' p.user.pk %}" onsubmit="return confirm('{% if p.user.is_active %}¿Suspender{% else %}¿Reactivar{% endif %} esta cuenta?');">
+            {% csrf_token %}
+            <button type="submit" class="t-xs fw-700" style="background:none;border:none;cursor:pointer;color:{% if p.user.is_active %}var(--red){% else %}var(--green){% endif %};">
+              {% if p.user.is_active %}Suspender{% else %}Reactivar{% endif %}
+            </button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Sin resultados</div><div class="empty-sub">Prueba con otros filtros</div></div>
+{% endif %}
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

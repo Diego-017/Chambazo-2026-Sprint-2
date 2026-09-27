@@ -24,7 +24,7 @@
 
 {% if solicitudes %}
 <table class="data-table">
-  <thead><tr><th>Candidato</th><th>Habilidades</th><th>Calificación</th><th>Experiencia</th><th>Tarifa</th><th>Compatibilidad</th><th>Estado</th><th>Acciones</th></tr></thead>
+  <thead><tr><th>Candidato</th><th>Habilidades</th><th>Calificación</th><th>Nivel educativo</th><th>Tarifa</th><th>Compatibilidad</th><th>Estado</th><th>Acciones</th></tr></thead>
   <tbody>
     {% for sol in solicitudes %}
     <tr>
@@ -39,7 +39,7 @@
       </td>
       <td>{% for h in sol.trabajador.profile.habilidades|slice:":2" %}<span class="skill-tag" style="margin-right:3px;">{{ h }}</span>{% endfor %}</td>
       <td><span class="stars" style="font-size:11px;">★</span> {{ sol.trabajador.profile.calificacion|default:"—" }}</td>
-      <td>{{ sol.trabajador.profile.experiencia_anos }} años</td>
+      <td>{{ sol.trabajador.profile.get_nivel_educativo_display|default:"—" }}</td>
       <td class="fw-700 t-green">{% if sol.tarifa_propuesta %}${{ sol.tarifa_propuesta }}{% else %}—{% endif %}</td>
       <td>{% with score=sol.trabajador.profile.match_score %}{% if score > 0 %}<span class="match-badge {% if score >= 80 %}match-hi{% elif score >= 50 %}match-md{% else %}match-lo{% endif %}">{{ score }}%</span>{% else %}—{% endif %}{% endwith %}</td>
       <td><span class="est-badge est-{{ sol.estado }}">{{ sol.estado_label }}</span></td>

@@ -1,0 +1,34 @@
+{% extends 'core/base.html' %}
+{% block title %}Reportar usuario · Chambazo{% endblock %}
+{% block body %}
+{% if request.user.profile.rol == 'administrador' %}{% include 'core/_sidebar_admin.html' %}{% elif request.user.profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
+
+<div class="page-hd">
+  <div><h1>Reportar usuario</h1><p>Estás reportando a {{ reportado.get_full_name|default:reportado.username }}</p></div>
+</div>
+
+<div class="card" style="max-width:520px;"><div class="card-body">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="form-label">¿Cuál es el motivo?</label>
+      <select name="motivo" class="form-control" required>
+        <option value="fraude">Fraude o estafa</option>
+        <option value="no_pago">No pagó / no cumplió lo acordado</option>
+        <option value="comportamiento">Comportamiento inapropiado</option>
+        <option value="spam">Spam o publicaciones falsas</option>
+        <option value="calidad">Calidad del trabajo/servicio</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Cuéntanos qué pasó <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>
+      <textarea name="descripcion" class="form-control" rows="4" placeholder="Describe la situación con el mayor detalle posible..."></textarea>
+    </div>
+    <p class="t-xs t-muted mb-16">Nuestro equipo de soporte revisará este reporte. Los reportes falsos o mal intencionados pueden afectar tu propia cuenta.</p>
+    <button type="submit" class="btn btn-g btn-full">Enviar reporte</button>
+  </form>
+</div></div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

@@ -6,9 +6,21 @@
 <div class="page-hd"><div><h1>Editar perfil</h1><p>Actualiza tus datos para mejorar tu presencia y confianza en Chambazo</p></div></div>
 
 <div style="max-width:680px;">
-  <form method="post" enctype="multipart/form-data">
+
+  <!-- Barra de progreso del perfil -->
+  <div class="card mb-16" style="padding:16px 20px;">
+    <div class="flex-bc mb-8">
+      <span class="t-sm fw-700">Tu perfil está {{ profile.completitud_perfil }}% completo</span>
+      <span class="t-xs t-muted">Mientras más completo, más confianza generas</span>
+    </div>
+    <div style="background:var(--border);height:8px;border-radius:4px;overflow:hidden;">
+      <div style="width:{{ profile.completitud_perfil }}%;background:var(--green);height:100%;border-radius:4px;transition:width .3s ease;"></div>
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" id="perfilForm">
     {% csrf_token %}
-    
+
     <!-- 1. Información General -->
     <div class="card mb-16"><div class="card-body">
       <h3 class="t-h3 mb-14"><i class="bi bi-person-badge"></i> Información General</h3>
@@ -16,45 +28,121 @@
         <label class="form-label">Nombre completo / Persona responsable *</label>
         <input type="text" name="nombre" value="{{ request.user.get_full_name }}" class="form-control" placeholder="Juan Pérez">
       </div>
-      <div class="form-group"><label class="form-label">Foto de perfil</label>{{ form.foto }}</div>
+      <div class="form-group"><label class="form-label">Foto de perfil <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.foto }}</div>
       <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group"><label class="form-label">Teléfono de contacto</label>{{ form.telefono }}</div>
-        <div class="form-group"><label class="form-label">Ubicación / Ciudad</label>{{ form.ubicacion }}</div>
+        <div class="form-group"><label class="form-label">Teléfono de contacto <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.telefono }}</div>
+        <div class="form-group"><label class="form-label">Ubicación / Ciudad <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.ubicacion }}</div>
       </div>
-      <div class="form-group"><label class="form-label">Descripción / Biografía</label>{{ form.descripcion }}</div>
+      <div class="form-group"><label class="form-label">Descripción / Biografía <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.descripcion }}</div>
     </div></div>
 
     {% if profile.rol == 'trabajador' %}
-    <!-- 2. Datos Profesionales del Trabajador -->
+
+    <!-- 2. Datos laborales -->
     <div class="card mb-16"><div class="card-body">
-      <h3 class="t-h3 mb-14"><i class="bi bi-briefcase"></i> Datos Laborales y Transporte</h3>
-      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group"><label class="form-label">Documento de Identidad (DUI)</label>{{ form.dui }}</div>
-        <div class="form-group"><label class="form-label">Vehículo / Transporte</label>{{ form.vehiculo }}</div>
+      <details open>
+        <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <h3 class="t-h3" style="margin:0;"><i class="bi bi-briefcase"></i> Datos laborales y transporte</h3>
+          <i class="bi bi-chevron-down"></i>
+        </summary>
+        <div style="margin-top:14px;">
+          <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label class="form-label">Documento de Identidad (DUI) <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.dui }}</div>
+            <div class="form-group"><label class="form-label">Vehículo / Transporte</label>{{ form.vehiculo }}</div>
+          </div>
+          <div class="form-group"><label class="form-label">Nivel Educativo</label>{{ form.nivel_educativo }}</div>
+        </div>
+      </details>
+    </div></div>
+
+    <!-- Disponibilidad -->
+    <div class="card mb-16"><div class="card-body">
+      <details>
+        <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <h3 class="t-h3" style="margin:0;"><i class="bi bi-calendar-week"></i> Disponibilidad <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></h3>
+          <i class="bi bi-chevron-down"></i>
+        </summary>
+        <div style="margin-top:14px;">
+          <label class="form-label">¿Qué días puedes trabajar?</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+            {% for cod, lab in dias_semana %}
+            <label class="day-chip {% if cod in profile.disponibilidad_horario.dias %}active{% endif %}">
+              <input type="checkbox" name="disp_dias" value="{{ cod }}" {% if cod in profile.disponibilidad_horario.dias %}checked{% endif %}>{{ lab }}
+            </label>
+            {% endfor %}
+          </div>
+          <label class="form-label">Franja horaria</label>
+          <select name="disp_franja" class="form-control">
+            <option value="">Selecciona...</option>
+            <option value="manana" {% if profile.disponibilidad_horario.franja == 'manana' %}selected{% endif %}>Mañana</option>
+            <option value="tarde" {% if profile.disponibilidad_horario.franja == 'tarde' %}selected{% endif %}>Tarde</option>
+            <option value="noche" {% if profile.disponibilidad_horario.franja == 'noche' %}selected{% endif %}>Noche</option>
+            <option value="completo" {% if profile.disponibilidad_horario.franja == 'completo' %}selected{% endif %}>Tiempo completo</option>
+          </select>
+        </div>
+      </details>
+    </div></div>
+
+    <!-- Idiomas -->
+    <div class="card mb-16"><div class="card-body">
+      <details>
+        <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <h3 class="t-h3" style="margin:0;"><i class="bi bi-translate"></i> Idiomas <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></h3>
+          <i class="bi bi-chevron-down"></i>
+        </summary>
+        <div style="margin-top:14px;">
+          <div id="idiomasChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" id="idiomaInput" class="form-control" placeholder="Ej: Inglés" style="flex:1;min-width:140px;">
+            <select id="idiomaNivelInput" class="form-control" style="max-width:150px;">
+              <option value="Básico">Básico</option>
+              <option value="Intermedio">Intermedio</option>
+              <option value="Avanzado">Avanzado</option>
+              <option value="Nativo">Nativo</option>
+            </select>
+            <button type="button" class="btn btn-outline btn-sm" onclick="agregarIdioma()"><i class="bi bi-plus-lg"></i> Agregar</button>
+          </div>
+          <input type="hidden" name="idiomas_json" id="idiomasJsonInput">
+        </div>
+      </details>
+    </div></div>
+
+    <!-- Currículum y documentos -->
+    <div class="card mb-16"><div class="card-body">
+      <h3 class="t-h3 mb-14"><i class="bi bi-file-earmark-text"></i> Currículum y documentos</h3>
+
+      <div style="background:var(--green-light);border:1px solid var(--green);border-radius:var(--r);padding:14px 16px;margin-bottom:18px;">
+        <div class="fw-700 t-sm mb-4"><i class="bi bi-magic"></i> ¿No tienes tu CV armado?</div>
+        <p class="t-xs t-mid" style="margin-bottom:10px;">Genera uno automáticamente con la información que ya llenaste aquí, listo para descargar en PDF.</p>
+        <button type="submit" name="generar_cv" value="1" class="btn btn-g btn-sm">
+          <i class="bi bi-download"></i> Guardar y generar mi CV en PDF
+        </button>
       </div>
-      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group"><label class="form-label">Tarifa por hora sugerida ($ USD)</label>{{ form.tarifa_hora }}</div>
-        <div class="form-group"><label class="form-label">Años de experiencia</label>{{ form.experiencia_anos }}</div>
-      </div>
-      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group"><label class="form-label">Nivel Educativo</label>{{ form.nivel_educativo }}</div>
-        <div class="form-group"><label class="form-label">Disponibilidad de Horario</label>{{ form.disponibilidad_horario }}</div>
-      </div>
-      <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group"><label class="form-label">Expectativa Salarial</label>{{ form.expectativa_salarial }}</div>
-        <div class="form-group"><label class="form-label">Idiomas</label>{{ form.idiomas }}</div>
-      </div>
+
       <div class="form-group">
-        <label class="form-label">Currículum Vitae (PDF)</label>
+        <label class="form-label">O sube tu propio CV (PDF) <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>
         {{ form.cv_pdf }}
         {% if profile.cv_pdf %}
           <div class="t-xs t-muted mt-4">Actual: <a href="{{ profile.cv_pdf.url }}" target="_blank">Ver archivo subido</a></div>
         {% endif %}
       </div>
-      <div class="form-group"><label class="form-label">Certificaciones y Diplomas</label>{{ form.certificaciones }}</div>
-      <div class="form-group"><label class="form-label">Referencias Personales</label>{{ form.referencias_personales }}</div>
-      <div class="form-group"><label class="form-label">Contacto de Emergencia</label>{{ form.contacto_emergencia }}</div>
-      <div class="form-group"><label class="form-label">Enlace a Portfolio o Red Social</label>{{ form.portfolio_url }}</div>
+      <div class="form-group"><label class="form-label">Certificaciones y Diplomas <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.certificaciones }}</div>
+      <div class="form-group"><label class="form-label">Enlace a Portafolio o Red Social <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.portfolio_url }}</div>
+    </div></div>
+
+    <!-- Referencias personales -->
+    <div class="card mb-16"><div class="card-body">
+      <details>
+        <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+          <h3 class="t-h3" style="margin:0;"><i class="bi bi-people"></i> Referencias personales <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></h3>
+          <i class="bi bi-chevron-down"></i>
+        </summary>
+        <div style="margin-top:14px;">
+          <div id="referenciasRows"></div>
+          <button type="button" class="btn btn-outline btn-sm mt-8" onclick="agregarReferenciaRow()"><i class="bi bi-plus-lg"></i> Agregar referencia</button>
+          <input type="hidden" name="referencias_json" id="referenciasJsonInput">
+        </div>
+      </details>
     </div></div>
 
     <!-- 3. Habilidades -->
@@ -75,20 +163,20 @@
       <h3 class="t-h3 mb-14"><i class="bi bi-building"></i> Datos Corporativos y Fiscales</h3>
       <div class="form-group"><label class="form-label">Nombre Comercial de la Empresa</label>{{ form.empresa }}</div>
       <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group"><label class="form-label">NIT o Registro Fiscal (NRC)</label>{{ form.nit_nrc }}</div>
-        <div class="form-group"><label class="form-label">Años de Operación</label>{{ form.anos_operacion }}</div>
+        <div class="form-group"><label class="form-label">NIT o Registro Fiscal (NRC) <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.nit_nrc }}</div>
+        <div class="form-group"><label class="form-label">Años de Operación <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.anos_operacion }}</div>
       </div>
       <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group"><label class="form-label">Tipo de Empresa</label>{{ form.tipo_empresa }}</div>
-        <div class="form-group"><label class="form-label">Cantidad de Empleados</label>{{ form.cantidad_empleados }}</div>
+        <div class="form-group"><label class="form-label">Tipo de Empleador</label>{{ form.tipo_empresa }}</div>
+        <div class="form-group"><label class="form-label">Cantidad de Empleados <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.cantidad_empleados }}</div>
       </div>
-      <div class="form-group"><label class="form-label">Giro Comercial / Actividad Económica</label>{{ form.giro_comercial }}</div>
+      <div class="form-group"><label class="form-label">Giro Comercial / Actividad Económica <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.giro_comercial }}</div>
       <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group"><label class="form-label">Cargo de la Persona de Contacto</label>{{ form.contacto_cargo }}</div>
-        <div class="form-group"><label class="form-label">Sitio Web Oficial</label>{{ form.sitio_web }}</div>
+        <div class="form-group"><label class="form-label">Cargo de la Persona de Contacto <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.contacto_cargo }}</div>
+        <div class="form-group"><label class="form-label">Sitio Web Oficial <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.sitio_web }}</div>
       </div>
-      <div class="form-group"><label class="form-label">Redes Sociales (LinkedIn / Instagram / Facebook)</label>{{ form.redes_sociales }}</div>
-      <div class="form-group"><label class="form-label">Copia de Registro Fiscal (opcional)</label>{{ form.registro_fiscal }}</div>
+      <div class="form-group"><label class="form-label">Redes Sociales (LinkedIn / Instagram / Facebook) <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.redes_sociales }}</div>
+      <div class="form-group"><label class="form-label">Copia de Registro Fiscal <span class="t-xs t-muted" style="font-weight:400;">(opcional)</span></label>{{ form.registro_fiscal }}</div>
     </div></div>
     {% endif %}
 
@@ -99,9 +187,79 @@
 </div>
 
 {% include 'core/_sidebar_close.html' %}
+
+{{ profile.idiomas|json_script:"idiomasData" }}
+{{ profile.referencias_personales|json_script:"referenciasData" }}
+
 <script>
-document.querySelectorAll('.skill-chip-label').forEach(label=>{
+document.querySelectorAll('.skill-chip-label, .day-chip').forEach(label=>{
   label.addEventListener('click',()=>setTimeout(()=>label.classList.toggle('active',label.querySelector('input').checked),0));
 });
+
+// ── Idiomas ──
+let idiomas = [];
+try { idiomas = JSON.parse(document.getElementById('idiomasData')?.textContent || '[]'); } catch(e){ idiomas = []; }
+
+function renderIdiomas(){
+  const wrap = document.getElementById('idiomasChips');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  idiomas.forEach((it, idx) => {
+    const chip = document.createElement('span');
+    chip.className = 'skill-chip-label active';
+    chip.style.cssText = 'display:inline-flex;align-items:center;gap:6px;';
+    chip.innerHTML = `${it.nombre} <span class="t-xs" style="opacity:.75;">(${it.nivel})</span> <i class="bi bi-x-lg" style="cursor:pointer;font-size:10px;" onclick="quitarIdioma(${idx})"></i>`;
+    wrap.appendChild(chip);
+  });
+  document.getElementById('idiomasJsonInput').value = JSON.stringify(idiomas);
+}
+function agregarIdioma(){
+  const nombreInput = document.getElementById('idiomaInput');
+  const nivelInput = document.getElementById('idiomaNivelInput');
+  const nombre = nombreInput.value.trim();
+  if(!nombre) return;
+  idiomas.push({ nombre, nivel: nivelInput.value });
+  nombreInput.value = '';
+  renderIdiomas();
+}
+function quitarIdioma(idx){
+  idiomas.splice(idx, 1);
+  renderIdiomas();
+}
+renderIdiomas();
+
+// ── Referencias personales ──
+let referencias = [];
+try { referencias = JSON.parse(document.getElementById('referenciasData')?.textContent || '[]'); } catch(e){ referencias = []; }
+if (referencias.length === 0) referencias = [{ nombre:'', telefono:'' }];
+
+function renderReferencias(){
+  const wrap = document.getElementById('referenciasRows');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  referencias.forEach((ref, idx) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;';
+    row.innerHTML = `
+      <input type="text" class="form-control" placeholder="Nombre" value="${ref.nombre || ''}" oninput="referencias[${idx}].nombre=this.value; sincronizarReferencias();">
+      <input type="text" class="form-control" placeholder="Teléfono" value="${ref.telefono || ''}" style="max-width:160px;" oninput="referencias[${idx}].telefono=this.value; sincronizarReferencias();">
+      <button type="button" class="btn btn-outline btn-sm" onclick="quitarReferenciaRow(${idx})"><i class="bi bi-trash"></i></button>
+    `;
+    wrap.appendChild(row);
+  });
+  sincronizarReferencias();
+}
+function sincronizarReferencias(){
+  document.getElementById('referenciasJsonInput').value = JSON.stringify(referencias.filter(r => r.nombre || r.telefono));
+}
+function agregarReferenciaRow(){
+  referencias.push({ nombre:'', telefono:'' });
+  renderReferencias();
+}
+function quitarReferenciaRow(idx){
+  referencias.splice(idx, 1);
+  renderReferencias();
+}
+renderReferencias();
 </script>
 {% endblock %}

@@ -39,7 +39,16 @@
 
   <div>
     <div class="card mb-16"><div class="card-body">
-      <div class="flex-bc mb-8"><h4 class="t-h3">Completitud del perfil</h4><span class="fw-800 t-green">{{ profile.completitud_perfil }}%</span></div>
+      <div class="flex-bc mb-8">
+        <h4 class="t-h3" style="display:flex;align-items:center;gap:6px;">
+          Completitud del perfil
+          <button type="button" onclick="document.getElementById('modalCompletitud').classList.add('open')"
+                  style="background:none;border:none;color:var(--muted);cursor:pointer;padding:0;display:flex;" title="¿Qué me falta?">
+            <i class="bi bi-info-circle"></i>
+          </button>
+        </h4>
+        <span class="fw-800 t-green">{{ profile.completitud_perfil }}%</span>
+      </div>
       <div class="prog-wrap"><div class="prog-fill" style="width:{{ profile.completitud_perfil }}%;"></div></div>
       {% if profile.descripcion %}<p class="t-sm t-mid mt-12">{{ profile.descripcion }}</p>{% endif %}
     </div></div>
@@ -80,4 +89,34 @@
 </div>
 
 {% include 'core/_sidebar_close.html' %}
+
+<!-- Modal: ¿qué me falta para completar el perfil? -->
+<div class="ubic-modal-overlay" id="modalCompletitud">
+  <div class="ubic-modal">
+    <h3>¿Qué te falta?</h3>
+    <p class="sub">Estos son los datos que se toman en cuenta para tu {{ profile.completitud_perfil }}% de completitud</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:6px;">
+      {% for label, completo in profile.checklist_perfil %}
+      <div style="display:flex;align-items:center;gap:10px;">
+        {% if completo %}
+          <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:16px;"></i>
+          <span class="t-sm" style="color:var(--dark);">{{ label }}</span>
+        {% else %}
+          <i class="bi bi-circle" style="color:var(--muted);font-size:16px;"></i>
+          <span class="t-sm t-muted">{{ label }} <span class="t-xs">— pendiente</span></span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="ubic-modal-actions">
+      <button type="button" class="btn btn-outline" style="flex:1;justify-content:center;" onclick="document.getElementById('modalCompletitud').classList.remove('open')">Cerrar</button>
+      <a href="{% url 'editar_perfil' %}" class="btn btn-g" style="flex:1;justify-content:center;">Completar perfil</a>
+    </div>
+  </div>
+</div>
+<script>
+document.getElementById('modalCompletitud')?.addEventListener('click', (e) => {
+  if (e.target.id === 'modalCompletitud') e.target.classList.remove('open');
+});
+</script>
 {% endblock %}

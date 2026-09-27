@@ -38,9 +38,15 @@ input,textarea,select,button{font-family:inherit}
 .app-shell{display:flex;min-height:100vh}
 .app-sidebar{
   width:250px;flex-shrink:0;background:var(--navy);color:#fff;
-  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;
-  transition:transform .25s ease;
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;
+  transition:width .25s ease, transform .25s ease;
 }
+.app-sidebar.collapsed{width:72px}
+.app-sidebar.collapsed .sidebar-brand-text,
+.app-sidebar.collapsed .link-text,
+.app-sidebar.collapsed .sidebar-badge{display:none}
+.app-sidebar.collapsed .sidebar-link{justify-content:center}
+.app-sidebar.collapsed .sidebar-brand{justify-content:center;padding:22px 0 18px}
 .app-content{flex:1;min-width:0;padding:28px 32px 60px;max-width:1400px}
 .sidebar-brand{display:flex;align-items:center;gap:10px;padding:22px 20px 18px}
 .sidebar-brand .brand-icon{width:34px;height:34px;border-radius:9px;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
@@ -112,6 +118,14 @@ input,textarea,select,button{font-family:inherit}
 /* ── Forms ─────────────────────────────────────────────────────── */
 .form-group{margin-bottom:16px}
 .form-label{display:block;font-size:12.5px;font-weight:700;color:var(--dark);margin-bottom:6px}
+
+/* ── Modal de ubicación (cascada País > Departamento > Municipio > Distrito) ── */
+.ubic-modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.ubic-modal-overlay.open{display:flex}
+.ubic-modal{background:var(--white);border-radius:var(--r-lg);box-shadow:var(--sh-xl);width:100%;max-width:440px;padding:24px;max-height:90vh;overflow-y:auto}
+.ubic-modal h3{font-size:17px;font-weight:800;margin-bottom:4px}
+.ubic-modal p.sub{font-size:12.5px;color:var(--mid);margin-bottom:18px}
+.ubic-modal-actions{display:flex;gap:10px;margin-top:18px}
 .form-control{width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);font-size:14px;color:var(--dark);background:#fff;transition:var(--tr);outline:none}
 .form-control:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-glow)}
 .form-control::placeholder{color:var(--muted)}
@@ -133,6 +147,10 @@ textarea.form-control{resize:vertical;min-height:90px}
 .skill-chip-label.active{background:var(--green);color:#fff;border-color:var(--green)}
 .skill-chip-label.active.yellow{background:var(--yellow);color:var(--navy);border-color:var(--yellow)}
 .skill-chip-label input{display:none}
+.day-chip{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:1.5px solid var(--border);font-size:12.5px;cursor:pointer;transition:var(--tr);color:var(--mid);font-weight:700;background:#fff}
+.day-chip:hover{border-color:var(--green);color:var(--green)}
+.day-chip.active{background:var(--green);color:#fff;border-color:var(--green)}
+.day-chip input{display:none}
 .skill-tag{display:inline-flex;align-items:center;padding:3px 11px;border-radius:8px;background:var(--green-light);color:var(--green-dark);font-size:11px;font-weight:600}
 .skill-tag.blue{background:var(--blue-light);color:#1d4ed8}
 .skill-tag.grey{background:var(--bg);color:var(--mid)}
@@ -398,6 +416,10 @@ textarea.form-control{resize:vertical;min-height:90px}
 @media(max-width:1000px){
   .app-sidebar{position:fixed;left:0;top:0;z-index:400;transform:translateX(-100%);box-shadow:var(--sh-xl)}
   .app-sidebar.open{transform:translateX(0)}
+  .app-sidebar.collapsed{width:250px}
+  .app-sidebar.collapsed .sidebar-brand-text,
+  .app-sidebar.collapsed .link-text,
+  .app-sidebar.collapsed .sidebar-badge{display:block}
   .app-content{padding:20px 16px 70px}
   .mobile-topbar{
     display:flex;align-items:center;gap:12px;background:var(--navy);color:#fff;

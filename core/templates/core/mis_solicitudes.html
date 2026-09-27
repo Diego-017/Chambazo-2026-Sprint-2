@@ -11,16 +11,14 @@
   <a href="?" class="btn {% if not request.GET.estado %}btn-g{% else %}btn-outline{% endif %} btn-xs">Todas</a>
   <a href="?estado=pendiente" class="btn {% if request.GET.estado == 'pendiente' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Pendientes</a>
   <a href="?estado=en_revision" class="btn {% if request.GET.estado == 'en_revision' %}btn-g{% else %}btn-outline{% endif %} btn-xs">En revisión</a>
-  <a href="?estado=aceptado" class="btn {% if request.GET.estado == 'aceptado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Aceptadas</a>
-  <a href="?estado=contratado" class="btn {% if request.GET.estado == 'contratado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Contratado</a>
+  <a href="?estado=finalizado" class="btn {% if request.GET.estado == 'finalizado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Finalizado</a>
   <a href="?estado=en_progreso" class="btn {% if request.GET.estado == 'en_progreso' %}btn-g{% else %}btn-outline{% endif %} btn-xs">En progreso</a>
-  <a href="?estado=completado" class="btn {% if request.GET.estado == 'completado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Completado</a>
   <a href="?estado=rechazado" class="btn {% if request.GET.estado == 'rechazado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Rechazadas</a>
 </div>
 
 {% if solicitudes %}
 <table class="data-table">
-  <thead><tr><th>Trabajo</th><th>Empresa</th><th>Tarifa pactada</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
+  <thead><tr><th>Trabajo</th><th>Empresa</th><th>Modalidad</th><th>Tarifa pactada</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
   <tbody>
     {% for sol in solicitudes %}
     <tr>
@@ -33,10 +31,31 @@
         </div>
         {% endif %}
       </td>
-      <td>{{ sol.trabajo.contratista.profile.nombre_display }}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          {% if sol.trabajo.contratista.profile.foto %}
+            <img src="{{ sol.trabajo.contratista.profile.foto.url }}" alt="" style="width:28px;height:28px;border-radius:8px;object-fit:cover;flex-shrink:0;">
+          {% else %}
+            <div style="width:28px;height:28px;border-radius:8px;background:var(--green-light);color:var(--green-dark);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.7rem;flex-shrink:0;">{{ sol.trabajo.contratista.profile.nombre_display|first|upper }}</div>
+          {% endif %}
+          <div>
+            <div>{{ sol.trabajo.contratista.profile.nombre_display }}</div>
+            {% if sol.trabajo.contratista.profile.calificacion %}
+            <div class="t-xs t-muted"><span class="stars" style="font-size:10px;">★</span> {{ sol.trabajo.contratista.profile.calificacion }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </td>
+      <td><span class="pill" style="background:var(--bg);border:1px solid var(--border);color:var(--mid);padding:3px 10px;font-size:11px;">{{ sol.trabajo.get_modalidad_display }}</span></td>
       <td class="fw-700 t-green">{% if sol.tarifa_propuesta %}${{ sol.tarifa_propuesta }}{% else %}${{ sol.trabajo.presupuesto }}{% endif %}</td>
       <td class="t-muted">{{ sol.creado|date:"d/m/Y" }}</td>
-      <td><span class="est-badge est-{{ sol.estado }}">{{ sol.estado_label }}</span></td>
+      <td>
+        {% if sol.estado in 'aceptado contratado completado' %}
+          <span class="est-badge est-completado">Finalizado</span>
+        {% else %}
+          <span class="est-badge est-{{ sol.estado }}">{{ sol.estado_label }}</span>
+        {% endif %}
+      </td>
       <td>
         <div style="display:flex;flex-direction:column;gap:4px;">
           <a href="{% url 'trabajo_detalle' sol.trabajo.pk %}" class="t-green fw-700 t-xs" style="text-decoration:none;">Ver detalle <i class="bi bi-chevron-right"></i></a>

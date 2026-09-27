@@ -1,12 +1,20 @@
 import json
+import os
 import random
 import string
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+
+# Control de acceso temporal para vistas de administrador (mediación y KYC).
+# Usa el campo is_staff de Django mientras no exista un rol formal de
+# Administrador en UserProfile. Se marca is_staff=True desde /admin/ de Django
+# a los usuarios que deban tener este acceso.
+staff_required = user_passes_test(lambda u: u.is_staff, login_url='home')
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q, Count, Avg, Sum
 from django.utils import timezone
 from django.conf import settings
@@ -34,6 +42,11 @@ def ctx_base(request):
             ctx['urgentes_count'] = Trabajo.objects.filter(activo=True, es_urgente=True).count()
             ctx['solicitudes_pend_count'] = Solicitud.objects.filter(
                 trabajador=request.user, estado__in=['pendiente', 'en_revision']).count()
+        elif request.user.profile.rol == 'contratista':
+            ctx['es_formal'] = request.user.profile.tipo_empresa != 'independiente'
+        if request.user.is_staff:
+            from .models import ReporteUsuario
+            ctx['reportes_pendientes_count'] = ReporteUsuario.objects.filter(estado__in=['pendiente', 'en_revision']).count()
     return ctx
 
 
@@ -85,7 +98,6 @@ def login_view(request):
     }
     if request.method == 'POST':
         form = LoginForm(request.POST)
-        rol_login = request.POST.get('rol_login', 'trabajador')
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
@@ -95,9 +107,16 @@ def login_view(request):
                 if user:
                     login(request, user)
                     rol = getattr(user.profile, 'rol', 'trabajador')
+                    if rol == 'administrador':
+                        return redirect('panel_admin')
                     return redirect('panel_contratista' if rol == 'contratista' else 'home_trabajador')
                 else:
-                    error = 'Contraseña incorrecta.'
+                    if not user_obj.check_password(password):
+                        error = 'Contraseña incorrecta.'
+                    elif not user_obj.is_active:
+                        error = 'Esta cuenta fue suspendida. Contacta a soporte si crees que es un error.'
+                    else:
+                        error = 'Contraseña incorrecta.'
             except User.DoesNotExist:
                 error = 'No existe una cuenta con ese correo.'
     else:
@@ -207,6 +226,8 @@ def registro_step3(request):
                 user=user, rol=rol,
                 telefono=data.get('telefono', ''), ubicacion=data.get('ubicacion', ''),
                 empresa=data.get('empresa', ''), habilidades=habilidades,
+                tipo_empresa=form.cleaned_data.get('tipo_empresa', 'privada') if rol == 'contratista' else 'privada',
+                descripcion=form.cleaned_data.get('descripcion', '') if rol == 'contratista' else '',
             )
             AceptacionTerminos.objects.create(usuario=user, aceptado=True)
             # Generar y enviar código de 6 dígitos
@@ -290,6 +311,10 @@ def home_trabajador(request):
     q = request.GET.get('q', '')
     categoria = request.GET.get('categoria', '')
     urgente = request.GET.get('urgente', '')
+    modalidad = request.GET.get('modalidad', '')
+    salario_min = request.GET.get('salario_min', '')
+    salario_max = request.GET.get('salario_max', '')
+    ubicacion_depto = request.GET.get('ubicacion_depto', '')
 
     if q:
         qs = qs.filter(Q(titulo__icontains=q) | Q(descripcion__icontains=q) | Q(ubicacion__icontains=q))
@@ -297,6 +322,20 @@ def home_trabajador(request):
         qs = qs.filter(categoria=categoria)
     if urgente:
         qs = qs.filter(es_urgente=True)
+    if modalidad:
+        qs = qs.filter(modalidad=modalidad)
+    if salario_min:
+        try:
+            qs = qs.filter(presupuesto__gte=Decimal(salario_min))
+        except Exception:
+            pass
+    if salario_max:
+        try:
+            qs = qs.filter(presupuesto__lte=Decimal(salario_max))
+        except Exception:
+            pass
+    if ubicacion_depto:
+        qs = qs.filter(ubicacion__icontains=ubicacion_depto)
 
     profile = request.user.profile
     guardado_ids = set(TrabajoGuardado.objects.filter(usuario=request.user).values_list('trabajo_id', flat=True))
@@ -313,7 +352,14 @@ def home_trabajador(request):
         'ganado_mes': _ganado_este_mes(request.user),
     }
     ctx = ctx_base(request)
-    ctx.update({'trabajos': trabajos_list, 'stats': stats, 'active': 'buscar', 'skills': SKILL_CHOICES})
+    departamentos_sv = ['Ahuachapán','Cabañas','Chalatenango','Cuscatlán','La Libertad','La Paz',
+                         'La Unión','Morazán','San Miguel','San Salvador','San Vicente','Santa Ana',
+                         'Sonsonate','Usulután']
+    ctx.update({
+        'trabajos': trabajos_list, 'stats': stats, 'active': 'buscar', 'skills': SKILL_CHOICES,
+        'departamentos_sv': departamentos_sv,
+        'modalidad_choices': Trabajo._meta.get_field('modalidad').choices,
+    })
     return render(request, 'core/home_trabajador.html', ctx)
 
 
@@ -451,11 +497,15 @@ def aplicar_rapido(request, pk):
 
 
 # ── Mis solicitudes (tabla) ─────────────────────────────────────────────────────
+ESTADOS_FINALIZADO = ['aceptado', 'contratado', 'completado']
+
 @login_required
 def mis_solicitudes(request):
     qs = Solicitud.objects.filter(trabajador=request.user).select_related('trabajo__contratista__profile')
     estado = request.GET.get('estado', '')
-    if estado:
+    if estado == 'finalizado':
+        qs = qs.filter(estado__in=ESTADOS_FINALIZADO)
+    elif estado:
         qs = qs.filter(estado=estado)
     ctx = ctx_base(request)
     ctx.update({'solicitudes': qs, 'active': 'solicitudes'})
@@ -635,8 +685,9 @@ def panel_contratista(request):
         'tarifa_prom': trabajos.aggregate(a=Avg('presupuesto'))['a'] or 0,
         'reputacion': request.user.profile.calificacion or 0,
     }
+    es_formal = request.user.profile.tipo_empresa != 'independiente'
     ctx = ctx_base(request)
-    ctx.update({'trabajos': trabajos[:8], 'stats': stats, 'active': 'panel'})
+    ctx.update({'trabajos': trabajos[:8], 'stats': stats, 'active': 'panel', 'es_formal': es_formal})
     return render(request, 'core/panel_contratista.html', ctx)
 
 
@@ -1054,6 +1105,18 @@ def editar_perfil(request):
             p = form.save(commit=False)
             if profile.rol == 'trabajador':
                 p.habilidades = request.POST.getlist('habilidades')
+                try:
+                    p.idiomas = json.loads(request.POST.get('idiomas_json', '[]'))
+                except (ValueError, TypeError):
+                    p.idiomas = []
+                try:
+                    p.referencias_personales = json.loads(request.POST.get('referencias_json', '[]'))
+                except (ValueError, TypeError):
+                    p.referencias_personales = []
+                p.disponibilidad_horario = {
+                    'dias': request.POST.getlist('disp_dias'),
+                    'franja': request.POST.get('disp_franja', ''),
+                }
             nombre = request.POST.get('nombre', '').strip()
             if nombre:
                 partes = nombre.split(' ', 1)
@@ -1061,13 +1124,29 @@ def editar_perfil(request):
                 request.user.last_name = partes[1] if len(partes) > 1 else ''
                 request.user.save(update_fields=['first_name', 'last_name'])
             p.save()
+
+            if request.POST.get('generar_cv') == '1':
+                from .pdf_utils import generar_cv_pdf
+                from django.http import FileResponse
+                from django.core.files import File
+                pdf_path = generar_cv_pdf(p, request.user)
+                full_path = settings.MEDIA_ROOT / pdf_path
+                # Guardar el CV generado como el CV oficial del perfil (queda persistido,
+                # visible en "Currículum y documentos" y cuenta para la completitud del perfil).
+                with open(full_path, 'rb') as f:
+                    p.cv_pdf.save(os.path.basename(pdf_path), File(f), save=True)
+                messages.success(request, '✅ Perfil actualizado y CV generado.')
+                return FileResponse(open(full_path, 'rb'), as_attachment=True,
+                                     filename=f"CV_{request.user.get_full_name() or request.user.username}.pdf")
+
             messages.success(request, '✅ Perfil actualizado.')
             return redirect('perfil_trabajador' if profile.rol == 'trabajador' else 'mi_empresa')
     else:
         form = EditarPerfilForm(instance=profile, rol=profile.rol,
                                 initial={'nombre': request.user.get_full_name()})
     ctx = ctx_base(request)
-    ctx.update({'form': form, 'profile': profile, 'skills': SKILL_CHOICES, 'active': 'perfil'})
+    dias_semana = [('lun','Lun'), ('mar','Mar'), ('mie','Mié'), ('jue','Jue'), ('vie','Vie'), ('sab','Sáb'), ('dom','Dom')]
+    ctx.update({'form': form, 'profile': profile, 'skills': SKILL_CHOICES, 'active': 'perfil', 'dias_semana': dias_semana})
     return render(request, 'core/editar_perfil.html', ctx)
 
 
@@ -1365,21 +1444,26 @@ def liberar_fondos_escrow(request, sol_pk):
         return redirect('gestionar_trabajo', sol_pk=sol_pk)
 
     if request.method == 'POST':
-        escrow = solicitud.escrow
-        escrow.estado = 'liberado'
-        escrow.save()
-
-        solicitud.estado = 'completado'
-        solicitud.save()
-
-        # Generar comprobante
-        from .pdf_utils import generar_comprobante_pdf
-        pdf_path = generar_comprobante_pdf(solicitud, escrow)
-        if pdf_path:
-            escrow.comprobante_pdf.name = pdf_path
+        # Todo lo que cambia el estado del dinero (escrow + solicitud) debe quedar
+        # completo o no pasar nada — si el servidor falla a medias, no puede
+        # quedar el escrow marcado "liberado" con la solicitud sin actualizar.
+        with transaction.atomic():
+            escrow = solicitud.escrow
+            escrow.estado = 'liberado'
             escrow.save()
 
-        # Notificar por correo
+            solicitud.estado = 'completado'
+            solicitud.save()
+
+            # Generar comprobante
+            from .pdf_utils import generar_comprobante_pdf
+            pdf_path = generar_comprobante_pdf(solicitud, escrow)
+            if pdf_path:
+                escrow.comprobante_pdf.name = pdf_path
+                escrow.save()
+
+        # Notificar por correo (fuera de la transacción: si el correo falla,
+        # no debe revertir el pago que ya se liberó correctamente)
         from .email_utils import enviar_notif_trabajo_completado_exito
         enviar_notif_trabajo_completado_exito(solicitud, escrow)
 
@@ -1543,9 +1627,9 @@ def abrir_disputa(request, sol_pk):
 
 
 @login_required
+@staff_required
 def resolver_disputa(request, disputa_pk):
-    """Simulación del dictamen del equipo de soporte (mediador)."""
-    # Para la demo, cualquier staff o superusuario (o cualquiera en el dashboard) puede dictaminar.
+    """Dictamen del equipo de soporte (mediador). Solo accesible para is_staff."""
     disputa = get_object_or_404(Disputa, pk=disputa_pk)
     solicitud = disputa.solicitud
     
@@ -1554,32 +1638,36 @@ def resolver_disputa(request, disputa_pk):
         comentario = request.POST.get('resolucion_comentario', '')
         
         disputa.resolucion_comentario = comentario
-        
+
+        # El cambio de estado de la disputa + el escrow + la solicitud debe
+        # quedar completo o no pasar nada (dinero congelado de por medio).
+        with transaction.atomic():
+            if resolucion == 'reembolso':
+                disputa.estado = 'resuelta_reembolso'
+                if hasattr(solicitud, 'escrow'):
+                    solicitud.escrow.estado = 'reembolsado'
+                    solicitud.escrow.save()
+                solicitud.estado = 'rechazado' # Cancelado
+                solicitud.save()
+
+            elif resolucion == 'liberar':
+                disputa.estado = 'resuelta_pago'
+                if hasattr(solicitud, 'escrow'):
+                    solicitud.escrow.estado = 'liberado'
+                    solicitud.escrow.save()
+                solicitud.estado = 'completado'
+                solicitud.save()
+
+            disputa.save()
+
+        # Notificaciones (fuera de la transacción, no deben revertir la resolución si fallan)
         if resolucion == 'reembolso':
-            disputa.estado = 'resuelta_reembolso'
-            if hasattr(solicitud, 'escrow'):
-                solicitud.escrow.estado = 'reembolsado'
-                solicitud.escrow.save()
-            solicitud.estado = 'rechazado' # Cancelado
-            solicitud.save()
-            
-            # Notificaciones
             crear_notif(solicitud.trabajo.contratista, 'sistema', '💸 Reembolso de Disputa Aprobado', f'Se ha resuelto a tu favor. Los fondos de {solicitud.trabajo.titulo} fueron reembolsados.', '/contratista/estadisticas/')
             crear_notif(solicitud.trabajador, 'sistema', '⚠️ Disputa Resuelta (Reembolso)', f'El soporte de Chambazo reembolsó el depósito a {solicitud.trabajo.contratista.profile.nombre_display}.', '/inicio/')
-            
         elif resolucion == 'liberar':
-            disputa.estado = 'resuelta_pago'
-            if hasattr(solicitud, 'escrow'):
-                solicitud.escrow.estado = 'liberado'
-                solicitud.escrow.save()
-            solicitud.estado = 'completado'
-            solicitud.save()
-            
-            # Notificaciones
             crear_notif(solicitud.trabajador, 'sistema', '💸 Pago de Disputa Liberado', f'Se ha resuelto a tu favor. Se liberó el pago de {solicitud.trabajo.titulo} a tu cuenta.', '/inicio/')
             crear_notif(solicitud.trabajo.contratista, 'sistema', '⚠️ Disputa Resuelta (Liberado)', f'El soporte de Chambazo liberó los fondos a favor del trabajador.', '/contratista/estadisticas/')
 
-        disputa.save()
         messages.success(request, '⚖️ Disputa resuelta de forma exitosa y notificaciones enviadas.')
         return redirect('mediacion_soporte')
         
@@ -1587,8 +1675,128 @@ def resolver_disputa(request, disputa_pk):
 
 
 @login_required
+@staff_required
+def panel_admin(request):
+    """Dashboard principal del Administrador: métricas generales de la plataforma."""
+    from .models import ReporteUsuario, TransaccionEscrow
+    escrow_agg = TransaccionEscrow.objects.aggregate(
+        retenido=Sum('monto', filter=Q(estado='retenido')),
+        liberado=Sum('monto', filter=Q(estado='liberado')),
+    )
+    ctx = ctx_base(request)
+    ctx.update({
+        'active': 'dashboard',
+        'total_trabajadores': UserProfile.objects.filter(rol='trabajador').count(),
+        'total_contratistas': UserProfile.objects.filter(rol='contratista').count(),
+        'trabajos_activos': Trabajo.objects.filter(activo=True).count(),
+        'trabajos_completados': Solicitud.objects.filter(estado='completado').count(),
+        'escrow_retenido': escrow_agg['retenido'] or 0,
+        'escrow_liberado': escrow_agg['liberado'] or 0,
+        'disputas_abiertas': Disputa.objects.filter(estado__in=['abierta', 'en_revision']).count(),
+        'verificaciones_pendientes': UserProfile.objects.filter(verificacion_estado='pendiente').count(),
+        'reportes_pendientes': ReporteUsuario.objects.filter(estado__in=['pendiente', 'en_revision']).count(),
+        'usuarios_suspendidos': User.objects.filter(is_active=False).count(),
+    })
+    return render(request, 'core/panel_admin.html', ctx)
+
+
+@login_required
+@staff_required
+def admin_usuarios(request):
+    """Búsqueda y gestión de usuarios (suspender/reactivar). Solo accesible para is_staff."""
+    qs = UserProfile.objects.select_related('user').exclude(rol='administrador')
+    q = request.GET.get('q', '')
+    rol = request.GET.get('rol', '')
+    estado = request.GET.get('estado', '')
+    if q:
+        qs = qs.filter(Q(user__first_name__icontains=q) | Q(user__last_name__icontains=q) |
+                        Q(user__email__icontains=q) | Q(user__username__icontains=q) | Q(empresa__icontains=q))
+    if rol:
+        qs = qs.filter(rol=rol)
+    if estado == 'suspendido':
+        qs = qs.filter(user__is_active=False)
+    elif estado == 'activo':
+        qs = qs.filter(user__is_active=True)
+
+    ctx = ctx_base(request)
+    ctx.update({'active': 'usuarios', 'perfiles': qs.order_by('-user__date_joined')[:200]})
+    return render(request, 'core/admin_usuarios.html', ctx)
+
+
+@login_required
+@staff_required
+def admin_toggle_usuario_activo(request, user_pk):
+    """Suspende o reactiva la cuenta de un usuario (User.is_active)."""
+    if request.method == 'POST':
+        u = get_object_or_404(User, pk=user_pk)
+        if u.is_staff:
+            messages.error(request, 'No puedes suspender a otro administrador desde aquí.')
+        else:
+            u.is_active = not u.is_active
+            u.save(update_fields=['is_active'])
+            estado_txt = 'reactivada' if u.is_active else 'suspendida'
+            messages.success(request, f'Cuenta de {u.get_full_name() or u.username} {estado_txt}.')
+    return redirect(request.META.get('HTTP_REFERER', 'admin_usuarios'))
+
+
+@login_required
+@staff_required
+def admin_reportes(request):
+    """Bandeja de reportes/denuncias entre usuarios. Solo accesible para is_staff."""
+    from .models import ReporteUsuario
+    estado = request.GET.get('estado', 'pendiente')
+    qs = ReporteUsuario.objects.select_related('reportante__profile', 'reportado__profile')
+    if estado and estado != 'todos':
+        if estado == 'pendiente':
+            qs = qs.filter(estado__in=['pendiente', 'en_revision'])
+        else:
+            qs = qs.filter(estado=estado)
+    ctx = ctx_base(request)
+    ctx.update({'active': 'reportes', 'reportes': qs, 'estado_filtro': estado})
+    return render(request, 'core/admin_reportes.html', ctx)
+
+
+@login_required
+@staff_required
+def admin_resolver_reporte(request, reporte_pk):
+    """Marca un reporte como resuelto o desestimado, con comentario del admin."""
+    from .models import ReporteUsuario
+    reporte = get_object_or_404(ReporteUsuario, pk=reporte_pk)
+    if request.method == 'POST':
+        accion = request.POST.get('accion')
+        if accion in ['resuelto', 'desestimado']:
+            reporte.estado = accion
+            reporte.resolucion_comentario = request.POST.get('comentario', '')
+            reporte.resuelto_por = request.user
+            reporte.save()
+            messages.success(request, 'Reporte actualizado.')
+    return redirect('admin_reportes')
+
+
+@login_required
+def reportar_usuario(request, user_pk):
+    """Cualquier usuario logueado puede reportar a otro usuario."""
+    reportado = get_object_or_404(User, pk=user_pk)
+    if request.method == 'POST':
+        from .models import ReporteUsuario
+        motivo = request.POST.get('motivo', 'otro')
+        descripcion = request.POST.get('descripcion', '')
+        if reportado != request.user:
+            ReporteUsuario.objects.create(
+                reportante=request.user, reportado=reportado,
+                motivo=motivo, descripcion=descripcion,
+            )
+            messages.success(request, 'Gracias, tu reporte fue enviado al equipo de soporte.')
+        return redirect(request.META.get('HTTP_REFERER', 'home'))
+    ctx = ctx_base(request)
+    ctx.update({'reportado': reportado})
+    return render(request, 'core/reportar_usuario.html', ctx)
+
+
+@login_required
+@staff_required
 def mediacion_soporte(request):
-    """Consola del equipo de soporte para ver reclamos activos."""
+    """Consola del equipo de soporte para ver reclamos activos. Solo accesible para is_staff."""
     # Obtenemos las disputas abiertas o en revisión
     disputas = Disputa.objects.filter(estado__in=['abierta', 'en_revision']).select_related('solicitud__trabajo', 'creado_por')
     ctx = ctx_base(request)
@@ -1634,8 +1842,9 @@ def solicitar_verificacion(request):
 
 
 @login_required
+@staff_required
 def resolver_verificacion(request, user_pk):
-    """Acción del soporte administrativo de Chambazo para Aprobar o Rechazar el KYC."""
+    """Aprobar o Rechazar el KYC. Solo accesible para is_staff."""
     target_user = get_object_or_404(User, pk=user_pk)
     profile = target_user.profile
     
@@ -1669,8 +1878,9 @@ def resolver_verificacion(request, user_pk):
 
 
 @login_required
+@staff_required
 def consola_verificacion_admin(request):
-    """Consola para que soporte valide visualmente las selfies e identidades."""
+    """Consola para que soporte valide visualmente las selfies e identidades. Solo accesible para is_staff."""
     solicitudes = UserProfile.objects.filter(verificacion_estado='pendiente').select_related('user')
     ctx = ctx_base(request)
     ctx.update({
@@ -1678,6 +1888,3 @@ def consola_verificacion_admin(request):
         'active': 'kyc_admin'
     })
     return render(request, 'core/consola_verificacion_admin.html', ctx)
-
-
-

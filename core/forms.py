@@ -18,9 +18,11 @@ class RegistroStep2Form(forms.Form):
             widget=forms.EmailInput(attrs={'class':'form-control','placeholder':'correo@ejemplo.com'}))
         self.fields['telefono'] = forms.CharField(max_length=20, required=False, label='Teléfono',
             widget=forms.TextInput(attrs={'class':'form-control','placeholder':'+503 7123-4567'}))
-        self.fields['ubicacion'] = forms.CharField(max_length=100, required=False, label='Ubicación',
-            widget=forms.TextInput(attrs={'class':'form-control','placeholder':'San Salvador'}))
+        self.fields['ubicacion'] = forms.CharField(max_length=180, required=False, label='Ubicación',
+            widget=forms.TextInput(attrs={'class':'form-control', 'id':'id_ubicacion', 'placeholder':'Selecciona tu ubicación', 'readonly':'readonly', 'style':'cursor:pointer;background:#fff;'}))
         self.fields['password'] = forms.CharField(min_length=6, label='Contraseña',
+            widget=forms.PasswordInput(attrs={'class':'form-control','placeholder':'••••••••'}))
+        self.fields['confirmar_password'] = forms.CharField(min_length=6, label='Confirmar contraseña',
             widget=forms.PasswordInput(attrs={'class':'form-control','placeholder':'••••••••'}))
         if rol == 'contratista':
             self.fields['empresa'] = forms.CharField(max_length=100, label='Nombre de la empresa',
@@ -32,12 +34,30 @@ class RegistroStep2Form(forms.Form):
             raise forms.ValidationError('Ya existe una cuenta con este correo.')
         return email
 
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirmar_password = cleaned_data.get('confirmar_password')
+        if password and confirmar_password and password != confirmar_password:
+            self.add_error('confirmar_password', 'Las contraseñas no coinciden.')
+        return cleaned_data
+
 
 class RegistroStep3Form(forms.Form):
     def __init__(self, *args, rol='trabajador', **kwargs):
         super().__init__(*args, **kwargs)
         self.rol = rol
         if rol == 'contratista':
+            self.fields['tipo_empresa'] = forms.ChoiceField(
+                label='Tipo de empleador',
+                choices=[
+                    ('privada', 'Empresa Privada'),
+                    ('publica', 'Institución Pública'),
+                    ('ong', 'ONG / Sin fines de lucro'),
+                    ('independiente', 'Profesional Independiente'),
+                ],
+                initial='privada',
+                widget=forms.Select(attrs={'class': 'form-control'}))
             self.fields['descripcion'] = forms.CharField(required=False,
                 widget=forms.Textarea(attrs={'class':'form-control','rows':'5','placeholder':'Describe tu empresa y tipo de trabajo que contratas...'}))
         self.fields['terminos'] = forms.BooleanField(
@@ -84,10 +104,10 @@ class EditarPerfilForm(forms.ModelForm):
         model = UserProfile
         fields = [
             'foto', 'telefono', 'ubicacion', 'descripcion',
-            'empresa', 'tarifa_hora', 'experiencia_anos', 'portfolio_url',
+            'empresa', 'portfolio_url',
             # Trabajador
-            'dui', 'vehiculo', 'disponibilidad_horario', 'certificaciones', 'cv_pdf',
-            'contacto_emergencia', 'nivel_educativo', 'idiomas', 'referencias_personales', 'expectativa_salarial',
+            'dui', 'vehiculo', 'certificaciones', 'cv_pdf',
+            'nivel_educativo',
             # Contratista
             'nit_nrc', 'giro_comercial', 'sitio_web', 'redes_sociales',
             'contacto_cargo', 'anos_operacion', 'cantidad_empleados', 'tipo_empresa', 'registro_fiscal'
@@ -99,19 +119,12 @@ class EditarPerfilForm(forms.ModelForm):
             'ubicacion':       forms.TextInput(attrs={'class':'form-control','placeholder':'Ciudad, departamento'}),
             'descripcion':     forms.Textarea(attrs={'class':'form-control','rows':'3','placeholder':'Cuéntanos sobre ti o tu empresa...'}),
             'empresa':         forms.TextInput(attrs={'class':'form-control','placeholder':'Nombre comercial de la empresa'}),
-            'tarifa_hora':     forms.NumberInput(attrs={'class':'form-control','placeholder':'0.00','min':'0'}),
-            'experiencia_anos':forms.NumberInput(attrs={'class':'form-control','min':'0','max':'50'}),
             'portfolio_url':   forms.URLInput(attrs={'class':'form-control','placeholder':'https://...'}),
             # Trabajador
             'dui':             forms.TextInput(attrs={'class':'form-control','placeholder':'01234567-8'}),
             'vehiculo':        forms.Select(attrs={'class':'form-control'}),
-            'disponibilidad_horario': forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Lunes a Viernes, Turno completo'}),
-            'certificaciones': forms.Textarea(attrs={'class':'form-control','rows':'2','placeholder':'Diplomas, licencias de conducir, cursos INSAFORP/universitarios'}),
-            'contacto_emergencia': forms.TextInput(attrs={'class':'form-control','placeholder':'Nombre y teléfono de familiar/contacto'}),
+            'certificaciones': forms.Textarea(attrs={'class':'form-control','rows':'2','placeholder':'Ej: Licencia de conducir liviana, curso INSAFORP de electricidad (opcional)'}),
             'nivel_educativo': forms.Select(attrs={'class':'form-control'}),
-            'idiomas': forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Inglés (Básico), Español (Nativo)'}),
-            'referencias_personales': forms.Textarea(attrs={'class':'form-control','rows':'2','placeholder':'Nombres y teléfonos de referencias'}),
-            'expectativa_salarial': forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: $400 - $600 mensual'}),
             # Contratista
             'nit_nrc':         forms.TextInput(attrs={'class':'form-control','placeholder':'0614-010190-001-1 / NRC 123456'}),
             'giro_comercial':  forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Construcción, remodelaciones y servicios residenciales'}),
@@ -211,5 +224,3 @@ class GaleriaItemForm(forms.ModelForm):
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': '3', 'placeholder': 'Detalles del trabajo realizado, materiales o técnicas...'}),
             'imagen': forms.FileInput(attrs={'class': 'form-control'}),
         }
-
-

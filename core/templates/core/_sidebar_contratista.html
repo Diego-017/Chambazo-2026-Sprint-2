@@ -1,54 +1,58 @@
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <div class="app-shell">
 <aside class="app-sidebar" id="appSidebar">
-  <div class="sidebar-brand">
+  <div class="sidebar-brand" onclick="toggleSidebarCollapse()" style="cursor:pointer;" title="Colapsar/expandir menú">
     <div class="brand-icon yellow"><i class="bi bi-building"></i></div>
     <span class="sidebar-brand-text">Chambazo Pro</span>
   </div>
   <nav class="sidebar-nav">
     <a href="{% url 'panel_contratista' %}" class="sidebar-link {% if active == 'panel' %}active yellow{% endif %}">
-      <i class="bi bi-grid-1x2"></i> Panel principal
+      <i class="bi bi-grid-1x2"></i><span class="link-text">Panel principal</span>
     </a>
     <a href="{% url 'publicar_trabajo' %}" class="sidebar-link {% if active == 'publicar' %}active yellow{% endif %}">
-      <i class="bi bi-plus-square"></i> Publicar trabajo
+      <i class="bi bi-plus-square"></i><span class="link-text">Publicar trabajo</span>
     </a>
     <a href="{% url 'candidatos_general' %}" class="sidebar-link {% if active == 'candidatos' %}active yellow{% endif %}">
-      <i class="bi bi-person-check"></i> Candidatos
+      <i class="bi bi-person-check"></i><span class="link-text">Candidatos</span>
     </a>
+    {% if es_formal %}
     <a href="{% url 'buscar_trabajadores' %}" class="sidebar-link {% if active == 'buscar_trab' %}active yellow{% endif %}">
-      <i class="bi bi-people"></i> Buscar trabajadores
+      <i class="bi bi-people"></i><span class="link-text">Buscar trabajadores</span>
     </a>
+    {% endif %}
     <a href="{% url 'mensajes' %}" class="sidebar-link {% if active == 'mensajes' %}active yellow{% endif %}">
-      <i class="bi bi-chat-dots"></i> Mensajes
+      <i class="bi bi-chat-dots"></i><span class="link-text">Mensajes</span>
     </a>
+    {% if es_formal %}
     <a href="{% url 'estadisticas' %}" class="sidebar-link {% if active == 'stats' %}active yellow{% endif %}">
-      <i class="bi bi-bar-chart"></i> Estadísticas
+      <i class="bi bi-bar-chart"></i><span class="link-text">Estadísticas</span>
     </a>
+    {% endif %}
     
     <a href="{% url 'solicitar_verificacion' %}" class="sidebar-link {% if active == 'verificar_kyc' %}active yellow{% endif %}">
-      <i class="bi bi-shield-check"></i> Verificar Empresa
+      <i class="bi bi-shield-check"></i><span class="link-text">Verificar Empresa</span>
     </a>
 
     {% if request.user.is_staff %}
       <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; padding: 12px 16px 4px 16px; font-weight: 700;">Administración</div>
       <a href="{% url 'mediacion_soporte' %}" class="sidebar-link {% if active == 'soporte' %}active yellow{% endif %}" style="color:#fdba74;">
-        <i class="bi bi-shield-fill-exclamation"></i> Soporte: Mediación
+        <i class="bi bi-shield-fill-exclamation"></i><span class="link-text">Soporte: Mediación</span>
       </a>
       <a href="{% url 'consola_verificacion_admin' %}" class="sidebar-link {% if active == 'kyc_admin' %}active yellow{% endif %}" style="color:#fdba74;">
-        <i class="bi bi-patch-check-fill"></i> Soporte: Validar KYC
+        <i class="bi bi-patch-check-fill"></i><span class="link-text">Soporte: Validar KYC</span>
       </a>
     {% endif %}
   </nav>
   <div class="sidebar-divider"></div>
   <div class="sidebar-bottom">
     <a href="{% url 'notificaciones' %}" class="sidebar-link {% if active == 'notif' %}active yellow{% endif %}">
-      <i class="bi bi-bell"></i> Notificaciones
+      <i class="bi bi-bell"></i><span class="link-text">Notificaciones</span>
       {% if notif_count > 0 %}<span class="sidebar-badge">{{ notif_count }}</span>{% endif %}
     </a>
     <a href="{% url 'mi_empresa' %}" class="sidebar-link {% if active == 'empresa' %}active yellow{% endif %}">
-      <i class="bi bi-briefcase"></i> Mi empresa
+      <i class="bi bi-briefcase"></i><span class="link-text">Mi empresa</span>
     </a>
-    <a href="{% url 'logout' %}" class="sidebar-link"><i class="bi bi-box-arrow-right"></i> Salir</a>
+    <a href="{% url 'logout' %}" class="sidebar-link"><i class="bi bi-box-arrow-right"></i><span class="link-text">Salir</span></a>
   </div>
 </aside>
 <div style="flex:1;min-width:0;display:flex;flex-direction:column;">

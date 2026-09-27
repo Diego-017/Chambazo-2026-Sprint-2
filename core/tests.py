@@ -43,8 +43,6 @@ class ChambazoCoreTests(TestCase):
             ubicacion='Santa Tecla',
             descripcion='Electricista con 8 años de experiencia en residencias.',
             habilidades=['electricidad', 'instalaciones'],
-            tarifa_hora=15.00,
-            experiencia_anos=8,
             dui='01234567-8',
             vehiculo='moto'
         )

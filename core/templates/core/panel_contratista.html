@@ -8,12 +8,26 @@
   <a href="{% url 'publicar_trabajo' %}" class="btn btn-y btn-lg"><i class="bi bi-plus-lg"></i> Publicar trabajo</a>
 </div>
 
+{% if es_formal %}
 <div class="stats-grid">
   <div class="stat-card"><div class="lbl">PUBLICACIONES ACTIVAS</div><div class="num" style="color:var(--yellow-dark);">{{ stats.activas }}</div></div>
   <div class="stat-card"><div class="lbl">CANDIDATOS RECIBIDOS</div><div class="num t-green">{{ stats.candidatos }}</div></div>
   <div class="stat-card"><div class="lbl">TARIFA PROMEDIO</div><div class="num" style="color:var(--blue);">${{ stats.tarifa_prom|floatformat:0 }}</div></div>
   <div class="stat-card"><div class="lbl">REPUTACIÓN</div><div class="num" style="color:var(--purple);">{{ stats.reputacion|floatformat:1 }} ★</div></div>
 </div>
+{% else %}
+<div class="card mb-16" style="background:var(--yellow-light);border:1px solid var(--yellow);">
+  <div class="card-body" style="text-align:center;padding:22px;">
+    <i class="bi bi-lightning-charge-fill" style="font-size:22px;color:var(--yellow-dark);"></i>
+    <p class="t-sm fw-700 mt-8" style="color:var(--dark);">Publica tu chamba y gestiona a tus candidatos aquí mismo</p>
+    <p class="t-xs t-mid">Ideal para necesidades puntuales — sin trámites de empresa.</p>
+  </div>
+</div>
+<div class="stats-grid g2">
+  <div class="stat-card"><div class="lbl">PUBLICACIONES ACTIVAS</div><div class="num" style="color:var(--yellow-dark);">{{ stats.activas }}</div></div>
+  <div class="stat-card"><div class="lbl">CANDIDATOS RECIBIDOS</div><div class="num t-green">{{ stats.candidatos }}</div></div>
+</div>
+{% endif %}
 
 <div class="layout-2col-rev">
   <div>
@@ -47,6 +61,7 @@
         <div class="quick-access-icon"><i class="bi bi-person-check"></i></div>
         <div class="t-sm fw-600">Ver candidatos</div>
       </a>
+      {% if es_formal %}
       <a href="{% url 'buscar_trabajadores' %}" class="quick-access-item mb-8">
         <div class="quick-access-icon"><i class="bi bi-people"></i></div>
         <div class="t-sm fw-600">Buscar trabajadores</div>
@@ -55,6 +70,7 @@
         <div class="quick-access-icon"><i class="bi bi-bar-chart"></i></div>
         <div class="t-sm fw-600">Ver estadísticas</div>
       </a>
+      {% endif %}
       <a href="{% url 'mensajes' %}" class="quick-access-item">
         <div class="quick-access-icon"><i class="bi bi-chat-dots"></i></div>
         <div class="t-sm fw-600">Mensajes</div>

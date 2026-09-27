@@ -1,7 +1,14 @@
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = 'django-insecure-chambazo-sprint2-2026'
+load_dotenv(BASE_DIR / '.env')
+
+# SECRET_KEY se lee de la variable de entorno DJANGO_SECRET_KEY (ver .env).
+# El valor por defecto solo sirve para que el proyecto no truene si alguien
+# olvida crear el .env, pero NUNCA debe usarse en producción real.
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-chambazo-sprint2-2026')
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
@@ -93,6 +100,6 @@ EMAIL_BACKEND      = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST         = 'smtp.gmail.com'
 EMAIL_PORT         = 587
 EMAIL_USE_TLS      = True
-EMAIL_HOST_USER    = 'pointsgreen4@gmail.com'
-EMAIL_HOST_PASSWORD = 'uufbuiqnhacbzgmn'
-DEFAULT_FROM_EMAIL = 'Chambazo SV <pointsgreen4@gmail.com>'
+EMAIL_HOST_USER    = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = f'Chambazo SV <{EMAIL_HOST_USER}>'

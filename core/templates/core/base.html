@@ -43,6 +43,21 @@ function toggleSidebar(){
   document.getElementById('sidebarOverlay')?.classList.toggle('open');
 }
 
+// ── Colapsar sidebar en escritorio (con animación + recordar preferencia) ──
+function toggleSidebarCollapse(){
+  const sb = document.getElementById('appSidebar');
+  if(!sb) return;
+  const collapsed = sb.classList.toggle('collapsed');
+  try { localStorage.setItem('chambazo_sidebar_collapsed', collapsed ? '1' : '0'); } catch(e){}
+}
+(function(){
+  try {
+    if (localStorage.getItem('chambazo_sidebar_collapsed') === '1') {
+      document.getElementById('appSidebar')?.classList.add('collapsed');
+    }
+  } catch(e){}
+})();
+
 // ── SISTEMA DE NOTIFICACIONES PUSH (SIMULADAS EN APP) ──
 function showPushNotification(icon, title, message, delay) {
   setTimeout(() => {

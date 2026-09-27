@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 {% block title %}Perfil de {{ profile.nombre_display }}{% endblock %}
 {% block body %}
-{% if request.user.profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
+{% if request.user.profile.rol == 'administrador' %}{% include 'core/_sidebar_admin.html' %}{% elif request.user.profile.rol == 'contratista' %}{% include 'core/_sidebar_contratista.html' %}{% else %}{% include 'core/_sidebar_trabajador.html' %}{% endif %}
 
 <div class="page-hd"><div><h1>{{ profile.nombre_display }}</h1><p>Perfil público</p></div>
   <a href="javascript:history.back()" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
@@ -17,6 +17,9 @@
       {% if profile.verificado %}<span class="pill pill-green"><i class="bi bi-patch-check-fill"></i> Verificado</span>{% endif %}
       {% if profile.calificacion >= 4.5 %}<span class="pill" style="background:#fef3c7;color:#d97706;border:1px solid #fbbf24;"><i class="bi bi-star-fill"></i> Top Rated</span>{% endif %}
     </div>
+    {% if profile.user != request.user and request.user.profile.rol != 'administrador' %}
+    <a href="{% url 'reportar_usuario' profile.user.pk %}" class="t-xs t-muted" style="display:block;text-align:center;margin-top:12px;text-decoration:underline;"><i class="bi bi-flag"></i> Reportar usuario</a>
+    {% endif %}
     
     {% if profile.rol == 'trabajador' and profile.cv_pdf %}
       <div style="margin-top:16px;">
@@ -29,7 +32,7 @@
     <div class="divider"></div>
     <div class="mini-stat-row"><span class="lbl">Solicitudes</span><span class="val">{{ stats.aplicaciones }}</span></div>
     <div class="mini-stat-row"><span class="lbl">Contratados</span><span class="val">{{ stats.contratados }}</span></div>
-    <div class="mini-stat-row"><span class="lbl">Experiencia</span><span class="val">{{ profile.experiencia_anos }} años</span></div>
+    <div class="mini-stat-row"><span class="lbl">Nivel educativo</span><span class="val">{{ profile.get_nivel_educativo_display|default:"—" }}</span></div>
   </div>
 
   <div>

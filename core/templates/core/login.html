@@ -30,7 +30,6 @@
 
       <form method="post">
         {% csrf_token %}
-        <input type="hidden" name="rol_login" id="rolInput" value="trabajador">
         <div class="form-group">
           <label class="form-label">Correo electrónico</label>
           {{ form.email }}
@@ -39,17 +38,7 @@
           <label class="form-label">Contraseña</label>
           {{ form.password }}
         </div>
-        <div class="form-group">
-          <label class="form-label">Entrar como:</label>
-          <div class="role-btn-row">
-            <button type="submit" name="rol_login" value="trabajador" class="role-btn role-btn-g">
-              <i class="bi bi-person-fill"></i> Trabajador
-            </button>
-            <button type="submit" name="rol_login" value="contratista" class="role-btn role-btn-y">
-              <i class="bi bi-building"></i> Empleador
-            </button>
-          </div>
-        </div>
+        <button type="submit" class="btn btn-g btn-full btn-lg">Iniciar sesión</button>
       </form>
       <div class="text-center mt-8">
         <a href="{% url 'recuperar_password' %}" class="t-xs t-green fw-600">¿Olvidaste tu contraseña?</a>

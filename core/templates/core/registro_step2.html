@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 {% block title %}Información básica{% endblock %}
 {% block body %}
 <div class="wizard-shell">
@@ -35,4 +36,123 @@
     </div>
   </div>
 </div>
+
+<!-- Modal de ubicación en cascada -->
+<div class="ubic-modal-overlay" id="ubicModalOverlay">
+  <div class="ubic-modal">
+    <h3>¿Dónde estás ubicado?</h3>
+    <p class="sub">Selecciona tu ubicación para que te muestren oportunidades cerca de ti</p>
+
+    <div class="form-group">
+      <label class="form-label">País</label>
+      <select class="form-control" disabled>
+        <option>El Salvador</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Departamento</label>
+      <select class="form-control" id="ubicDepartamento">
+        <option value="">Selecciona un departamento...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Municipio</label>
+      <select class="form-control" id="ubicMunicipio" disabled>
+        <option value="">Primero elige un departamento...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Distrito</label>
+      <select class="form-control" id="ubicDistrito" disabled>
+        <option value="">Primero elige un municipio...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ubicación específica <span style="font-weight:400;color:var(--muted);">(opcional)</span></label>
+      <input type="text" class="form-control" id="ubicEspecifica" placeholder="Ej: Barrio El Calvario, cerca del parque central">
+    </div>
+
+    <div class="ubic-modal-actions">
+      <button type="button" class="btn btn-outline" style="flex:1;justify-content:center;" onclick="cerrarUbicModal()">Cancelar</button>
+      <button type="button" class="btn btn-g" style="flex:1;justify-content:center;" id="ubicConfirmarBtn" disabled onclick="confirmarUbicacion()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/el_salvador_ubicacion.js' %}"></script>
+<script>
+(function(){
+  const inputUbicacion = document.getElementById('id_ubicacion');
+  const overlay = document.getElementById('ubicModalOverlay');
+  const selDepto = document.getElementById('ubicDepartamento');
+  const selMuni = document.getElementById('ubicMunicipio');
+  const selDist = document.getElementById('ubicDistrito');
+  const inputEspecifica = document.getElementById('ubicEspecifica');
+  const btnConfirmar = document.getElementById('ubicConfirmarBtn');
+
+  // Llenar el select de departamentos una sola vez
+  Object.keys(EL_SALVADOR_UBICACION).forEach(depto => {
+    const opt = document.createElement('option');
+    opt.value = depto; opt.textContent = depto;
+    selDepto.appendChild(opt);
+  });
+
+  function resetSelect(sel, placeholder){
+    sel.innerHTML = `<option value="">${placeholder}</option>`;
+    sel.disabled = true;
+  }
+
+  function actualizarBotonConfirmar(){
+    btnConfirmar.disabled = !(selDepto.value && selMuni.value && selDist.value);
+  }
+
+  selDepto.addEventListener('change', () => {
+    resetSelect(selMuni, 'Selecciona un municipio...');
+    resetSelect(selDist, 'Primero elige un municipio...');
+    if (selDepto.value){
+      selMuni.disabled = false;
+      selMuni.innerHTML = '<option value="">Selecciona un municipio...</option>';
+      Object.keys(EL_SALVADOR_UBICACION[selDepto.value]).forEach(muni => {
+        const opt = document.createElement('option');
+        opt.value = muni; opt.textContent = muni;
+        selMuni.appendChild(opt);
+      });
+    }
+    actualizarBotonConfirmar();
+  });
+
+  selMuni.addEventListener('change', () => {
+    resetSelect(selDist, 'Selecciona un distrito...');
+    if (selMuni.value){
+      selDist.disabled = false;
+      selDist.innerHTML = '<option value="">Selecciona un distrito...</option>';
+      EL_SALVADOR_UBICACION[selDepto.value][selMuni.value].forEach(dist => {
+        const opt = document.createElement('option');
+        opt.value = dist; opt.textContent = dist;
+        selDist.appendChild(opt);
+      });
+    }
+    actualizarBotonConfirmar();
+  });
+
+  selDist.addEventListener('change', actualizarBotonConfirmar);
+
+  window.abrirUbicModal = function(){
+    overlay.classList.add('open');
+  };
+  window.cerrarUbicModal = function(){
+    overlay.classList.remove('open');
+  };
+  window.confirmarUbicacion = function(){
+    const partes = [];
+    if (inputEspecifica.value.trim()) partes.push(inputEspecifica.value.trim());
+    partes.push(selDist.value, selDepto.value);
+    inputUbicacion.value = partes.join(', ');
+    cerrarUbicModal();
+  };
+
+  inputUbicacion.addEventListener('click', abrirUbicModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrarUbicModal(); });
+})();
+</script>
 {% endblock %}

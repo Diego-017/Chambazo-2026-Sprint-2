@@ -1,0 +1,55 @@
+{% extends 'core/base.html' %}
+{% block title %}Reportes · Chambazo Admin{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_admin.html' %}
+
+<div class="page-hd">
+  <div><h1>Reportes de usuarios</h1><p>Denuncias entre trabajadores y contratistas</p></div>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+  <a href="?estado=pendiente" class="btn {% if estado_filtro == 'pendiente' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Pendientes</a>
+  <a href="?estado=resuelto" class="btn {% if estado_filtro == 'resuelto' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Resueltos</a>
+  <a href="?estado=desestimado" class="btn {% if estado_filtro == 'desestimado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Desestimados</a>
+  <a href="?estado=todos" class="btn {% if estado_filtro == 'todos' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Todos</a>
+</div>
+
+{% if reportes %}
+{% for r in reportes %}
+<div class="card mb-16"><div class="card-body">
+  <div class="flex-bc mb-8">
+    <div>
+      <span class="fw-700">{{ r.reportante.get_full_name|default:r.reportante.username }}</span>
+      <span class="t-muted"> reportó a </span>
+      <span class="fw-700">{{ r.reportado.get_full_name|default:r.reportado.username }}</span>
+    </div>
+    <span class="est-badge {% if r.estado == 'resuelto' %}est-completado{% elif r.estado == 'desestimado' %}est-rechazado{% else %}est-pendiente{% endif %}">{{ r.get_estado_display }}</span>
+  </div>
+  <div class="t-sm mb-4"><span class="fw-700">Motivo:</span> {{ r.motivo_label }}</div>
+  {% if r.descripcion %}<p class="t-sm t-mid mb-8">{{ r.descripcion }}</p>{% endif %}
+  <div class="t-xs t-muted mb-12">{{ r.creado|date:"d/m/Y H:i" }}</div>
+
+  {% if r.estado in 'pendiente en_revision' %}
+  <form method="post" action="{% url 'admin_resolver_reporte' r.pk %}">
+    {% csrf_token %}
+    <textarea name="comentario" class="form-control" rows="2" placeholder="Comentario de resolución (opcional)" style="margin-bottom:10px;"></textarea>
+    <div style="display:flex;gap:10px;">
+      <button type="submit" name="accion" value="resuelto" class="btn btn-g btn-sm">Marcar resuelto</button>
+      <button type="submit" name="accion" value="desestimado" class="btn btn-outline btn-sm">Desestimar</button>
+      <a href="{% url 'perfil_publico' r.reportado.pk %}" target="_blank" class="btn btn-outline btn-sm">Ver perfil reportado</a>
+    </div>
+  </form>
+  {% else %}
+  <div class="t-xs t-muted">
+    Resuelto por {{ r.resuelto_por.get_full_name|default:r.resuelto_por.username }} el {{ r.actualizado|date:"d/m/Y" }}
+    {% if r.resolucion_comentario %}— "{{ r.resolucion_comentario }}"{% endif %}
+  </div>
+  {% endif %}
+</div></div>
+{% endfor %}
+{% else %}
+<div class="empty-state"><div class="empty-icon">🚩</div><div class="empty-title">Sin reportes aquí</div><div class="empty-sub">Todo tranquilo por ahora</div></div>
+{% endif %}
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

@@ -40,6 +40,13 @@ urlpatterns = [
     path('solicitud/<int:sol_pk>/disputa/', views.abrir_disputa, name='abrir_disputa'),
     path('disputa/<int:disputa_pk>/resolver/', views.resolver_disputa, name='resolver_disputa'),
     path('soporte/mediacion/', views.mediacion_soporte, name='mediacion_soporte'),
+    # Panel de Administrador
+    path('admin-chambazo/', views.panel_admin, name='panel_admin'),
+    path('admin-chambazo/usuarios/', views.admin_usuarios, name='admin_usuarios'),
+    path('admin-chambazo/usuarios/<int:user_pk>/toggle-activo/', views.admin_toggle_usuario_activo, name='admin_toggle_usuario_activo'),
+    path('admin-chambazo/reportes/', views.admin_reportes, name='admin_reportes'),
+    path('admin-chambazo/reportes/<int:reporte_pk>/resolver/', views.admin_resolver_reporte, name='admin_resolver_reporte'),
+    path('usuario/<int:user_pk>/reportar/', views.reportar_usuario, name='reportar_usuario'),
     # KYC Verificación de Identidad
     path('solicitar-verificacion/', views.solicitar_verificacion, name='solicitar_verificacion'),
     path('soporte/verificar-kyc/', views.consola_verificacion_admin, name='consola_verificacion_admin'),

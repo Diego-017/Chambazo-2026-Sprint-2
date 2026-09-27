@@ -1,0 +1,40 @@
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<div class="app-shell">
+<aside class="app-sidebar" id="appSidebar">
+  <div class="sidebar-brand" onclick="toggleSidebarCollapse()" style="cursor:pointer;" title="Colapsar/expandir menú">
+    <div class="brand-icon" style="background:var(--navy-3);"><i class="bi bi-shield-lock-fill"></i></div>
+    <span class="sidebar-brand-text">Chambazo Admin</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="{% url 'panel_admin' %}" class="sidebar-link {% if active == 'dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-1x2-fill"></i><span class="link-text">Dashboard</span>
+    </a>
+    <a href="{% url 'admin_usuarios' %}" class="sidebar-link {% if active == 'usuarios' %}active{% endif %}">
+      <i class="bi bi-people-fill"></i><span class="link-text">Usuarios</span>
+    </a>
+    <a href="{% url 'admin_reportes' %}" class="sidebar-link {% if active == 'reportes' %}active{% endif %}">
+      <i class="bi bi-flag-fill"></i><span class="link-text">Reportes</span>
+      {% if reportes_pendientes_count > 0 %}<span class="sidebar-badge">{{ reportes_pendientes_count }}</span>{% endif %}
+    </a>
+    <a href="{% url 'mediacion_soporte' %}" class="sidebar-link {% if active == 'soporte' %}active{% endif %}">
+      <i class="bi bi-shield-fill-exclamation"></i><span class="link-text">Mediación de disputas</span>
+    </a>
+    <a href="{% url 'consola_verificacion_admin' %}" class="sidebar-link {% if active == 'kyc_admin' %}active{% endif %}">
+      <i class="bi bi-patch-check-fill"></i><span class="link-text">Validar identidad (KYC)</span>
+    </a>
+    <a href="/admin/" class="sidebar-link" target="_blank">
+      <i class="bi bi-gear-fill"></i><span class="link-text">Panel de Django</span>
+    </a>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-bottom">
+    <a href="{% url 'logout' %}" class="sidebar-link"><i class="bi bi-box-arrow-right"></i><span class="link-text">Salir</span></a>
+  </div>
+</aside>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+  <div class="mobile-topbar">
+    <button class="toggle-btn" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+    <div class="brand-icon" style="background:var(--navy-3);"><i class="bi bi-shield-lock-fill"></i></div>
+    <span style="font-weight:800;">Chambazo Admin</span>
+  </div>
+  <main class="app-content">

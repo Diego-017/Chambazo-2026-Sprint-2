@@ -58,11 +58,11 @@ def random_sv_location():
 
 # ── UserProfile ────────────────────────────────────────────────────────────────
 class UserProfile(models.Model):
-    ROL_CHOICES = [('trabajador', 'Trabajador'), ('contratista', 'Contratista')]
+    ROL_CHOICES = [('trabajador', 'Trabajador'), ('contratista', 'Contratista'), ('administrador', 'Administrador')]
     user        = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     rol         = models.CharField(max_length=20, choices=ROL_CHOICES)
     telefono    = models.CharField(max_length=20, blank=True)
-    ubicacion   = models.CharField(max_length=100, blank=True)
+    ubicacion   = models.CharField(max_length=180, blank=True)
     lat         = models.FloatField(null=True, blank=True)
     lng         = models.FloatField(null=True, blank=True)
     descripcion = models.TextField(blank=True)
@@ -93,8 +93,6 @@ class UserProfile(models.Model):
     notif_sistema = models.BooleanField(default=True)
     # Sprint 2
     disponible  = models.BooleanField(default=True)   # activo para contratar
-    tarifa_hora = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
-    experiencia_anos = models.PositiveIntegerField(default=0)
     portfolio_url = models.URLField(blank=True)
     
     # Nuevos campos para Trabajador
@@ -107,17 +105,21 @@ class UserProfile(models.Model):
     ], default='ninguno')
     cv_pdf = models.FileField(upload_to='cvs/', null=True, blank=True, help_text='Curriculum Vitae (PDF u otro doc)')
     certificaciones = models.TextField(blank=True, help_text='Postgrados, certificaciones o cursos realizados')
-    disponibilidad_horario = models.CharField(max_length=100, blank=True, help_text='Ej: Lunes a Viernes, Fines de semana, Turno completo')
-    contacto_emergencia = models.CharField(max_length=150, blank=True)
+    disponibilidad_horario = models.JSONField(default=dict, blank=True,
+        help_text='{"dias": ["lun","mar",...], "franja": "manana|tarde|noche|completo"}')
     nivel_educativo = models.CharField(max_length=50, blank=True, choices=[
-        ('basica', 'Educación Básica'),
-        ('media', 'Bachillerato / Secundaria'),
+        ('primaria', 'Educación Primaria (1° a 6° grado)'),
+        ('basica', 'Educación Básica / Tercer Ciclo (7° a 9° grado)'),
+        ('media', 'Bachillerato / Educación Media'),
         ('tecnico', 'Técnico Vocacional'),
-        ('universitario', 'Universitario / Superior')
+        ('universitario_curso', 'Universitario (en curso)'),
+        ('universitario', 'Universitario Graduado'),
+        ('postgrado', 'Postgrado / Maestría'),
     ], default='media')
-    idiomas = models.CharField(max_length=150, blank=True, help_text='Ej: Inglés (Básico), Español (Nativo)')
-    referencias_personales = models.TextField(blank=True, help_text='Nombres y teléfonos de referencias')
-    expectativa_salarial = models.CharField(max_length=50, blank=True, help_text='Ej: $400 - $600 mensual')
+    idiomas = models.JSONField(default=list, blank=True,
+        help_text='[{"nombre": "Inglés", "nivel": "Básico"}, ...]')
+    referencias_personales = models.JSONField(default=list, blank=True,
+        help_text='[{"nombre": "...", "telefono": "..."}, ...]')
 
     # Nuevos campos para Contratista / Empresa
     nit_nrc     = models.CharField(max_length=30, blank=True, help_text='NIT o NRC fiscal')
@@ -150,16 +152,28 @@ class UserProfile(models.Model):
         return self.user.get_full_name() or self.user.username
 
     @property
+    def checklist_perfil(self):
+        """Lista de (etiqueta, completo, url_para_completarlo) usada tanto para el
+        % de completitud como para el detalle mostrado en el modal de 'qué me falta'."""
+        items = [
+            ('Nombre completo', bool(self.user.get_full_name())),
+            ('Teléfono de contacto', bool(self.telefono)),
+            ('Ubicación', bool(self.ubicacion)),
+            ('Descripción / biografía', bool(self.descripcion)),
+            ('Foto de perfil', bool(self.foto)),
+            ('Al menos una habilidad', bool(self.habilidades)),
+        ]
+        if self.rol == 'trabajador':
+            items += [
+                ('Documento de identidad (DUI)', bool(self.dui)),
+                ('Currículum (CV)', bool(self.cv_pdf)),
+            ]
+        return items
+
+    @property
     def completitud_perfil(self):
         """Porcentaje de completitud del perfil"""
-        campos = [
-            bool(self.user.get_full_name()),
-            bool(self.telefono),
-            bool(self.ubicacion),
-            bool(self.descripcion),
-            bool(self.foto),
-            bool(self.habilidades),
-        ]
+        campos = [completo for _, completo in self.checklist_perfil]
         return int(sum(campos) / len(campos) * 100)
 
     @property
@@ -642,4 +656,38 @@ class Disputa(models.Model):
         return f"Disputa #{self.id} — Solicitud {self.solicitud.id} ({self.estado})"
 
 
+# ── Reportes / denuncias de usuarios ────────────────────────────────────────────
+class ReporteUsuario(models.Model):
+    MOTIVO_CHOICES = [
+        ('fraude', 'Fraude o estafa'),
+        ('no_pago', 'No pagó / no cumplió lo acordado'),
+        ('comportamiento', 'Comportamiento inapropiado'),
+        ('spam', 'Spam o publicaciones falsas'),
+        ('calidad', 'Calidad del trabajo/servicio'),
+        ('otro', 'Otro'),
+    ]
+    ESTADOS = [
+        ('pendiente', 'Pendiente'),
+        ('en_revision', 'En revisión'),
+        ('resuelto', 'Resuelto'),
+        ('desestimado', 'Desestimado'),
+    ]
+    reportante = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reportes_hechos')
+    reportado = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reportes_recibidos')
+    motivo = models.CharField(max_length=30, choices=MOTIVO_CHOICES)
+    descripcion = models.TextField(blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='pendiente')
+    resuelto_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reportes_resueltos')
+    resolucion_comentario = models.TextField(blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ['-creado']
+
+    def __str__(self):
+        return f"Reporte #{self.id} — {self.reportado} ({self.estado})"
+
+    @property
+    def motivo_label(self):
+        return dict(self.MOTIVO_CHOICES).get(self.motivo, self.motivo)

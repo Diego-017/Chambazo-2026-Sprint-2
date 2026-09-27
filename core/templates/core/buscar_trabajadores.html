@@ -27,7 +27,6 @@
       <div class="flex-c gap-10 mb-10 t-xs t-muted">
         <span><span class="stars" style="font-size:11px;">★</span> {{ p.calificacion|default:"—" }}</span>
         <span>{{ p.total_trabajos }} trabajos</span>
-        {% if p.tarifa_hora %}<span class="fw-700 t-green">${{ p.tarifa_hora }}/hr</span>{% endif %}
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">
         {% for h in p.habilidades|slice:":3" %}<span class="skill-tag">{{ h }}</span>{% endfor %}

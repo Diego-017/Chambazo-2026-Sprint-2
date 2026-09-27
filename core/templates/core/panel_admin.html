@@ -1,0 +1,71 @@
+{% extends 'core/base.html' %}
+{% block title %}Dashboard · Chambazo Admin{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_admin.html' %}
+
+<div class="page-hd">
+  <div><h1>Dashboard</h1><p>Estado general de la plataforma Chambazo</p></div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="lbl">Trabajadores registrados</div>
+    <div class="num">{{ total_trabajadores }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="lbl">Contratistas registrados</div>
+    <div class="num">{{ total_contratistas }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="lbl">Vacantes activas</div>
+    <div class="num">{{ trabajos_activos }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="lbl">Trabajos completados</div>
+    <div class="num t-green">{{ trabajos_completados }}</div>
+  </div>
+</div>
+
+<div class="stats-grid g2" style="margin-top:4px;">
+  <div class="stat-card">
+    <div class="lbl">Dinero retenido en Escrow</div>
+    <div class="num">${{ escrow_retenido }}</div>
+    <div class="sub">Pagos hechos, aún no liberados al trabajador</div>
+  </div>
+  <div class="stat-card">
+    <div class="lbl">Dinero liberado (histórico)</div>
+    <div class="num t-green">${{ escrow_liberado }}</div>
+    <div class="sub">Total ya pagado a trabajadores</div>
+  </div>
+</div>
+
+<h3 class="t-h3 mb-12" style="margin-top:8px;">Pendientes de tu atención</h3>
+<div class="stats-grid g3">
+  <a href="{% url 'mediacion_soporte' %}" class="stat-card" style="text-decoration:none;{% if disputas_abiertas > 0 %}border-color:var(--red);{% endif %}">
+    <div class="lbl">Disputas abiertas</div>
+    <div class="num {% if disputas_abiertas > 0 %}t-red{% endif %}">{{ disputas_abiertas }}</div>
+    <div class="sub">Ver mediación <i class="bi bi-arrow-right"></i></div>
+  </a>
+  <a href="{% url 'consola_verificacion_admin' %}" class="stat-card" style="text-decoration:none;{% if verificaciones_pendientes > 0 %}border-color:var(--yellow);{% endif %}">
+    <div class="lbl">Verificaciones KYC pendientes</div>
+    <div class="num {% if verificaciones_pendientes > 0 %}t-yellow{% endif %}">{{ verificaciones_pendientes }}</div>
+    <div class="sub">Ver consola KYC <i class="bi bi-arrow-right"></i></div>
+  </a>
+  <a href="{% url 'admin_reportes' %}" class="stat-card" style="text-decoration:none;{% if reportes_pendientes > 0 %}border-color:var(--red);{% endif %}">
+    <div class="lbl">Reportes de usuarios</div>
+    <div class="num {% if reportes_pendientes > 0 %}t-red{% endif %}">{{ reportes_pendientes }}</div>
+    <div class="sub">Ver bandeja <i class="bi bi-arrow-right"></i></div>
+  </a>
+</div>
+
+{% if usuarios_suspendidos > 0 %}
+<div class="card mt-16"><div class="card-body">
+  <div class="flex-bc">
+    <div><span class="fw-700">{{ usuarios_suspendidos }}</span> cuenta{{ usuarios_suspendidos|pluralize }} suspendida{{ usuarios_suspendidos|pluralize }} actualmente</div>
+    <a href="{% url 'admin_usuarios' %}?estado=suspendido" class="t-green fw-700 t-sm">Ver <i class="bi bi-arrow-right"></i></a>
+  </div>
+</div></div>
+{% endif %}
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}
