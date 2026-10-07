@@ -64,12 +64,12 @@ class ResenaViewSet(viewsets.ModelViewSet):
 
 
 class GaleriaItemViewSet(viewsets.ModelViewSet):
-    queryset = GaleriaItem.objects.all().select_related('trabajador')
+    queryset = GaleriaItem.objects.all().select_related('usuario')
     serializer_class = GaleriaItemSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
-        serializer.save(trabajador=self.request.user)
+        serializer.save(usuario=self.request.user)
 
 
 class PlataformaStatsAPIView(APIView):

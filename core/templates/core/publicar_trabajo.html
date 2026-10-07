@@ -215,8 +215,8 @@ document.getElementById('id_presupuesto_input')?.addEventListener('input', actua
 document.getElementById('id_es_urgente_chk')?.addEventListener('change', actualizarCalculoTarifas);
 actualizarCalculoTarifas();
 
-// Inicialización de Mapa (Google Maps con Leaflet Fallback)
-let pickerMarker=null, pickerMap=null, isLeaflet=false;
+// Inicialización de Mapa (Leaflet OpenStreetMap)
+let pickerMarker=null, pickerMap=null;
 
 function ponerPin(lat, lng, address){
   document.getElementById('latInput').value = lat;
@@ -241,20 +241,43 @@ function initMapPicker() {
   const defaultLng = parseFloat(lngStr);
 
   // Usar exclusivamente Leaflet OpenStreetMap
-  const map = L.map('mapPicker').setView([defaultLat, defaultLng], 12);
+  pickerMap = L.map('mapPicker').setView([defaultLat, defaultLng], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
-  }).addTo(map);
+  }).addTo(pickerMap);
 
-  const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
-  marker.on('dragend', function(e) {
-    const coord = marker.getLatLng();
+  pickerMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(pickerMap);
+  pickerMarker.on('dragend', function(e) {
+    const coord = pickerMarker.getLatLng();
     ponerPin(coord.lat, coord.lng);
   });
-  map.on('click', function(e) {
-    marker.setLatLng(e.latlng);
+  pickerMap.on('click', function(e) {
+    pickerMarker.setLatLng(e.latlng);
     ponerPin(e.latlng.lat, e.latlng.lng);
   });
+  
+  // Buscador Nominatim
+  const searchInput = document.getElementById('pickerSearch');
+  if (searchInput) {
+    searchInput.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const q = searchInput.value;
+        if (!q) return;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q + ', El Salvador')}`);
+          const data = await res.json();
+          if(data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lon = parseFloat(data[0].lon);
+            pickerMap.setView([lat, lon], 14);
+            pickerMarker.setLatLng([lat, lon]);
+            ponerPin(lat, lon, data[0].display_name.split(',')[0]);
+          }
+        } catch(err) {}
+      }
+    });
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {

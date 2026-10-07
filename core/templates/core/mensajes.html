@@ -167,8 +167,8 @@
               </div>
               <div style="padding: 8px 10px; font-size: 0.8rem;">
                 <div>{{ m.ubicacion_nombre|default:"Punto de ubicación fijado" }}</div>
-                <a href="https://www.google.com/maps/search/?api=1&query={{ m.lat }},{{ m.lng }}" target="_blank" style="color: #0284c7; font-weight: 700; text-decoration: none; display: inline-block; margin-top: 4px; font-size: 0.75rem;">
-                  <i class="bi bi-box-arrow-up-right"></i> Abrir en Google Maps
+                <a href="https://www.openstreetmap.org/?mlat={{ m.lat|stringformat:'f' }}&mlon={{ m.lng|stringformat:'f' }}#map=16/{{ m.lat|stringformat:'f' }}/{{ m.lng|stringformat:'f' }}" target="_blank" style="color: #0284c7; font-weight: 700; text-decoration: none; display: inline-block; margin-top: 4px; font-size: 0.75rem;">
+                  <i class="bi bi-box-arrow-up-right"></i> Abrir en OSM
                 </a>
               </div>
             </div>

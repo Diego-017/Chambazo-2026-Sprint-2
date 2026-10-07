@@ -20,19 +20,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'rol', 'telefono', 'ubicacion', 'lat', 'lng',
             'descripcion', 'habilidades', 'empresa', 'foto', 'verificado',
-            'calificacion', 'total_trabajos', 'disponible', 'tarifa_hora',
-            'experiencia_anos', 'portfolio_url', 'nombre_display',
+            'calificacion', 'total_trabajos', 'disponible',
+            'portfolio_url', 'nombre_display',
             'completitud_perfil', 'estrellas'
         ]
 
 
 class GaleriaItemSerializer(serializers.ModelSerializer):
-    trabajador_nombre = serializers.CharField(source='trabajador.get_full_name', read_only=True)
+    usuario_nombre = serializers.CharField(source='usuario.get_full_name', read_only=True)
 
     class Meta:
         model = GaleriaItem
-        fields = ['id', 'trabajador', 'trabajador_nombre', 'titulo', 'descripcion', 'categoria', 'imagen', 'creado']
-        read_only_fields = ['trabajador', 'creado']
+        fields = ['id', 'usuario', 'usuario_nombre', 'titulo', 'descripcion', 'categoria', 'imagen', 'creado']
+        read_only_fields = ['usuario', 'creado']
 
 
 class ResenaSerializer(serializers.ModelSerializer):

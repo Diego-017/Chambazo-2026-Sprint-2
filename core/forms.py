@@ -141,29 +141,13 @@ class EditarPerfilForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.rol = rol
         if rol == 'contratista':
-            del self.fields['tarifa_hora']
-            del self.fields['experiencia_anos']
-            del self.fields['portfolio_url']
-            del self.fields['dui']
-            del self.fields['vehiculo']
-            del self.fields['disponibilidad_horario']
-            del self.fields['certificaciones']
-            del self.fields['contacto_emergencia']
-            del self.fields['nivel_educativo']
-            del self.fields['idiomas']
-            del self.fields['referencias_personales']
-            del self.fields['expectativa_salarial']
+            campos_trabajador = ['tarifa_hora', 'experiencia_anos', 'portfolio_url', 'dui', 'vehiculo', 'disponibilidad_horario', 'certificaciones', 'contacto_emergencia', 'nivel_educativo', 'idiomas', 'referencias_personales', 'expectativa_salarial']
+            for f in campos_trabajador:
+                self.fields.pop(f, None)
         else:
-            del self.fields['empresa']
-            del self.fields['nit_nrc']
-            del self.fields['giro_comercial']
-            del self.fields['sitio_web']
-            del self.fields['redes_sociales']
-            del self.fields['contacto_cargo']
-            del self.fields['anos_operacion']
-            del self.fields['cantidad_empleados']
-            del self.fields['tipo_empresa']
-            del self.fields['registro_fiscal']
+            campos_contratista = ['empresa', 'nit_nrc', 'giro_comercial', 'sitio_web', 'redes_sociales', 'contacto_cargo', 'anos_operacion', 'cantidad_empleados', 'tipo_empresa', 'registro_fiscal']
+            for f in campos_contratista:
+                self.fields.pop(f, None)
 
 
 class PagoTarjetaForm(forms.Form):

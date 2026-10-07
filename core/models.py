@@ -273,8 +273,6 @@ class Trabajo(models.Model):
             self.total_a_pagar = self.comision_plataforma
         return self.total_a_pagar
 
-    fecha_pago    = models.DateTimeField(null=True, blank=True)
-
     class Meta:
         ordering = ['-creado']
 

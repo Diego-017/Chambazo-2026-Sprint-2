@@ -29,7 +29,7 @@
     </div>
     <div style="padding:12px;background:#f8fafc;font-size:0.85rem;color:#64748b;display:flex;justify-content:space-between;align-items:center;">
       <span><i class="bi bi-geo-alt-fill t-green"></i> {{ trabajo.ubicacion }}</span>
-      <a href="https://www.google.com/maps/search/?api=1&query={{ trabajo.lat }},{{ trabajo.lng }}" target="_blank" style="color:var(--blue);text-decoration:none;font-weight:700;"><i class="bi bi-box-arrow-up-right"></i> Ver en Maps</a>
+      <a href="https://www.openstreetmap.org/?mlat={{ trabajo.lat }}&mlon={{ trabajo.lng }}#map=16/{{ trabajo.lat }}/{{ trabajo.lng }}" target="_blank" style="color:var(--blue);text-decoration:none;font-weight:700;"><i class="bi bi-box-arrow-up-right"></i> Ver en OSM</a>
     </div>
     <!-- Script de Mapa Compartido -->
     <script>

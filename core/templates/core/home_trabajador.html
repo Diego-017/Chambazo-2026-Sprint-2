@@ -1,8 +1,7 @@
 {% extends 'core/base.html' %}
 {% block title %}Buscar empleos{% endblock %}
 {% block extra_head %}
-<script>function initMap(){window._mapReady=true;}</script>
-<script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_KEY }}&callback=initMap&libraries=places" async defer></script>
+<!-- Leaflet already loaded in base.html -->
 {% endblock %}
 {% block body %}
 {% include 'core/_sidebar_trabajador.html' %}
@@ -207,39 +206,74 @@ function toggleMap(){
   if(!vis && !mapInited){ setTimeout(initMapaTrabajo,100); mapInited=true; }
 }
 function initMapaTrabajo(){
-  mapObj=new google.maps.Map(document.getElementById('mapaTrabajos'),{
-    center:{lat:13.6929,lng:-89.2182}, zoom:9, disableDefaultUI:true, zoomControl:true,
-    styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{elementType:'geometry',stylers:[{color:'#f5f5f5'}]},
-      {featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#c9d8f0'}]}]
-  });
-  const bounds=new google.maps.LatLngBounds(new google.maps.LatLng(13.15,-90.10),new google.maps.LatLng(14.45,-87.68));
-  const ac=new google.maps.places.Autocomplete(document.getElementById('mapSearchInput'),{bounds,strictBounds:false,componentRestrictions:{country:'sv'}});
-  ac.addListener('place_changed',()=>{const p=ac.getPlace(); if(p.geometry){mapObj.setCenter(p.geometry.location);mapObj.setZoom(13);}});
+  mapObj = L.map('mapaTrabajos').setView([13.6929, -89.2182], 9);
+  
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 20
+  }).addTo(mapObj);
 
   TRABAJOS_MAP.forEach(t=>{
     const color = t.urgente ? '#e5484d' : '#1FA35A';
-    const marker=new google.maps.Marker({position:{lat:t.lat,lng:t.lng},map:mapObj,title:t.titulo,
-      icon:{path:google.maps.SymbolPath.CIRCLE,scale:11,fillColor:color,fillOpacity:1,strokeColor:'#fff',strokeWeight:2.5},
-      animation:google.maps.Animation.DROP});
-    marker.addListener('click',()=>{
+    
+    // Crear un icono circular personalizado estilo Gmaps
+    const customIcon = L.divIcon({
+      className: 'custom-leaflet-marker',
+      html: `<div style="width:22px;height:22px;background:${color};border:2.5px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+
+    const marker = L.marker([t.lat, t.lng], {icon: customIcon}).addTo(mapObj);
+    
+    marker.on('click', () => {
       document.getElementById('mapaSelCard').style.display='block';
       document.getElementById('mapaSelTitulo').textContent=t.titulo;
       document.getElementById('mapaSelEmpresa').textContent=t.empresa;
       document.getElementById('mapaSelPrecio').textContent=t.precio;
       document.getElementById('mapaSelUrl').href=t.url;
-      mapObj.panTo(marker.getPosition());
+      mapObj.panTo([t.lat, t.lng]);
     });
-    marker._data=t; markersAll.push(marker);
+    
+    marker._data = t;
+    markersAll.push(marker);
   });
 }
-function centrarElSalvador(){ if(mapObj){mapObj.setCenter({lat:13.6929,lng:-89.2182});mapObj.setZoom(9);} }
-function filtrarUrgentes(){ soloUrgentes=!soloUrgentes; markersAll.forEach(m=>m.setVisible(soloUrgentes?m._data.urgente:true)); }
-function toggleMapStyle(){ if(!mapObj)return; estiloSat=!estiloSat; mapObj.setMapTypeId(estiloSat?'satellite':'roadmap'); }
-function buscarEnMapa(){
-  const q=document.getElementById('mapSearchInput').value; if(!q||!mapObj)return;
-  new google.maps.Geocoder().geocode({address:q+', El Salvador'},(res,status)=>{
-    if(status==='OK'&&res[0]){mapObj.setCenter(res[0].geometry.location);mapObj.setZoom(13);}
-  });
+
+function centrarElSalvador(){ if(mapObj){ mapObj.setView([13.6929, -89.2182], 9); } }
+function filtrarUrgentes(){ 
+  soloUrgentes=!soloUrgentes; 
+  markersAll.forEach(m=>{
+    if(soloUrgentes && !m._data.urgente) {
+      mapObj.removeLayer(m);
+    } else {
+      m.addTo(mapObj);
+    }
+  }); 
+}
+function toggleMapStyle(){
+  // Leaflet toggle basemap (simplificado: toggle a satélite)
+  if(!mapObj) return;
+  estiloSat = !estiloSat;
+  if(estiloSat) {
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri'
+    }).addTo(mapObj);
+  } else {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(mapObj);
+  }
+}
+async function buscarEnMapa(){
+  const q = document.getElementById('mapSearchInput').value; 
+  if(!q || !mapObj) return;
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q + ', El Salvador')}`);
+    const data = await res.json();
+    if(data && data.length > 0) {
+      mapObj.setView([data[0].lat, data[0].lon], 13);
+    }
+  } catch(e) {}
 }
 </script>
 {% endblock %}
