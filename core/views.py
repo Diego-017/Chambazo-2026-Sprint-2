@@ -1932,3 +1932,151 @@ def mi_agenda(request):
     })
     sidebar = '_sidebar_contratista.html' if rol == 'contratista' else '_sidebar_trabajador.html'
     return render(request, 'core/mi_agenda.html', ctx)
+
+
+
+# ── SPRINT 3: FUNCIONALIDADES Y MEJORAS ACADÉMICAS (HU032 - HU048) ────────────
+
+@login_required
+def descargar_cv_candidato(request, user_pk):
+    """Descarga el CV en formato PDF de un candidato postulado en < 2s (HU033, Gherkin Escenario 3)."""
+    from django.http import FileResponse, Http404
+    from .pdf_utils import generar_cv_pdf
+    candidato_user = get_object_or_404(User, pk=user_pk)
+    profile = candidato_user.profile
+    
+    pdf_path = generar_cv_pdf(profile, candidato_user)
+    if not os.path.exists(pdf_path):
+        raise Http404("El currículo no pudo ser generado.")
+    
+    nombre_limpio = f"CV_{candidato_user.first_name or candidato_user.username}_{candidato_user.last_name or ''}".strip().replace(' ', '_')
+    return FileResponse(open(pdf_path, 'rb'), as_attachment=True, filename=f"{nombre_limpio}.pdf")
+
+
+@login_required
+def descartar_candidato(request, sol_pk):
+    """Descarta a un candidato registrando el motivo predefinido y notificando (HU034)."""
+    sol = get_object_or_404(Solicitud, pk=sol_pk)
+    if sol.trabajo.contratista != request.user:
+        messages.error(request, 'No tienes permiso para descartar esta solicitud.')
+        return redirect('home')
+
+    if request.method == 'POST':
+        motivo = request.POST.get('motivo', 'Perfil no se ajusta a los requerimientos').strip()
+        detalle = request.POST.get('detalle', '').strip()
+        motivo_completo = f"{motivo}: {detalle}" if detalle else motivo
+
+        sol.estado = 'rechazado'
+        sol.motivo_descarte = motivo_completo
+        sol.save(update_fields=['estado', 'motivo_descarte'])
+
+        # Notificación en plataforma
+        crear_notif(
+            sol.trabajador,
+            'estado',
+            f'❌ Postulación no seleccionada — {sol.trabajo.titulo}',
+            f'Tu postulación ha sido descartada. Motivo: {motivo_completo}',
+            url='/solicitudes/'
+        )
+
+        # Correo al trabajador con manejo seguro
+        if sol.trabajador.profile.notif_email:
+            try:
+                from .email_utils import enviar_notif_estado_solicitud
+                enviar_notif_estado_solicitud(sol.trabajador, sol)
+            except Exception:
+                pass
+
+        messages.info(request, f'Candidato descartado. Motivo registrado: {motivo}')
+        return redirect('candidatos', pk=sol.trabajo.pk)
+
+    return redirect('candidatos', pk=sol.trabajo.pk)
+
+
+@login_required
+def comparar_candidatos(request, pk):
+    """Vista comparativa lado a lado de todos los postulantes a una vacante (HU046)."""
+    trabajo = get_object_or_404(Trabajo, pk=pk, contratista=request.user)
+    solicitudes = Solicitud.objects.filter(trabajo=trabajo).select_related('trabajador__profile')
+
+    candidatos_data = []
+    for sol in solicitudes:
+        p = sol.trabajador.profile
+        candidatos_data.append({
+            'solicitud': sol,
+            'trabajador': sol.trabajador,
+            'perfil': p,
+            'match': p.match_score(trabajo),
+            'calificacion': p.calificacion,
+            'total_trabajos': p.total_trabajos,
+            'verificado': p.verificado,
+            'experiencia': p.get_nivel_educativo_display() if hasattr(p, 'get_nivel_educativo_display') else p.nivel_educativo,
+            'vehiculo': p.get_vehiculo_display() if hasattr(p, 'get_vehiculo_display') else p.vehiculo,
+            'tarifa': sol.tarifa_propuesta or trabajo.presupuesto,
+            'habilidades': p.habilidades if isinstance(p.habilidades, list) else [],
+        })
+
+    # Ordenar por afinidad/match score y calificación
+    candidatos_data.sort(key=lambda x: (x['match'], x['calificacion']), reverse=True)
+
+    ctx = ctx_base(request)
+    ctx.update({
+        'trabajo': trabajo,
+        'candidatos': candidatos_data,
+        'active': 'candidatos'
+    })
+    return render(request, 'core/comparar_candidatos.html', ctx)
+
+
+@login_required
+def preferencias_notificaciones(request):
+    """Pantalla de ajustes para activar/desactivar tipos de alertas (HU041)."""
+    profile = request.user.profile
+    if request.method == 'POST':
+        profile.notif_email = request.POST.get('notif_email') == '1'
+        profile.notif_sistema = request.POST.get('notif_sistema') == '1'
+        profile.notif_recordatorios = request.POST.get('notif_recordatorios') == '1'
+        profile.notif_mensajes = request.POST.get('notif_mensajes') == '1'
+        profile.save(update_fields=['notif_email', 'notif_sistema', 'notif_recordatorios', 'notif_mensajes'])
+        messages.success(request, '✅ Preferencias de notificación guardadas con éxito.')
+        return redirect('preferencias_notificaciones')
+
+    ctx = ctx_base(request)
+    ctx.update({
+        'profile': profile,
+        'active': 'notif'
+    })
+    return render(request, 'core/preferencias_notificaciones.html', ctx)
+
+
+@login_required
+def completar_onboarding(request):
+    """Marca la guía inicial como completada para el usuario (CP-018)."""
+    from django.http import JsonResponse
+    if request.method == 'POST':
+        p = request.user.profile
+        p.onboarding_completado = True
+        p.save(update_fields=['onboarding_completado'])
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'ignored'})
+
+
+@login_required
+def reportar_resena(request, resena_pk):
+    """Permite reportar una reseña inapropiada o falsa (HU048 / CP-017)."""
+    resena = get_object_or_404(Resena, pk=resena_pk)
+    if request.method == 'POST':
+        motivo = request.POST.get('motivo', 'Contenido inapropiado o falso').strip()
+        resena.reportada = True
+        resena.motivo_reporte = motivo
+        resena.save(update_fields=['reportada', 'motivo_reporte'])
+
+        from .models import ReporteUsuario
+        ReporteUsuario.objects.create(
+            reportante=request.user,
+            reportado=resena.autor,
+            motivo='comportamiento',
+            descripcion=f"[REPORTE RESEÑA #{resena.pk}] Motivo: {motivo}\nComentario: \"{resena.comentario}\""
+        )
+        messages.success(request, '🚩 Reseña reportada para revisión de moderación.')
+    return redirect(request.META.get('HTTP_REFERER', 'home'))

@@ -48,6 +48,9 @@
       <i class="bi bi-bell"></i><span class="link-text">Notificaciones</span>
       {% if notif_count > 0 %}<span class="sidebar-badge">{{ notif_count }}</span>{% endif %}
     </a>
+    <a href="{% url 'preferencias_notificaciones' %}" class="sidebar-link {% if active == 'preferencias_notif' %}active{% endif %}">
+      <i class="bi bi-sliders"></i><span class="link-text">Ajustes de Alertas</span>
+    </a>
     <a href="{% url 'logout' %}" class="sidebar-link"><i class="bi bi-box-arrow-right"></i><span class="link-text">Salir</span></a>
   </div>
 </aside>

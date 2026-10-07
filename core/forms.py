@@ -68,7 +68,7 @@ class TrabajoForm(forms.ModelForm):
     class Meta:
         model = Trabajo
         fields = [
-            'titulo', 'categoria', 'descripcion', 'requisitos', 'beneficios',
+            'titulo', 'categoria', 'tipo_oportunidad', 'descripcion', 'requisitos', 'beneficios',
             'ubicacion', 'presupuesto', 'es_urgente', 'modalidad', 'duracion',
             'verificacion_requerida', 'fecha_inicio', 'fecha_limite',
             'nivel_experiencia', 'herramientas', 'horario', 'vacantes_disponibles',
@@ -77,6 +77,7 @@ class TrabajoForm(forms.ModelForm):
         widgets = {
             'titulo':       forms.TextInput(attrs={'class':'form-control','placeholder':'Ej: Instalación eléctrica residencial'}),
             'categoria':    forms.Select(attrs={'class':'form-control'}),
+            'tipo_oportunidad': forms.Select(attrs={'class':'form-control'}),
             'descripcion':  forms.Textarea(attrs={'class':'form-control','rows':'4','placeholder':'Describe el trabajo, materiales disponibles, horario, acceso al lugar...'}),
             'requisitos':   forms.Textarea(attrs={'class':'form-control','rows':'2','placeholder':'Experiencia, certificaciones, etc.'}),
             'beneficios':   forms.Textarea(attrs={'class':'form-control','rows':'2','placeholder':'Alimentación, transporte, bono...'}),

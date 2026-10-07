@@ -1,67 +1,107 @@
 {% extends 'core/base.html' %}
-{% block title %}Mis Solicitudes{% endblock %}
+{% block title %}Mis Solicitudes — Seguimiento{% endblock %}
 {% block body %}
 {% include 'core/_sidebar_trabajador.html' %}
 
 <div class="page-hd">
-  <div><h1>Mis Solicitudes</h1><p>Seguimiento de todas tus postulaciones</p></div>
+  <div>
+    <h1>Mis Solicitudes</h1>
+    <p>Seguimiento y trazabilidad en tiempo real de tus postulaciones (HU039)</p>
+  </div>
 </div>
 
 <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
   <a href="?" class="btn {% if not request.GET.estado %}btn-g{% else %}btn-outline{% endif %} btn-xs">Todas</a>
   <a href="?estado=pendiente" class="btn {% if request.GET.estado == 'pendiente' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Pendientes</a>
   <a href="?estado=en_revision" class="btn {% if request.GET.estado == 'en_revision' %}btn-g{% else %}btn-outline{% endif %} btn-xs">En revisión</a>
-  <a href="?estado=finalizado" class="btn {% if request.GET.estado == 'finalizado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Finalizado</a>
+  <a href="?estado=aceptado" class="btn {% if request.GET.estado == 'aceptado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Aceptadas</a>
+  <a href="?estado=contratado" class="btn {% if request.GET.estado == 'contratado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Contratadas</a>
   <a href="?estado=en_progreso" class="btn {% if request.GET.estado == 'en_progreso' %}btn-g{% else %}btn-outline{% endif %} btn-xs">En progreso</a>
+  <a href="?estado=completado" class="btn {% if request.GET.estado == 'completado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Completadas</a>
   <a href="?estado=rechazado" class="btn {% if request.GET.estado == 'rechazado' %}btn-g{% else %}btn-outline{% endif %} btn-xs">Rechazadas</a>
 </div>
 
 {% if solicitudes %}
 <table class="data-table">
-  <thead><tr><th>Trabajo</th><th>Empresa</th><th>Modalidad</th><th>Tarifa pactada</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
+  <thead>
+    <tr>
+      <th>Trabajo & Empresa</th>
+      <th>Modalidad / Tipo</th>
+      <th>Tarifa</th>
+      <th>Fecha</th>
+      <th>Progreso de Solicitud (HU039)</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
   <tbody>
     {% for sol in solicitudes %}
     <tr>
       <td>
         <div class="dt-title">{{ sol.trabajo.titulo }}</div>
-        {% if sol.estado in 'aceptado contratado en_progreso completado' %}
-        <div class="dt-sub" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-          <a href="{% url 'mensajes_chat' sol.pk %}" class="t-blue" style="color:#1d4ed8;font-size:0.75rem;text-decoration:none;"><i class="bi bi-chat-dots"></i> Chat</a>
-          <a href="{% url 'comprobante_contrato' sol.pk %}" style="color:#059669;font-size:0.75rem;text-decoration:none;font-weight:600;"><i class="bi bi-file-earmark-text"></i> Contrato</a>
-        </div>
-        {% endif %}
-      </td>
-      <td>
-        <div style="display:flex;align-items:center;gap:8px;">
-          {% if sol.trabajo.contratista.profile.foto %}
-            <img src="{{ sol.trabajo.contratista.profile.foto.url }}" alt="" style="width:28px;height:28px;border-radius:8px;object-fit:cover;flex-shrink:0;">
-          {% else %}
-            <div style="width:28px;height:28px;border-radius:8px;background:var(--green-light);color:var(--green-dark);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.7rem;flex-shrink:0;">{{ sol.trabajo.contratista.profile.nombre_display|first|upper }}</div>
+        <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+          <span class="t-xs t-muted"><i class="bi bi-building"></i> {{ sol.trabajo.contratista.profile.nombre_display }}</span>
+          {% if sol.trabajo.contratista.profile.calificacion %}
+            <span class="t-xs t-yellow fw-700">★ {{ sol.trabajo.contratista.profile.calificacion }}</span>
           {% endif %}
-          <div>
-            <div>{{ sol.trabajo.contratista.profile.nombre_display }}</div>
-            {% if sol.trabajo.contratista.profile.calificacion %}
-            <div class="t-xs t-muted"><span class="stars" style="font-size:10px;">★</span> {{ sol.trabajo.contratista.profile.calificacion }}</div>
-            {% endif %}
-          </div>
         </div>
-      </td>
-      <td><span class="pill" style="background:var(--bg);border:1px solid var(--border);color:var(--mid);padding:3px 10px;font-size:11px;">{{ sol.trabajo.get_modalidad_display }}</span></td>
-      <td class="fw-700 t-green">{% if sol.tarifa_propuesta %}${{ sol.tarifa_propuesta }}{% else %}${{ sol.trabajo.presupuesto }}{% endif %}</td>
-      <td class="t-muted">{{ sol.creado|date:"d/m/Y" }}</td>
-      <td>
-        {% if sol.estado in 'aceptado contratado completado' %}
-          <span class="est-badge est-completado">Finalizado</span>
-        {% else %}
-          <span class="est-badge est-{{ sol.estado }}">{{ sol.estado_label }}</span>
+        {% if sol.estado in 'aceptado contratado en_progreso completado' %}
+        <div class="dt-sub" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
+          <a href="{% url 'mensajes_chat' sol.pk %}" style="color:#1d4ed8; font-size:0.75rem; text-decoration:none; font-weight:700;">
+            <i class="bi bi-chat-dots-fill"></i> Chat Directo
+          </a>
+          <a href="{% url 'comprobante_contrato' sol.pk %}" style="color:#059669; font-size:0.75rem; text-decoration:none; font-weight:700;">
+            <i class="bi bi-file-earmark-text-fill"></i> Contrato
+          </a>
+        </div>
         {% endif %}
       </td>
       <td>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <a href="{% url 'trabajo_detalle' sol.trabajo.pk %}" class="t-green fw-700 t-xs" style="text-decoration:none;">Ver detalle <i class="bi bi-chevron-right"></i></a>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <span class="pill" style="background:var(--bg); border:1px solid var(--border); color:var(--mid); padding:2px 8px; font-size:10px;">
+            {{ sol.trabajo.get_modalidad_display }}
+          </span>
+          {% if sol.trabajo.tipo_oportunidad == 'formal' %}
+            <span class="pill" style="background:#e0e7ff; color:#3730a3; padding:2px 8px; font-size:10px;">
+              🏢 Empleo Formal
+            </span>
+          {% else %}
+            <span class="pill" style="background:#ecfdf5; color:#065f46; padding:2px 8px; font-size:10px;">
+              ⚡ Chamba Rápida
+            </span>
+          {% endif %}
+        </div>
+      </td>
+      <td class="fw-700 t-green">
+        {% if sol.tarifa_propuesta %}${{ sol.tarifa_propuesta }} USD{% else %}${{ sol.trabajo.presupuesto }} USD{% endif %}
+      </td>
+      <td class="t-muted" style="font-size:0.8rem;">{{ sol.creado|date:"d/m/Y" }}</td>
+      <td style="min-width:180px;">
+        <!-- Stepper Visual de Estados (HU039) -->
+        <div style="margin-bottom:4px;">
+          <span class="est-badge est-{{ sol.estado }}">{{ sol.estado_label }}</span>
+        </div>
+        
+        {% if sol.estado == 'rechazado' %}
+          {% if sol.motivo_descarte %}
+            <div class="t-xxs" style="color:#dc2626; margin-top:4px; line-height:1.3;">
+              <strong>Motivo:</strong> {{ sol.motivo_descarte }}
+            </div>
+          {% endif %}
+        {% else %}
+          <!-- Barra de Progreso -->
+          <div style="background:#e2e8f0; height:6px; border-radius:3px; overflow:hidden; width:100%; margin-top:6px;">
+            <div style="height:100%; border-radius:3px; background:{% if sol.estado == 'completado' %}#10b981{% elif sol.estado == 'contratado' or sol.estado == 'en_progreso' %}#3b82f6{% elif sol.estado == 'aceptado' %}#f59e0b{% else %}#94a3b8{% endif %}; width:{% if sol.estado == 'completado' %}100%{% elif sol.estado == 'en_progreso' %}80%{% elif sol.estado == 'contratado' %}60%{% elif sol.estado == 'aceptado' %}40%{% elif sol.estado == 'en_revision' %}25%{% else %}10%{% endif %};"></div>
+          </div>
+        {% endif %}
+      </td>
+      <td>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <a href="{% url 'trabajo_detalle' sol.trabajo.pk %}" class="t-green fw-700 t-xs" style="text-decoration:none;">
+            Ver vacante <i class="bi bi-chevron-right"></i>
+          </a>
           {% if sol.estado in 'contratado en_progreso completado' %}
-            <a href="{% url 'crear_resena_solicitud' sol.pk %}" style="color:#f59e0b;font-weight:700;font-size:0.75rem;text-decoration:none;">
-              ⭐ Calificar empleador
+            <a href="{% url 'crear_resena_solicitud' sol.pk %}" class="btn btn-xs" style="background:#fef3c7; color:#b45309; border:none; padding:3px 6px; font-size:11px; text-decoration:none; display:inline-flex; align-items:center; gap:3px;">
+              <i class="bi bi-star-fill"></i> Calificar empleador
             </a>
           {% endif %}
         </div>
@@ -71,8 +111,11 @@
   </tbody>
 </table>
 {% else %}
-<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Sin solicitudes aún</div><div class="empty-sub">Aplica a trabajos y aquí verás el seguimiento</div>
-  <a href="{% url 'home_trabajador' %}" class="btn btn-g mt-16">Buscar trabajos</a>
+<div class="empty-state">
+  <div class="empty-icon">📋</div>
+  <div class="empty-title">Sin solicitudes aún</div>
+  <div class="empty-sub">Aplica a trabajos en el feed y aquí verás el seguimiento paso a paso.</div>
+  <a href="{% url 'home_trabajador' %}" class="btn btn-g mt-16">Buscar chambas</a>
 </div>
 {% endif %}
 

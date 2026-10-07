@@ -153,6 +153,11 @@
             <a href="{% url 'trabajo_detalle' trabajo.pk %}" class="job-row-title-link">{{ trabajo.titulo }}</a>
             {% if trabajo.contratista.profile.verificado %}<i class="bi bi-patch-check-fill t-green" style="font-size:13px;"></i>{% endif %}
             {% if trabajo.es_urgente %}<span class="pill pill-red-lt" style="padding:2px 9px;font-size:10px;"><i class="bi bi-fire"></i> Urgente</span>{% endif %}
+            {% if trabajo.tipo_oportunidad == 'formal' %}
+              <span class="pill" style="background:#e0e7ff; color:#3730a3; padding:2px 8px; font-size:10px;"><i class="bi bi-building"></i> Formal</span>
+            {% else %}
+              <span class="pill" style="background:#ecfdf5; color:#065f46; padding:2px 8px; font-size:10px;"><i class="bi bi-lightning-charge"></i> Rápida</span>
+            {% endif %}
           </div>
           <div class="job-row-author">{{ trabajo.contratista.profile.nombre_display }} · <i class="bi bi-geo-alt"></i> {{ trabajo.ubicacion }}</div>
         </div>

@@ -91,6 +91,9 @@ class UserProfile(models.Model):
     total_trabajos = models.IntegerField(default=0)
     notif_email = models.BooleanField(default=True)
     notif_sistema = models.BooleanField(default=True)
+    notif_recordatorios = models.BooleanField(default=True, help_text='Recordatorios de citas/entrevistas')
+    notif_mensajes = models.BooleanField(default=True, help_text='Notificación de nuevos mensajes')
+    onboarding_completado = models.BooleanField(default=False, help_text='Guía inicial completada')
     # Sprint 2
     disponible  = models.BooleanField(default=True)   # activo para contratar
     portfolio_url = models.URLField(blank=True)
@@ -225,7 +228,11 @@ class Trabajo(models.Model):
     actualizado   = models.DateTimeField(auto_now=True)
     habilidades_req = models.JSONField(default=list, blank=True)
     vistas        = models.PositiveIntegerField(default=0)
-    # Sprint 2
+    # Sprint 2 & 3
+    tipo_oportunidad = models.CharField(max_length=20, choices=[
+        ('informal', 'Chamba Rápida / Ocasional'),
+        ('formal', 'Empleo Formal (Contrato / Empresa)')
+    ], default='informal', help_text='Diferenciación entre trabajo formal e informal')
     modalidad     = models.CharField(max_length=20, choices=[
         ('presencial','Presencial'), ('remoto','Remoto'), ('hibrido','Híbrido')
     ], default='presencial')
@@ -336,6 +343,7 @@ class Solicitud(models.Model):
     estado    = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendiente')
     mensaje   = models.TextField(blank=True)
     rapida    = models.BooleanField(default=False)
+    motivo_descarte = models.CharField(max_length=255, blank=True, null=True, help_text='Motivo por el cual fue descartado')
     tarifa_propuesta = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     pagado = models.BooleanField(default=False)
     total_a_pagar = models.DecimalField(max_digits=10, decimal_places=2, default=1.50)
@@ -383,6 +391,8 @@ class Resena(models.Model):
     calificacion= models.IntegerField(default=5)
     comentario  = models.TextField()
     etiquetas   = models.CharField(max_length=255, blank=True, help_text="Etiquetas separadas por comas")
+    reportada   = models.BooleanField(default=False, help_text='Indica si la reseña fue reportada por inapropiada')
+    motivo_reporte = models.TextField(blank=True, help_text='Motivo del reporte')
     creado      = models.DateTimeField(auto_now_add=True)
 
     class Meta:

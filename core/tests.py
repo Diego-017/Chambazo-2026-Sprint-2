@@ -184,12 +184,12 @@ class ChambazoCoreTests(TestCase):
     def test_galeria_portafolio(self):
         """Valida la creación de ítems de portafolio para el trabajador."""
         item = GaleriaItem.objects.create(
-            trabajador=self.trabajador_user,
+            usuario=self.trabajador_user,
             titulo='Panel de distribución 220V',
             categoria='electricidad',
             descripcion='Instalación limpia de breakers industriales.'
         )
-        self.assertEqual(item.trabajador, self.trabajador_user)
+        self.assertEqual(item.usuario, self.trabajador_user)
         self.assertEqual(self.trabajador_user.galeria.count(), 1)
 
 

@@ -99,6 +99,13 @@ urlpatterns = [
     path('asistente/responder/', views.asistente_responder, name='asistente_responder'),
     # Mi Agenda y Calendario
     path('agenda/', views.mi_agenda, name='mi_agenda'),
+    # Sprint 3: Candidatos, Comparador, CVs, Preferencias y Moderación
+    path('candidatos/solicitud/<int:sol_pk>/descartar/', views.descartar_candidato, name='descartar_candidato'),
+    path('candidatos/descargar-cv/<int:user_pk>/', views.descargar_cv_candidato, name='descargar_cv_candidato'),
+    path('contratista/trabajo/<int:pk>/comparar/', views.comparar_candidatos, name='comparar_candidatos'),
+    path('preferencias/notificaciones/', views.preferencias_notificaciones, name='preferencias_notificaciones'),
+    path('onboarding/completar/', views.completar_onboarding, name='completar_onboarding'),
+    path('resena/<int:resena_pk>/reportar/', views.reportar_resena, name='reportar_resena'),
     # API RESTful v1
     path('api/v1/', include(router.urls)),
     path('api/v1/stats/', api_views.PlataformaStatsAPIView.as_view(), name='api_stats'),
