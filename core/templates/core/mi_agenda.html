@@ -1,0 +1,197 @@
+{% extends 'core/base.html' %}
+{% block title %}Mi Agenda{% endblock %}
+{% block extra_head %}
+<!-- FullCalendar v6 (CDN, sin API key) -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+<style>
+  .fc { font-family: 'Inter', sans-serif; font-size: 0.85rem; }
+  .fc .fc-toolbar-title { font-size: 1.1rem; font-weight: 800; color: #1e293b; }
+  .fc .fc-button { background: var(--green-main, #1FA35A); border: none; font-weight: 600; font-size: 0.78rem; border-radius: 8px; }
+  .fc .fc-button:hover { background: #178a4a; }
+  .fc .fc-button-active { background: #064e3b !important; }
+  .fc .fc-daygrid-day-number { font-weight: 600; color: #475569; }
+  .fc .fc-daygrid-day.fc-day-today { background: #f0fdf4 !important; }
+  .fc .fc-event { border-radius: 6px; padding: 2px 6px; font-weight: 600; font-size: 0.75rem; cursor: pointer; }
+  .fc .fc-event:hover { filter: brightness(1.1); transform: translateY(-1px); transition: all 0.15s; }
+  .agenda-sidebar { display: flex; flex-direction: column; gap: 12px; }
+  .agenda-upcoming-card { background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; }
+  .agenda-upcoming-card:hover { border-color: #bbf7d0; box-shadow: 0 4px 12px rgba(31,163,90,0.1); }
+  .upcoming-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #64748b; }
+  .legend-circle { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  /* Modal de detalle de evento */
+  .event-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center; }
+  .event-modal-overlay.open { display:flex; }
+  .event-modal { background:#fff; border-radius:16px; padding:24px; max-width:400px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+  .event-modal h3 { margin:0 0 12px; font-size:1.1rem; font-weight:800; color:#1e293b; }
+  .event-modal .meta-row { display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#64748b; margin-bottom:6px; }
+  .event-modal .meta-row i { color: var(--green-main, #1FA35A); }
+</style>
+{% endblock %}
+
+{% block body %}
+{% if rol == 'contratista' %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
+
+<div class="page-hd">
+  <div>
+    <h1>📅 Mi Agenda</h1>
+    <p>Visualiza tus compromisos de trabajo en calendario</p>
+  </div>
+</div>
+
+<div class="layout-2col">
+  <!-- Sidebar de próximos compromisos -->
+  <div>
+    <div class="filter-card">
+      <h4>⏰ Próximos 7 días</h4>
+      {% if proximos %}
+        <div class="agenda-sidebar">
+          {% for item in proximos %}
+          <div class="agenda-upcoming-card">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <div class="upcoming-dot" style="background:#f59e0b;"></div>
+              <div style="flex:1; min-width:0;">
+                <div class="fw-700 t-sm" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  {% if rol == 'trabajador' %}{{ item.trabajo.titulo }}{% else %}{{ item.titulo }}{% endif %}
+                </div>
+                <div class="t-xxs t-muted">
+                  {% if rol == 'trabajador' %}
+                    {{ item.trabajo.contratista.profile.nombre_display }} · {{ item.trabajo.fecha_inicio|date:"d M" }}
+                  {% else %}
+                    {{ item.fecha_inicio|date:"d M" }} · {{ item.candidatos_count }} candidatos
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <a href="{% if rol == 'trabajador' %}{% url 'gestionar_trabajo' item.pk %}{% else %}{% url 'candidatos' item.pk %}{% endif %}" 
+               class="btn btn-g btn-xs btn-full" style="justify-content:center; font-size:0.72rem;">
+              Ver detalle →
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="text-align:center; padding:20px 0; color:#94a3b8;">
+          <i class="bi bi-calendar-check" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
+          <div class="t-sm fw-600">Sin compromisos próximos</div>
+          <div class="t-xxs">Los trabajos con fecha aparecerán aquí</div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Leyenda de colores -->
+    <div class="filter-card" style="margin-top:12px;">
+      <h4>🎨 Leyenda</h4>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        {% if rol == 'trabajador' %}
+        <div class="legend-row"><div class="legend-circle" style="background:#f59e0b;"></div> Contratado (pendiente inicio)</div>
+        <div class="legend-row"><div class="legend-circle" style="background:#3b82f6;"></div> En progreso</div>
+        <div class="legend-row"><div class="legend-circle" style="background:#10b981;"></div> Completado</div>
+        {% else %}
+        <div class="legend-row"><div class="legend-circle" style="background:#3b82f6;"></div> Vacante disponible</div>
+        <div class="legend-row"><div class="legend-circle" style="background:#f59e0b;"></div> En proceso</div>
+        <div class="legend-row"><div class="legend-circle" style="background:#10b981;"></div> Ocupada / Asignada</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Tip motivacional -->
+    <div class="filter-card" style="margin-top:12px; background:#f0fdf4; border:1px solid #bbf7d0; text-align:center; padding:16px;">
+      <i class="bi bi-lightbulb" style="font-size:1.5rem; color:#34d399;"></i>
+      <p class="t-xs fw-600" style="color:#065f46; margin:8px 0 0;">
+        💡 Tip: Agrega fechas de inicio y límite al publicar trabajos para que aparezcan automáticamente en tu calendario.
+      </p>
+    </div>
+  </div>
+
+  <!-- Calendario principal -->
+  <div>
+    <div class="card"><div class="card-body" style="padding:16px;">
+      <div id="calendarioApp"></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- Modal de detalle de evento -->
+<div class="event-modal-overlay" id="eventModal" onclick="if(event.target===this)cerrarModal()">
+  <div class="event-modal">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 id="modalTitle">—</h3>
+      <button onclick="cerrarModal()" style="background:none; border:none; font-size:1.3rem; cursor:pointer; color:#94a3b8;">✕</button>
+    </div>
+    <div class="meta-row"><i class="bi bi-building"></i> <span id="modalEmpresa">—</span></div>
+    <div class="meta-row"><i class="bi bi-geo-alt"></i> <span id="modalUbicacion">—</span></div>
+    <div class="meta-row"><i class="bi bi-cash-stack"></i> $<span id="modalPresupuesto">—</span> USD</div>
+    <div class="meta-row"><i class="bi bi-flag"></i> Estado: <span id="modalEstado" class="fw-700">—</span></div>
+    <a id="modalUrl" href="#" class="btn btn-g btn-full mt-16" style="justify-content:center;">
+      <i class="bi bi-arrow-right-circle"></i> Ir al detalle
+    </a>
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const calendarEl = document.getElementById('calendarioApp');
+  
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    locale: 'es',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,listWeek'
+    },
+    buttonText: {
+      today: 'Hoy',
+      month: 'Mes',
+      week: 'Semana',
+      list: 'Lista'
+    },
+    height: 'auto',
+    navLinks: true,
+    editable: false,
+    dayMaxEvents: 3,
+    moreLinkText: 'más',
+    
+    events: function(fetchInfo, successCallback, failureCallback) {
+      fetch('/api/v1/calendario/')
+        .then(res => res.json())
+        .then(data => successCallback(data))
+        .catch(err => failureCallback(err));
+    },
+    
+    eventClick: function(info) {
+      info.jsEvent.preventDefault();
+      const props = info.event.extendedProps;
+      
+      document.getElementById('modalTitle').textContent = info.event.title;
+      document.getElementById('modalEmpresa').textContent = props.empresa || props.candidatos + ' candidatos' || '—';
+      document.getElementById('modalUbicacion').textContent = props.ubicacion || '—';
+      document.getElementById('modalPresupuesto').textContent = props.presupuesto || '—';
+      document.getElementById('modalEstado').textContent = props.estado || '—';
+      document.getElementById('modalUrl').href = info.event.url || '#';
+      
+      document.getElementById('eventModal').classList.add('open');
+    },
+
+    eventDidMount: function(info) {
+      // Tooltip simple con título
+      info.el.title = info.event.title;
+    }
+  });
+  
+  calendar.render();
+});
+
+function cerrarModal() {
+  document.getElementById('eventModal').classList.remove('open');
+}
+</script>
+{% endblock %}

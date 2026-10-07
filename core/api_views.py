@@ -98,3 +98,76 @@ class PlataformaStatsAPIView(APIView):
             'presupuesto_promedio': round(presupuesto_promedio, 2),
             'top_categorias': list(top_categorias),
         }, status=status.HTTP_200_OK)
+
+
+
+class CalendarioEventosAPIView(APIView):
+    """Devuelve eventos del calendario en formato FullCalendar para el usuario logueado."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        eventos = []
+
+        try:
+            rol = user.profile.rol
+        except Exception:
+            return Response([], status=status.HTTP_200_OK)
+
+        if rol == 'trabajador':
+            solicitudes = Solicitud.objects.filter(
+                trabajador=user,
+                estado__in=['contratado', 'en_progreso', 'completado']
+            ).select_related('trabajo', 'trabajo__contratista__profile')
+
+            for sol in solicitudes:
+                t = sol.trabajo
+                color_map = {
+                    'contratado': '#f59e0b',
+                    'en_progreso': '#3b82f6',
+                    'completado': '#10b981',
+                }
+                evento = {
+                    'title': t.titulo,
+                    'start': str(t.fecha_inicio) if t.fecha_inicio else str(t.creado.date()),
+                    'end': str(t.fecha_limite) if t.fecha_limite else None,
+                    'url': f'/solicitud/{sol.pk}/gestionar/',
+                    'backgroundColor': color_map.get(sol.estado, '#6b7280'),
+                    'borderColor': color_map.get(sol.estado, '#6b7280'),
+                    'extendedProps': {
+                        'empresa': t.contratista.profile.nombre_display,
+                        'ubicacion': t.ubicacion,
+                        'presupuesto': str(t.presupuesto),
+                        'estado': sol.get_estado_display(),
+                    }
+                }
+                eventos.append(evento)
+        else:
+            # Contratista
+            trabajos = Trabajo.objects.filter(
+                contratista=user,
+                activo=True
+            )
+            for t in trabajos:
+                estado_color = {
+                    'disponible': '#3b82f6',
+                    'en_proceso': '#f59e0b',
+                    'ocupada': '#10b981',
+                }
+                evento = {
+                    'title': t.titulo,
+                    'start': str(t.fecha_inicio) if t.fecha_inicio else str(t.creado.date()),
+                    'end': str(t.fecha_limite) if t.fecha_limite else None,
+                    'url': f'/contratista/trabajo/{t.pk}/candidatos/',
+                    'backgroundColor': estado_color.get(t.estado_vacante, '#6b7280'),
+                    'borderColor': estado_color.get(t.estado_vacante, '#6b7280'),
+                    'extendedProps': {
+                        'candidatos': t.candidatos_count,
+                        'ubicacion': t.ubicacion,
+                        'presupuesto': str(t.presupuesto),
+                        'estado': t.get_estado_vacante_display(),
+                    }
+                }
+                eventos.append(evento)
+
+        return Response(eventos, status=status.HTTP_200_OK)

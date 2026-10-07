@@ -97,9 +97,12 @@ urlpatterns = [
     # Asistente
     path('asistente/', views.asistente, name='asistente'),
     path('asistente/responder/', views.asistente_responder, name='asistente_responder'),
+    # Mi Agenda y Calendario
+    path('agenda/', views.mi_agenda, name='mi_agenda'),
     # API RESTful v1
     path('api/v1/', include(router.urls)),
     path('api/v1/stats/', api_views.PlataformaStatsAPIView.as_view(), name='api_stats'),
+    path('api/v1/calendario/', api_views.CalendarioEventosAPIView.as_view(), name='api_calendario'),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.BASE_DIR / 'static')

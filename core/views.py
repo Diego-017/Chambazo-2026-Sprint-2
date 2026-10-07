@@ -35,7 +35,7 @@ from .forms import (
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def ctx_base(request):
-    ctx = {'GOOGLE_MAPS_KEY': settings.GOOGLE_MAPS_API_KEY}
+    ctx = {}
     if request.user.is_authenticated:
         ctx['notif_count'] = Notificacion.objects.filter(usuario=request.user, leida=False).count()
         if request.user.profile.rol == 'trabajador':
@@ -1888,3 +1888,47 @@ def consola_verificacion_admin(request):
         'active': 'kyc_admin'
     })
     return render(request, 'core/consola_verificacion_admin.html', ctx)
+
+
+
+# ── Mi Agenda y Calendario de Chambas ──────────────────────────────────────────
+@login_required
+def mi_agenda(request):
+    """Calendario interactivo con FullCalendar. Muestra trabajos activos y próximos compromisos."""
+    from datetime import timedelta
+    hoy = timezone.now().date()
+    proximos_7d = hoy + timedelta(days=7)
+    rol = request.user.profile.rol
+
+    if rol == 'trabajador':
+        # Solicitudes donde soy el trabajador y están activas
+        solicitudes_activas = Solicitud.objects.filter(
+            trabajador=request.user,
+            estado__in=['contratado', 'en_progreso', 'completado']
+        ).select_related('trabajo', 'trabajo__contratista__profile')
+
+        proximos = []
+        for sol in solicitudes_activas:
+            t = sol.trabajo
+            if t.fecha_inicio and t.fecha_inicio >= hoy and t.fecha_inicio <= proximos_7d:
+                proximos.append(sol)
+    else:
+        # Contratista: todos mis trabajos con fecha
+        trabajos_activos = Trabajo.objects.filter(
+            contratista=request.user,
+            activo=True
+        ).exclude(estado_vacante='ocupada')
+
+        proximos = []
+        for t in trabajos_activos:
+            if t.fecha_inicio and t.fecha_inicio >= hoy and t.fecha_inicio <= proximos_7d:
+                proximos.append(t)
+
+    ctx = ctx_base(request)
+    ctx.update({
+        'active': 'agenda',
+        'proximos': proximos,
+        'rol': rol,
+    })
+    sidebar = '_sidebar_contratista.html' if rol == 'contratista' else '_sidebar_trabajador.html'
+    return render(request, 'core/mi_agenda.html', ctx)
