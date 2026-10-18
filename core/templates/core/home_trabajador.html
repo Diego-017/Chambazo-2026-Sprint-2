@@ -213,10 +213,9 @@ function toggleMap(){
 function initMapaTrabajo(){
   mapObj = L.map('mapaTrabajos').setView([13.6929, -89.2182], 9);
   
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    subdomains: 'abcd',
-    maxZoom: 20
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
+    maxZoom: 19
   }).addTo(mapObj);
 
   TRABAJOS_MAP.forEach(t=>{
@@ -266,7 +265,7 @@ function toggleMapStyle(){
       attribution: 'Tiles &copy; Esri'
     }).addTo(mapObj);
   } else {
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(mapObj);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}').addTo(mapObj);
   }
 }
 async function buscarEnMapa(){

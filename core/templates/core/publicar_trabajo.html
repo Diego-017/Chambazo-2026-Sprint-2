@@ -247,12 +247,11 @@ function initMapPicker() {
   const defaultLat = parseFloat(latStr);
   const defaultLng = parseFloat(lngStr);
 
-  // Usar CartoDB Voyager (tiles de OpenStreetMap optimizados sin bloqueos 403)
+  // Usar Esri World Street Map (100% libre, sin API key, sin bloqueos 403 ni marcas de agua)
   pickerMap = L.map('mapPicker').setView([defaultLat, defaultLng], 12);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    subdomains: 'abcd',
-    maxZoom: 20
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
+    maxZoom: 19
   }).addTo(pickerMap);
 
   pickerMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(pickerMap);
