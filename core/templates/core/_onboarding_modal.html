@@ -1,0 +1,120 @@
+<!-- Modal de Guía Inicial / Onboarding (CP-018) -->
+{% if user.is_authenticated and not user.profile.onboarding_completado %}
+<div class="onboarding-overlay" id="onboardingModal">
+  <div class="onboarding-card">
+    <div class="onboarding-header">
+      <div style="font-size:2rem; margin-bottom:8px;">
+        {% if user.profile.rol == 'contratista' %}🏢{% else %}🚀{% endif %}
+      </div>
+      <h2>¡Bienvenido a Chambazo, {{ user.first_name|default:user.username }}!</h2>
+      <p style="color:#64748b; font-size:0.9rem; margin-top:4px;">
+        {% if user.profile.rol == 'contratista' %}
+          Guía rápida para publicar tus vacantes y contratar el mejor talento de El Salvador.
+        {% else %}
+          Guía rápida para encontrar y postular a las mejores oportunidades laborales.
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="onboarding-steps">
+      {% if user.profile.rol == 'contratista' %}
+        <div class="onboarding-step">
+          <div class="step-num">1</div>
+          <div>
+            <div class="fw-700 t-sm">Publica tu primera vacante</div>
+            <div class="t-xxs t-muted">Define los requisitos, presupuesto y ubicación exacta en el mapa de El Salvador.</div>
+          </div>
+        </div>
+        <div class="onboarding-step">
+          <div class="step-num">2</div>
+          <div>
+            <div class="fw-700 t-sm">Evalúa y compara candidatos</div>
+            <div class="t-xxs t-muted">Usa el Comparador de Candidatos para revisar habilidades, match score y descargar CVs en PDF.</div>
+          </div>
+        </div>
+        <div class="onboarding-step">
+          <div class="step-num">3</div>
+          <div>
+            <div class="fw-700 t-sm">Pago 100% protegido con Escrow</div>
+            <div class="t-xxs t-muted">Tus fondos quedan resguardados y solo se liberan cuando apruebes el trabajo completado.</div>
+          </div>
+        </div>
+      {% else %}
+        <div class="onboarding-step">
+          <div class="step-num">1</div>
+          <div>
+            <div class="fw-700 t-sm">Completa tu perfil profesional</div>
+            <div class="t-xxs t-muted">Agrega tus habilidades, foto y genera tu Currículum Vitae oficial en PDF.</div>
+          </div>
+        </div>
+        <div class="onboarding-step">
+          <div class="step-num">2</div>
+          <div>
+            <div class="fw-700 t-sm">Postúlate en 1 clic</div>
+            <div class="t-xxs t-muted">Filtra por zona y categoría para encontrar chambas acordes a tu especialidad.</div>
+          </div>
+        </div>
+        <div class="onboarding-step">
+          <div class="step-num">3</div>
+          <div>
+            <div class="fw-700 t-sm">Organiza tu Agenda y cobra seguro</div>
+            <div class="t-xxs t-muted">Consulta tu calendario interactivo y recibe tus pagos directamente en garantía.</div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div style="margin-top:24px; display:flex; gap:10px;">
+      <button onclick="cerrarOnboarding()" class="btn btn-g btn-full" style="justify-content:center;">
+        ¡Entendido, comenzar! →
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+.onboarding-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+  backdrop-filter: blur(4px); z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
+}
+.onboarding-card {
+  background: #fff; border-radius: 20px; max-width: 480px; width: 92%;
+  padding: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.onboarding-header { text-align: center; margin-bottom: 20px; }
+.onboarding-header h2 { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0; }
+.onboarding-steps { display: flex; flex-direction: column; gap: 12px; }
+.onboarding-step {
+  display: flex; align-items: center; gap: 14px;
+  background: #f8fafc; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--green, #10b981);
+  color: #fff; font-weight: 800; font-size: 13px; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+}
+@keyframes popIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+</style>
+
+<script>
+function cerrarOnboarding() {
+  const modal = document.getElementById('onboardingModal');
+  if (modal) {
+    modal.style.display = 'none';
+    fetch('/onboarding/completar/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'Content-Type': 'application/json'
+      }
+    }).catch(e => console.log(e));
+  }
+}
+</script>
+{% endif %}

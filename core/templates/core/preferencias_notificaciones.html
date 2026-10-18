@@ -1,0 +1,95 @@
+{% extends 'core/base.html' %}
+{% block title %}Preferencias de Notificación{% endblock %}
+
+{% block body %}
+{% if profile.rol == 'contratista' %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
+
+<div class="page-hd">
+  <div>
+    <h1>🔔 Preferencias de Notificación</h1>
+    <p>Configura qué tipo de alertas y avisos deseas recibir en tu cuenta (HU041)</p>
+  </div>
+</div>
+
+<div class="layout-2col">
+  <div>
+    <div class="card">
+      <div class="card-body">
+        <h3 class="t-h3 mb-16"><i class="bi bi-sliders"></i> Canales y Tipos de Notificación</h3>
+        
+        <form method="post">
+          {% csrf_token %}
+          
+          <!-- Notificaciones por Correo -->
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-bottom:1px solid #f1f5f9;">
+            <div style="max-width:80%;">
+              <div class="fw-700 t-body"><i class="bi bi-envelope-at t-green" style="font-size:1.1rem; margin-right:6px;"></i> Notificaciones por Correo Electrónico</div>
+              <div class="t-xs t-muted mt-4">Recibe confirmaciones de postulación, cambios de estado en tus ofertas y comprobantes de pago en <strong>{{ request.user.email }}</strong>.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="notif_email" value="1" {% if profile.notif_email %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Notificaciones Push / En Plataforma -->
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-bottom:1px solid #f1f5f9;">
+            <div style="max-width:80%;">
+              <div class="fw-700 t-body"><i class="bi bi-bell-fill t-yellow" style="font-size:1.1rem; margin-right:6px;"></i> Notificaciones en Vivo / En Plataforma</div>
+              <div class="t-xs t-muted mt-4">Muestra alertas inmediatas y badges de novedades dentro de la barra de navegación de Chambazo.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="notif_sistema" value="1" {% if profile.notif_sistema %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Recordatorios de Citas y Entrevistas -->
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-bottom:1px solid #f1f5f9;">
+            <div style="max-width:80%;">
+              <div class="fw-700 t-body"><i class="bi bi-calendar-event-fill" style="color:#3b82f6; font-size:1.1rem; margin-right:6px;"></i> Recordatorios de Entrevistas y Eventos (HU042)</div>
+              <div class="t-xs t-muted mt-4">Envía una alerta automática 24 horas antes del inicio de un trabajo o cita técnica agendada.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="notif_recordatorios" value="1" {% if profile.notif_recordatorios %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Alertas de Mensajes de Chat -->
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; margin-bottom:20px;">
+            <div style="max-width:80%;">
+              <div class="fw-700 t-body"><i class="bi bi-chat-dots-fill" style="color:#8b5cf6; font-size:1.1rem; margin-right:6px;"></i> Mensajes Nuevos en el Chat</div>
+              <div class="t-xs t-muted mt-4">Avisarte cuando un empleador o trabajador te envíe un mensaje de texto, audio o documento.</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="notif_mensajes" value="1" {% if profile.notif_mensajes %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-g btn-full btn-lg">
+            <i class="bi bi-check-circle-fill"></i> Guardar Preferencias
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="filter-card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
+      <h4 style="color:#065f46;"><i class="bi bi-shield-check"></i> Control y Privacidad</h4>
+      <p class="t-xs" style="color:#065f46; line-height:1.5;">
+        En Chambazo respetamos tu tiempo. Puedes modificar estas preferencias en cualquier momento para evitar la saturación de alertas y mantener solo los avisos esenciales para tu trabajo.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

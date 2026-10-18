@@ -1,0 +1,205 @@
+{% extends 'core/base.html' %}
+{% block title %}Candidatos{% endblock %}
+{% block body %}
+{% include 'core/_sidebar_contratista.html' %}
+
+<div class="page-hd">
+  <div>
+    <h1>{% if trabajo %}Candidatos — {{ trabajo.titulo }}{% else %}Todos los candidatos{% endif %}</h1>
+    <p>{{ solicitudes|length }} candidato{{ solicitudes|length|pluralize }} postulado{{ solicitudes|length|pluralize }}</p>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center;">
+    {% if trabajo %}
+      <a href="{% url 'comparar_candidatos' trabajo.pk %}" class="btn btn-g btn-sm">
+        <i class="bi bi-layout-three-columns"></i> 📊 Comparador de Candidatos
+      </a>
+    {% endif %}
+    {% if not trabajo and trabajos_propios %}
+    <select onchange="if(this.value)window.location=this.value" class="form-control" style="width:auto;">
+      <option value="">Filtrar por vacante...</option>
+      {% for t in trabajos_propios %}<option value="{% url 'candidatos' t.pk %}">{{ t.titulo }}</option>{% endfor %}
+    </select>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+  <a href="?" class="btn {% if not request.GET.estado %}btn-y{% else %}btn-outline{% endif %} btn-xs">Todos</a>
+  <a href="?estado=pendiente" class="btn {% if request.GET.estado == 'pendiente' %}btn-y{% else %}btn-outline{% endif %} btn-xs">Pendientes</a>
+  <a href="?estado=en_revision" class="btn {% if request.GET.estado == 'en_revision' %}btn-y{% else %}btn-outline{% endif %} btn-xs">En revisión</a>
+  <a href="?estado=aceptado" class="btn {% if request.GET.estado == 'aceptado' %}btn-y{% else %}btn-outline{% endif %} btn-xs">Aceptados</a>
+  <a href="?estado=contratado" class="btn {% if request.GET.estado == 'contratado' %}btn-y{% else %}btn-outline{% endif %} btn-xs">Contratados</a>
+  <a href="?estado=rechazado" class="btn {% if request.GET.estado == 'rechazado' %}btn-y{% else %}btn-outline{% endif %} btn-xs">Rechazados</a>
+</div>
+
+{% if solicitudes %}
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Candidato</th>
+      <th>Habilidades</th>
+      <th>Calificación</th>
+      <th>Educación</th>
+      <th>Tarifa</th>
+      <th>Afinidad</th>
+      <th>Estado</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for sol in solicitudes %}
+    <tr>
+      <td>
+        <div class="flex-c gap-8">
+          <div class="conv-av" style="width:36px;height:36px;">
+            {% if sol.trabajador.profile.foto %}
+              <img src="{{ sol.trabajador.profile.foto.url }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+            {% else %}
+              <i class="bi bi-person" style="font-size:16px;"></i>
+            {% endif %}
+          </div>
+          <div>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <a href="{% url 'perfil_publico' sol.trabajador.pk %}" class="dt-title" style="color:var(--dark);">
+                {{ sol.trabajador.get_full_name|default:sol.trabajador.username }}
+              </a>
+              {% if sol.trabajador.profile.verificado %}
+                <i class="bi bi-patch-check-fill t-green" title="Identidad Verificada (KYC)" style="font-size:12px;"></i>
+              {% endif %}
+            </div>
+            {% if not trabajo %}<div class="dt-sub">{{ sol.trabajo.titulo }}</div>{% endif %}
+          </div>
+        </div>
+      </td>
+      <td>
+        {% for h in sol.trabajador.profile.habilidades|slice:":2" %}
+          <span class="skill-tag" style="margin-right:3px;">{{ h }}</span>
+        {% empty %}
+          <span class="t-xxs t-muted">—</span>
+        {% endfor %}
+      </td>
+      <td>
+        <span class="stars" style="font-size:11px;">★</span> {{ sol.trabajador.profile.calificacion|default:"5.0" }}
+        <div class="t-xxs t-muted">({{ sol.trabajador.profile.total_trabajos }} chambas)</div>
+      </td>
+      <td>{{ sol.trabajador.profile.get_nivel_educativo_display|default:"Media / Bachillerato" }}</td>
+      <td class="fw-700 t-green">{% if sol.tarifa_propuesta %}${{ sol.tarifa_propuesta }}{% else %}${{ sol.trabajo.presupuesto }}{% endif %}</td>
+      <td>
+        {% with score=sol.trabajador.profile.match_score %}
+          {% if score > 0 %}
+            <span class="match-badge {% if score >= 80 %}match-hi{% elif score >= 50 %}match-md{% else %}match-lo{% endif %}">{{ score }}%</span>
+          {% else %}
+            <span class="t-xxs t-muted">—</span>
+          {% endif %}
+        {% endwith %}
+      </td>
+      <td>
+        <span class="est-badge est-{{ sol.estado }}">{{ sol.estado_label }}</span>
+        {% if sol.motivo_descarte %}
+          <div class="t-xxs t-muted mt-2" style="max-width:140px; white-space:normal;" title="{{ sol.motivo_descarte }}">
+            <em>{{ sol.motivo_descarte|truncatechars:35 }}</em>
+          </div>
+        {% endif %}
+      </td>
+      <td>
+        <div class="flex-c gap-4">
+          <!-- Botón directo de descarga de CV en PDF (HU033) -->
+          <a href="{% url 'descargar_cv_candidato' sol.trabajador.pk %}" class="btn-icon-circle" style="background:#fef2f2; color:#dc2626;" title="Descargar CV en PDF (HU033)">
+            <i class="bi bi-file-earmark-pdf"></i>
+          </a>
+
+          {% if sol.estado == 'pendiente' or sol.estado == 'en_revision' %}
+            {% if sol.trabajo.verificacion_requerida and not sol.trabajador.profile.verificado %}
+              <!-- Gherkin Escenario 2: Alerta cuando requiere verificación previa -->
+              <button onclick="alert('⚠️ Este candidato no ha completado su verificación de identidad (DUI/Selfie). La vacante requiere un perfil verificado.')" class="btn-icon-circle" style="background:#fef3c7; color:#d97706;" title="Perfil sin verificar">
+                <i class="bi bi-exclamation-triangle"></i>
+              </button>
+            {% else %}
+              <a href="{% url 'cambiar_estado_solicitud' sol.pk 'aceptado' %}?next={{ request.path }}" class="btn-icon-circle" style="background:var(--green-light);color:var(--green-dark);" title="Pre-Aceptar (HU032)">
+                <i class="bi bi-check-lg"></i>
+              </a>
+            {% endif %}
+            
+            <!-- Botón Descartar con Modal (HU034) -->
+            <button onclick="abrirModalDescarte({{ sol.pk }}, '{{ sol.trabajador.get_full_name|default:sol.trabajador.username|escapejs }}')" class="btn-icon-circle" style="background:var(--red-light);color:var(--red);" title="Descartar con motivo (HU034)">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          {% elif sol.estado == 'aceptado' %}
+            <a href="{% url 'crear_contrato_digital' sol.pk %}" class="btn btn-g btn-xs" style="padding:4px 8px;font-size:11px;" title="Contratar Formalmente">
+              🤝 Contratar
+            </a>
+            <a href="{% url 'mensajes_chat' sol.pk %}" class="btn-icon-circle" style="background:#e0f2fe;color:#0369a1;" title="Chat / Coordinar">
+              <i class="bi bi-chat-dots"></i>
+            </a>
+          {% elif sol.estado == 'contratado' or sol.estado == 'en_progreso' %}
+            <a href="{% url 'cambiar_estado_solicitud' sol.pk 'completado' %}?next={{ request.path }}" class="btn btn-xs" style="background:#10b981;color:#fff;border:none;padding:4px 8px;font-size:11px;" title="Marcar como Finalizado y Liberar Fondos">
+              ✅ Finalizar
+            </a>
+            <a href="{% url 'mensajes_chat' sol.pk %}" class="btn-icon-circle" style="background:#e0f2fe;color:#0369a1;" title="Chat con Trabajador">
+              <i class="bi bi-chat-dots"></i>
+            </a>
+          {% endif %}
+          
+          <a href="{% url 'perfil_publico' sol.trabajador.pk %}" class="t-xs t-green fw-700" style="margin-left:4px;">Ver perfil</a>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">👥</div>
+  <div class="empty-title">Sin candidatos aún</div>
+  <div class="empty-sub">Cuando alguien aplique a tus vacantes aparecerá aquí con su afinidad y CV.</div>
+</div>
+{% endif %}
+
+<!-- Modal Descartar Candidato con Motivo (HU034) -->
+<div class="event-modal-overlay" id="modalDescarte" onclick="if(event.target===this)cerrarModalDescarte()">
+  <div class="event-modal">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="margin:0; font-size:1.1rem; color:#dc2626;"><i class="bi bi-x-circle-fill"></i> Descartar Candidato</h3>
+      <button onclick="cerrarModalDescarte()" style="background:none; border:none; font-size:1.3rem; cursor:pointer; color:#94a3b8;">✕</button>
+    </div>
+    <p class="t-xs t-muted mb-12">
+      Indica el motivo por el cual estás descartando a <strong id="nombreCandidatoDescarte">—</strong>. Esto brindará retroalimentación al candidato.
+    </p>
+    <form id="formDescarte" method="post" action="">
+      {% csrf_token %}
+      <div class="form-group mb-12">
+        <label class="form-label">Motivo principal *</label>
+        <select name="motivo" class="form-control" required>
+          <option value="Perfil no se ajusta a los requerimientos">Perfil no se ajusta a los requerimientos</option>
+          <option value="Pretensión salarial fuera del rango">Pretensión salarial fuera del rango</option>
+          <option value="Experiencia laboral insuficiente">Experiencia laboral insuficiente</option>
+          <option value="Plaza cubierta por otro candidato">Plaza cubierta por otro candidato</option>
+          <option value="Falta de herramientas o transporte">Falta de herramientas o transporte</option>
+          <option value="Otro motivo">Otro motivo</option>
+        </select>
+      </div>
+      <div class="form-group mb-16">
+        <label class="form-label">Detalle opcional</label>
+        <textarea name="detalle" class="form-control" rows="2" placeholder="Observaciones adicionales (opcional)..."></textarea>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" onclick="cerrarModalDescarte()" class="btn btn-outline btn-full">Cancelar</button>
+        <button type="submit" class="btn btn-full" style="background:#dc2626; color:#fff; border:none;">Confirmar Descarte</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function abrirModalDescarte(solPk, nombre) {
+  document.getElementById('nombreCandidatoDescarte').textContent = nombre;
+  document.getElementById('formDescarte').action = `/candidatos/solicitud/${solPk}/descartar/`;
+  document.getElementById('modalDescarte').classList.add('open');
+}
+function cerrarModalDescarte() {
+  document.getElementById('modalDescarte').classList.remove('open');
+}
+</script>
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

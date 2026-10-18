@@ -1,0 +1,135 @@
+{% extends 'core/base.html' %}
+{% block title %}Comparador de Candidatos — {{ trabajo.titulo }}{% endblock %}
+
+{% block body %}
+{% include 'core/_sidebar_contratista.html' %}
+
+<div class="page-hd">
+  <div>
+    <a href="{% url 'candidatos' trabajo.pk %}" class="t-sm t-muted" style="text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-bottom:6px;">
+      <i class="bi bi-arrow-left"></i> Volver a lista de candidatos
+    </a>
+    <h1>📊 Comparador de Candidatos</h1>
+    <p>Evaluación comparativa lado a lado para la vacante: <strong>{{ trabajo.titulo }}</strong></p>
+  </div>
+  <div>
+    <a href="{% url 'candidatos' trabajo.pk %}" class="btn btn-outline btn-sm">
+      <i class="bi bi-list-ul"></i> Vista de Tabla
+    </a>
+  </div>
+</div>
+
+{% if candidatos %}
+<div style="overflow-x:auto; padding-bottom:16px;">
+  <div style="display:grid; grid-template-columns: repeat({{ candidatos|length }}, minmax(280px, 1fr)); gap:16px; min-width:600px;">
+    {% for c in candidatos %}
+    <div class="card" style="border-top: 4px solid {% if c.match >= 80 %}var(--green, #10b981){% elif c.match >= 50 %}#f59e0b{% else %}#94a3b8{% endif %}; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+      <div class="card-body" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+        
+        <!-- Header Candidato -->
+        <div style="text-align:center; padding-bottom:12px; border-bottom:1px solid #f1f5f9;">
+          <div class="conv-av" style="width:64px; height:64px; margin:0 auto 10px; font-size:24px;">
+            {% if c.perfil.foto %}
+              <img src="{{ c.perfil.foto.url }}" style="width:64px; height:64px; border-radius:50%; object-fit:cover;">
+            {% else %}
+              <i class="bi bi-person"></i>
+            {% endif %}
+          </div>
+          <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:#1e293b;">
+            {{ c.trabajador.get_full_name|default:c.trabajador.username }}
+          </h3>
+          <div style="display:flex; justify-content:center; align-items:center; gap:6px; margin-top:4px;">
+            {% if c.verificado %}
+              <span class="pill pill-green" style="font-size:11px; padding:2px 8px;"><i class="bi bi-patch-check-fill"></i> Verificado</span>
+            {% else %}
+              <span class="pill" style="font-size:11px; padding:2px 8px; background:#f1f5f9; color:#64748b;">Sin verificar</span>
+            {% endif %}
+            <span class="est-badge est-{{ c.solicitud.estado }}" style="font-size:10px;">{{ c.solicitud.estado_label }}</span>
+          </div>
+        </div>
+
+        <!-- Métricas Principales -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; text-align:center;">
+          <div style="background:#f8fafc; padding:10px; border-radius:10px;">
+            <div class="t-xxs t-muted">Afinidad (Match)</div>
+            <div class="fw-900" style="font-size:1.2rem; color:{% if c.match >= 80 %}#10b981{% elif c.match >= 50 %}#f59e0b{% else %}#64748b{% endif %};">
+              {{ c.match }}%
+            </div>
+          </div>
+          <div style="background:#f8fafc; padding:10px; border-radius:10px;">
+            <div class="t-xxs t-muted">Calificación</div>
+            <div class="fw-900 t-yellow" style="font-size:1.1rem;">
+              ★ {{ c.calificacion|default:"5.0" }}
+            </div>
+            <div class="t-xxs t-muted">({{ c.total_trabajos }} chambas)</div>
+          </div>
+        </div>
+
+        <!-- Detalles Operativos -->
+        <div style="display:flex; flex-direction:column; gap:8px; font-size:0.83rem;">
+          <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #f1f5f9; padding-bottom:4px;">
+            <span class="t-muted"><i class="bi bi-cash"></i> Tarifa:</span>
+            <span class="fw-700 t-green">${{ c.tarifa }} USD</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #f1f5f9; padding-bottom:4px;">
+            <span class="t-muted"><i class="bi bi-mortarboard"></i> Educación:</span>
+            <span class="fw-600">{{ c.experiencia }}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #f1f5f9; padding-bottom:4px;">
+            <span class="t-muted"><i class="bi bi-car-front"></i> Vehículo:</span>
+            <span class="fw-600">{{ c.vehiculo }}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #f1f5f9; padding-bottom:4px;">
+            <span class="t-muted"><i class="bi bi-geo-alt"></i> Ubicación:</span>
+            <span class="fw-600">{{ c.perfil.ubicacion|default:"No especificada"|truncatechars:18 }}</span>
+          </div>
+        </div>
+
+        <!-- Habilidades -->
+        <div>
+          <div class="t-xxs t-muted fw-700 mb-6">HABILIDADES DESTACADAS:</div>
+          <div style="display:flex; flex-wrap:wrap; gap:4px; min-height:48px;">
+            {% for h in c.habilidades %}
+              <span class="skill-tag" style="font-size:11px;">{{ h }}</span>
+            {% empty %}
+              <span class="t-xxs t-muted">Sin habilidades registradas</span>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Acciones Directas -->
+        <div style="margin-top:auto; display:flex; flex-direction:column; gap:8px; pt-8;">
+          <a href="{% url 'descargar_cv_candidato' c.trabajador.pk %}" class="btn btn-outline btn-xs btn-full" style="justify-content:center;">
+            <i class="bi bi-file-earmark-pdf-fill" style="color:#dc2626;"></i> Descargar CV (PDF)
+          </a>
+          
+          {% if c.solicitud.estado in 'pendiente,en_revision' %}
+            <a href="{% url 'cambiar_estado_solicitud' c.solicitud.pk 'aceptado' %}?next={{ request.path }}" class="btn btn-y btn-xs btn-full" style="justify-content:center;">
+              <i class="bi bi-check-circle"></i> Pre-Aceptar Candidato
+            </a>
+          {% elif c.solicitud.estado == 'aceptado' %}
+            <a href="{% url 'crear_contrato_digital' c.solicitud.pk %}" class="btn btn-g btn-xs btn-full" style="justify-content:center;">
+              🤝 Contratar y Escrow
+            </a>
+          {% endif %}
+          
+          <a href="{% url 'perfil_publico' c.trabajador.pk %}" class="btn btn-outline btn-xs btn-full" style="justify-content:center; color:#64748b;">
+            Ver Perfil Completo
+          </a>
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">👥</div>
+  <div class="empty-title">Sin candidatos para comparar</div>
+  <div class="empty-sub">Cuando los trabajadores apliquen a esta vacante podrás compararlos lado a lado.</div>
+</div>
+{% endif %}
+
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}
