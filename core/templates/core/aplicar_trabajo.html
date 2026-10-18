@@ -39,7 +39,11 @@
       const pos = { lat: parseFloat(latStr), lng: parseFloat(lngStr) };
       
       const map = L.map('mapaAplicar').setView([pos.lat, pos.lng], 14);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }).addTo(map);
       L.marker([pos.lat, pos.lng]).addTo(map);
       L.circle([pos.lat, pos.lng], { radius: 500, color: '{{ trabajo.es_urgente|yesno:"#dc2626,#1FA35A" }}' }).addTo(map);
     }
