@@ -102,4 +102,4 @@ EMAIL_PORT         = 587
 EMAIL_USE_TLS      = True
 EMAIL_HOST_USER    = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '').replace(' ', '')
-DEFAULT_FROM_EMAIL = f'Chambazo SV <{EMAIL_HOST_USER}>'
+DEFAULT_FROM_EMAIL = f'Chambazo SV <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else 'Chambazo SV <chambazosv@gmail.com>'

@@ -10,7 +10,13 @@ from django.conf import settings
 from django.utils.html import strip_tags
 
 
-FROM_EMAIL = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Chambazo SV <chambazosv@gmail.com>')
+def get_from_email():
+    f = getattr(settings, 'DEFAULT_FROM_EMAIL', '') or 'Chambazo SV <chambazosv@gmail.com>'
+    if '<>' in f or not f.strip():
+        return 'Chambazo SV <chambazosv@gmail.com>'
+    return f
+
+FROM_EMAIL = get_from_email()
 
 
 def generar_codigo_6():
@@ -236,7 +242,7 @@ def _enviar_html(asunto, html_content, destinatarios, async_send=True):
             msg = EmailMultiAlternatives(
                 subject=asunto,
                 body=texto_plano,
-                from_email=FROM_EMAIL,
+                from_email=get_from_email(),
                 to=destinatarios,
             )
             msg.attach_alternative(html_content, "text/html")
