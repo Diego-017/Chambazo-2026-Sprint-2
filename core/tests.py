@@ -5,7 +5,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 from core.models import (
-    UserProfile, Trabajo, Solicitud, Resena, GaleriaItem, Mensaje, Logro, LogroObtenido
+    UserProfile, Trabajo, Solicitud, Resena, GaleriaItem, Mensaje, Logro, LogroObtenido, TrabajoGuardado
 )
 
 
@@ -232,3 +232,163 @@ class ChambazoAPITests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('total_ofertas', response.data)
         self.assertIn('promedio_calificacion', response.data)
+
+
+class ChambazoSprint3Tests(TestCase):
+    """
+    Casos de prueba automatizados correspondientes al Sprint 3 (HU032 - HU048),
+    según lo documentado en la Semana 11 y Semana 12.
+    """
+    def setUp(self):
+        self.contratista = User.objects.create_user(
+            username='empleador3',
+            email='empleador3@chambazo.com',
+            password='password123',
+            first_name='Empleador',
+            last_name='Sprint3'
+        )
+        self.contratista_profile = UserProfile.objects.create(
+            user=self.contratista,
+            rol='contratista',
+            empresa='Empresa Demo S.A. de C.V.',
+            verificado=True
+        )
+
+        self.trabajador = User.objects.create_user(
+            username='trabajador_demo3',
+            email='trabajador_demo3@chambazo.com',
+            password='password123',
+            first_name='Trabajador',
+            last_name='Sprint3'
+        )
+        self.trabajador_profile = UserProfile.objects.create(
+            user=self.trabajador,
+            rol='trabajador',
+            telefono='+503 7000-0000',
+            ubicacion='San Salvador',
+            dui='04859603-9'
+        )
+
+        self.trabajo = Trabajo.objects.create(
+            contratista=self.contratista,
+            titulo='Auxiliar de bodega VAC-2026-050',
+            categoria='general',
+            descripcion='Carga y descarga de inventario.',
+            ubicacion='San Salvador',
+            presupuesto=150.00,
+            activo=True
+        )
+
+        self.solicitud = Solicitud.objects.create(
+            trabajo=self.trabajo,
+            trabajador=self.trabajador,
+            estado='pendiente',
+            mensaje='Disponible inmediatamente con experiencia previa.'
+        )
+
+    def test_h01_tc_xss3_001_escape_html_en_vacantes(self):
+        """TC-XSS3-001 (RNF-02): El contenido HTML/JS se muestra sanitizado/escapado como texto."""
+        payload = "<script>alert('xss')</script>"
+        trabajo_xss = Trabajo.objects.create(
+            contratista=self.contratista,
+            titulo=payload,
+            categoria='general',
+            descripcion='Test payload: ' + payload,
+            ubicacion='San Salvador',
+            presupuesto=50.00
+        )
+        self.client.login(username='trabajador_demo3', password='password123')
+        response = self.client.get(reverse('trabajo_detalle', args=[trabajo_xss.pk]))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        # Se asegura que la carga maliciosa no se ejecute ni aparezca cruda
+        self.assertNotIn("<script>alert('xss')</script>", content)
+        self.assertIn("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;", content)
+
+    def test_def001_rnf01_seleccion_no_se_bloquea_por_smtp_lento(self):
+        """DEF-001 / RNF-01: La respuesta responde en < 2.0s gracias al envío asíncrono en segundo plano."""
+        import time
+        from unittest.mock import patch
+
+        def _smtp_simulado_lento(*args, **kwargs):
+            time.sleep(3) # Simula latencia de 3 segundos en el servidor SMTP
+
+        self.client.login(username='empleador3', password='password123')
+        with patch("django.core.mail.EmailMultiAlternatives.send", side_effect=_smtp_simulado_lento):
+            inicio = time.perf_counter()
+            response = self.client.get(
+                reverse('cambiar_estado_solicitud', args=[self.solicitud.pk, 'aceptado'])
+            )
+            duracion = time.perf_counter() - inicio
+
+            # Debe redirigir y responder casi de inmediato (< 2.0s)
+            self.assertEqual(response.status_code, 302)
+            self.assertLess(duracion, 2.0, f"DEF-001 no resuelto: tardó {duracion:.2f}s")
+            
+            self.solicitud.refresh_from_db()
+            self.assertEqual(self.solicitud.estado, 'aceptado')
+
+    def test_tc_descand3_001_descartar_candidato_con_motivo(self):
+        """HU034 / TC-DESCAND3-001: Descartar candidato registrando motivo."""
+        self.client.login(username='empleador3', password='password123')
+        response = self.client.post(
+            reverse('descartar_candidato', args=[self.solicitud.pk]),
+            {'motivo': 'Perfil no cumple con la experiencia requerida'}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.solicitud.refresh_from_db()
+        self.assertEqual(self.solicitud.estado, 'rechazado')
+        self.assertEqual(self.solicitud.motivo_descarte, 'Perfil no cumple con la experiencia requerida')
+
+    def test_tc_guardarof3_001_guardar_favoritos(self):
+        """HU042 / TC-GUARDAROF3-001: Guardar y retirar vacante de guardados/favoritos."""
+        self.client.login(username='trabajador_demo3', password='password123')
+        # Guardar
+        res1 = self.client.post(reverse('toggle_guardado', args=[self.trabajo.pk]))
+        self.assertEqual(res1.status_code, 302)
+        self.assertTrue(TrabajoGuardado.objects.filter(usuario=self.trabajador, trabajo=self.trabajo).exists())
+        
+        # Quitar de guardados
+        res2 = self.client.post(reverse('toggle_guardado', args=[self.trabajo.pk]))
+        self.assertEqual(res2.status_code, 302)
+        self.assertFalse(TrabajoGuardado.objects.filter(usuario=self.trabajador, trabajo=self.trabajo).exists())
+
+    def test_tc_prefnot3_001_preferencias_notificaciones(self):
+        """HU041 / TC-PREFNOT3-001: Actualización de preferencias de comunicación."""
+        self.client.login(username='trabajador_demo3', password='password123')
+        response = self.client.post(reverse('preferencias_notificaciones'), {
+            'notif_email': '0',
+            'notif_sistema': '1',
+            'notif_recordatorios': '1',
+            'notif_mensajes': '0'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.trabajador_profile.refresh_from_db()
+        self.assertFalse(self.trabajador_profile.notif_email)
+        self.assertTrue(self.trabajador_profile.notif_sistema)
+
+    def test_tc_onboarding_completar(self):
+        """CP-018: Guía inicial / Onboarding completado por el usuario."""
+        self.client.login(username='trabajador_demo3', password='password123')
+        response = self.client.post(reverse('completar_onboarding'))
+        self.assertEqual(response.status_code, 200)
+        self.trabajador_profile.refresh_from_db()
+        self.assertTrue(self.trabajador_profile.onboarding_completado)
+
+    def test_tc_represena3_001_reportar_resena(self):
+        """HU048 / TC-REPRESENA3-001: Reporte de reseña inapropiada."""
+        resena = Resena.objects.create(
+            trabajo=self.trabajo,
+            solicitud=self.solicitud,
+            autor=self.contratista,
+            destinatario=self.trabajador,
+            calificacion=1,
+            comentario='Comentario ofensivo de prueba'
+        )
+        self.client.login(username='trabajador_demo3', password='password123')
+        response = self.client.post(reverse('reportar_resena', args=[resena.pk]), {
+            'motivo': 'Lenguaje inapropiado y ofensivo'
+        })
+        self.assertEqual(response.status_code, 302)
+        resena.refresh_from_db()
+        self.assertTrue(resena.reportada)

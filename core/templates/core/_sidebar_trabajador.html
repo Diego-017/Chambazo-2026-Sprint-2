@@ -1,7 +1,7 @@
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" role="button" tabindex="-1" aria-label="Cerrar menú"></div>
 <div class="app-shell">
 <aside class="app-sidebar" id="appSidebar">
-  <div class="sidebar-brand" onclick="toggleSidebarCollapse()" style="cursor:pointer;" title="Colapsar/expandir menú">
+  <div class="sidebar-brand" onclick="toggleSidebarCollapse()" onkeypress="if(event.key==='Enter'||event.key===' ')toggleSidebarCollapse()" role="button" tabindex="0" style="cursor:pointer;" title="Colapsar/expandir menú">
     <div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div>
     <span class="sidebar-brand-text">Chambazo</span>
   </div>

@@ -193,7 +193,8 @@ function selectCat(val){
   document.getElementById('cat-'+val)?.classList.add('active');
   document.getElementById('id_categoria').value = val;
 }
-const habilidadesGuardadas = {{ form.instance.habilidades_req|default:'[]'|safe }};
+{{ form.instance.habilidades_req|default:'[]'|json_script:"habilidades-req-data" }}
+const habilidadesGuardadas = JSON.parse(document.getElementById('habilidades-req-data')?.textContent || '[]');
 document.querySelectorAll('.skill-chip-label').forEach(label=>{
   const input = label.querySelector('input');
   if(habilidadesGuardadas.includes(input.value)){ label.classList.add('active'); input.checked=true; }

@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import secrets
 import string
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
@@ -138,7 +139,7 @@ def recuperar_password(request):
             user = User.objects.get(email=email)
             # Invalida tokens anteriores
             PasswordResetToken.objects.filter(user=user, usado=False).update(usado=True)
-            token = ''.join(random.choices(string.ascii_letters + string.digits, k=40))
+            token = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(40))
             PasswordResetToken.objects.create(user=user, token=token)
             # Enviar email real
             from .email_utils import enviar_reset_password
@@ -730,7 +731,7 @@ def pagar_trabajo(request, pk):
         if form.is_valid():
             card_num = form.cleaned_data['numero_tarjeta'].replace(' ', '')
             last4 = card_num[-4:] if len(card_num) >= 4 else '4242'
-            trabajo.metodo_pago_id = f"CHZ-CARD-*{last4}-{random.randint(1000, 9999)}"
+            trabajo.metodo_pago_id = f"CHZ-CARD-*{last4}-{secrets.randbelow(9000) + 1000}"
             trabajo.pagado = True
             trabajo.fecha_pago = timezone.now()
             trabajo.activo = True

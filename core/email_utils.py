@@ -2,7 +2,8 @@
 email_utils.py — Chambazo SV
 Funciones de envío de correo usando Gmail (chambazosv@gmail.com).
 """
-import random
+import secrets
+import threading
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
@@ -14,7 +15,7 @@ FROM_EMAIL = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Chambazo SV <chambazosv@gm
 
 def generar_codigo_6():
     """Genera un código numérico de 6 dígitos."""
-    return str(random.randint(100000, 999999))
+    return f"{secrets.randbelow(900000) + 100000}"
 
 
 def enviar_codigo_verificacion(user, codigo):
@@ -225,22 +226,30 @@ def enviar_notif_trabajo_completado_exito(solicitud, transaccion):
     _enviar_html(asunto_c, html_c, [c.email])
 
 
-def _enviar_html(asunto, html_content, destinatarios):
-    """Helper interno: envía un correo con cuerpo HTML + texto plano de fallback."""
+def _enviar_html(asunto, html_content, destinatarios, async_send=True):
+    """Helper interno: envía un correo con cuerpo HTML + texto plano de fallback.
+    Usa un hilo de fondo (daemon=True) para evitar bloqueos en solicitudes HTTP (DEF-001 / RNF-01).
+    """
     texto_plano = strip_tags(html_content)
-    try:
-        msg = EmailMultiAlternatives(
-            subject=asunto,
-            body=texto_plano,
-            from_email=FROM_EMAIL,
-            to=destinatarios,
-        )
-        msg.attach_alternative(html_content, "text/html")
-        msg.send(fail_silently=False)
+    def _deliver():
+        try:
+            msg = EmailMultiAlternatives(
+                subject=asunto,
+                body=texto_plano,
+                from_email=FROM_EMAIL,
+                to=destinatarios,
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
+            return True
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"[Chambazo Email] Error al enviar correo a {destinatarios}: {e}")
+            return False
+
+    if async_send:
+        t = threading.Thread(target=_deliver, daemon=True)
+        t.start()
         return True
-    except Exception as e:
-        # Log el error pero no rompe la app
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.error(f"[Chambazo Email] Error al enviar correo a {destinatarios}: {e}")
-        return False
+    return _deliver()
