@@ -392,3 +392,53 @@ class ChambazoSprint3Tests(TestCase):
         self.assertEqual(response.status_code, 302)
         resena.refresh_from_db()
         self.assertTrue(resena.reportada)
+
+
+
+class ChambazoSubscriptionTests(TestCase):
+    """Casos de prueba para el sistema de Planes de Suscripción."""
+    def setUp(self):
+        from core.models import PlanSuscripcion, SuscripcionUsuario
+        self.plan_basico = PlanSuscripcion.objects.create(
+            nombre='Básico Test', slug='basico-test', rol='trabajador', tipo='basico',
+            precio_mensual=0.00, cupo_mensual=5, activo=True
+        )
+        self.plan_pro = PlanSuscripcion.objects.create(
+            nombre='Pro Test', slug='pro-test', rol='trabajador', tipo='pro',
+            precio_mensual=4.99, cupo_mensual=30, activo=True
+        )
+        self.user = User.objects.create_user(
+            username='user_sub_test', email='sub@chambazo.com', password='password123'
+        )
+        UserProfile.objects.create(user=self.user, rol='trabajador')
+        self.sub = SuscripcionUsuario.objects.create(
+            usuario=self.user, plan=self.plan_basico, usos_este_mes=0
+        )
+
+    def test_cupo_y_consumo(self):
+        """Valida que el cupo se calcule y consuma correctamente."""
+        self.assertTrue(self.sub.tiene_cupo)
+        self.assertEqual(self.sub.cupo_restante, 5)
+        self.sub.consumir_cupo()
+        self.assertEqual(self.sub.usos_este_mes, 1)
+        self.assertEqual(self.sub.cupo_restante, 4)
+
+    def test_vista_catalogo_planes(self):
+        """Valida que la vista /planes/ cargue correctamente."""
+        self.client.login(username='user_sub_test', password='password123')
+        response = self.client.get(reverse('planes'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Básico Test')
+        self.assertContains(response, 'Pro Test')
+
+    def test_cambio_a_plan_pro(self):
+        """Valida el upgrade de plan a través del endpoint /planes/suscribir/<slug>/."""
+        self.client.login(username='user_sub_test', password='password123')
+        response = self.client.post(
+            reverse('suscribir_plan', args=['pro-test']),
+            {'numero_tarjeta': '4242 4242 4242 4242'}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.sub.refresh_from_db()
+        self.assertEqual(self.sub.plan.slug, 'pro-test')
+        self.assertEqual(self.sub.plan.tipo, 'pro')

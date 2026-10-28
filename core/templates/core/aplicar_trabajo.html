@@ -52,6 +52,28 @@
   {% endif %}
 
   <div class="card"><div class="card-body">
+    
+    {% if suscripcion %}
+    <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;" class="anim-fade-up">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:20px;">{{ suscripcion.plan.icono|default:'🆓' }}</span>
+        <div>
+          <strong style="font-size:13px;color:#065f46;">Plan {{ suscripcion.plan.nombre }}</strong>
+          <div style="font-size:11.5px;color:#047857;">
+            {% if suscripcion.plan.es_ilimitado %}
+              Postulaciones ilimitadas
+            {% else %}
+              {{ suscripcion.cupo_restante }} de {{ suscripcion.plan.cupo_mensual }} aplicaciones restantes
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <a href="{% url 'planes' %}" style="font-size:12px;font-weight:700;color:#059669;text-decoration:none;padding:5px 10px;border-radius:6px;background:#d1fae5;">
+        Mejorar plan
+      </a>
+    </div>
+    {% endif %}
+
     <form method="post">
       {% csrf_token %}
       <div class="form-group">

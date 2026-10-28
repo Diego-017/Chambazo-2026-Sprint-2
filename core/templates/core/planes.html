@@ -1,0 +1,133 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Planes y Precios{% endblock %}
+
+{% block body %}
+{% if user.profile.rol == 'contratista' %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% elif user.profile.rol == 'administrador' %}
+  {% include 'core/_sidebar_admin.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
+
+<main class="app-content page-enter">
+  <!-- Encabezado Principal con Animaciones -->
+  <div style="text-align:center;margin-bottom:44px;position:relative;">
+    <div style="font-size:52px;margin-bottom:12px;display:inline-block;" class="anim-bounce-in">🚀</div>
+    <h1 style="font-size:32px;font-weight:900;color:#0f172a;margin-bottom:10px;letter-spacing:-0.5px;" class="anim-fade-up">
+      Planes Flexibles para Todos
+    </h1>
+    <p style="font-size:16px;color:#64748b;max-width:600px;margin:0 auto;line-height:1.6;" class="anim-fade-up">
+      {% if user.profile.rol == 'contratista' %}
+        Publica tus plazas de trabajo con cuotas mensuales, olvídate de ingresar tu tarjeta cada vez y accede a candidatos certificados más rápido.
+      {% else %}
+        Aplica a todas las chambas que desees sin comisiones individuales por postulación, destaca tu perfil y recibe respuestas inmediatas.
+      {% endif %}
+    </p>
+
+    {% if suscripcion_actual %}
+    <div style="margin-top:24px;display:inline-flex;align-items:center;background:#fff;padding:8px 20px;border-radius:99px;box-shadow:0 4px 16px rgba(15,23,42,.06);border:1px solid #e2e8f0;" class="anim-fade-up">
+      <span class="badge-plan {{ suscripcion_actual.plan.tipo }}">
+        {{ suscripcion_actual.plan.icono }} {{ suscripcion_actual.plan.nombre }}
+      </span>
+      <span style="font-size:13.5px;color:#475569;margin-left:12px;font-weight:600;">
+        {% if suscripcion_actual.plan.es_ilimitado %}
+          ✨ Tienes publicaciones/aplicaciones <strong>ilimitadas</strong>
+        {% else %}
+          📊 Disponibles este mes: <strong>{{ suscripcion_actual.cupo_restante }} de {{ suscripcion_actual.plan.cupo_mensual }}</strong>
+        {% endif %}
+      </span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Rejilla de Planes Interactivos -->
+  <div class="pricing-grid">
+    {% for plan in planes %}
+    <div class="pricing-card anim-fade-up {% if plan.destacado %}featured{% endif %}" style="animation-delay:{{ forloop.counter0|add:1 }}00ms;">
+      <div class="plan-icon">{{ plan.icono }}</div>
+      <div class="plan-name">{{ plan.nombre }}</div>
+
+      {% if plan.precio_mensual == 0 %}
+        <div class="plan-price free">$0.00 <span>/mes</span></div>
+      {% else %}
+        <div class="plan-price">${{ plan.precio_mensual }} <span>/mes</span></div>
+      {% endif %}
+
+      <div class="plan-quota">
+        {% if plan.es_ilimitado %}
+          ∞ {% if user.profile.rol == 'contratista' %}Publicaciones{% else %}Aplicaciones{% endif %} ilimitadas
+        {% else %}
+          🎯 {{ plan.cupo_mensual }} {% if user.profile.rol == 'contratista' %}plazas{% else %}aplicaciones{% endif %} por mes
+        {% endif %}
+      </div>
+
+      <ul class="plan-benefits">
+        {% for beneficio in plan.beneficios %}
+          <li>{{ beneficio }}</li>
+        {% endfor %}
+      </ul>
+
+      {% if suscripcion_actual and suscripcion_actual.plan.id == plan.id %}
+        <div class="plan-btn current">
+          <i class="bi bi-check-circle-fill" style="color:#10b981;"></i> Plan Actual
+        </div>
+      {% elif plan.precio_mensual == 0 %}
+        <a href="{% url 'suscribir_plan' plan.slug %}" class="plan-btn">
+          Comenzar Gratis
+        </a>
+      {% else %}
+        <a href="{% url 'suscribir_plan' plan.slug %}" class="plan-btn {% if plan.destacado %}btn-pulse{% endif %}">
+          {% if plan.destacado %}⭐ Elegir Plan Pro{% else %}💎 Activar Premium{% endif %}
+        </a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Beneficios comparativos interactivos -->
+  <div style="max-width:850px;margin:60px auto 0;background:#fff;border-radius:20px;padding:36px;border:1px solid #e6e9ee;box-shadow:0 8px 30px rgba(15,23,42,.05);" class="anim-fade-up">
+    <div style="text-align:center;margin-bottom:28px;">
+      <h3 style="font-size:20px;font-weight:900;color:#0f172a;margin-bottom:6px;">
+        💡 ¿Por qué suscribirse a un plan mensual en Chambazo?
+      </h3>
+      <p style="font-size:14px;color:#64748b;">Ahorra tiempo y dinero con una sola membresía activa</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:20px;">
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#ecfdf5;color:#10b981;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+          <i class="bi bi-lightning-charge-fill"></i>
+        </div>
+        <div>
+          <h4 style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:3px;">Sin pagos repetitivos</h4>
+          <p style="font-size:13px;color:#64748b;line-height:1.5;">Publica o postula inmediatamente con 1 solo clic sin tener que ingresar tus datos bancarios en cada acción.</p>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#fef3c7;color:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+          <i class="bi bi-shield-check"></i>
+        </div>
+        <div>
+          <h4 style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:3px;">Insignias de Confianza</h4>
+          <p style="font-size:13px;color:#64748b;line-height:1.5;">Los usuarios Pro y Premium obtienen sellos verificados visibles en todas sus ofertas y perfiles públicos.</p>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#f3e8ff;color:#8b5cf6;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+          <i class="bi bi-arrow-repeat"></i>
+        </div>
+        <div>
+          <h4 style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:3px;">Control y Transparencia</h4>
+          <p style="font-size:13px;color:#64748b;line-height:1.5;">Lleva el conteo exacto de las plazas y aplicaciones que utilizas cada mes desde tu panel lateral.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

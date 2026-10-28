@@ -25,7 +25,8 @@ from .models import (
     Resena, GaleriaItem, Mensaje, PasswordResetToken,
     TrabajoGuardado, Logro, LogroObtenido, AceptacionTerminos,
     EmailVerificationToken,
-    SKILL_CHOICES, SKILL_ICONS, SKILL_COLORS
+    SKILL_CHOICES, SKILL_ICONS, SKILL_COLORS,
+    PlanSuscripcion, SuscripcionUsuario
 )
 from .forms import (
     LoginForm, RegistroStep2Form, RegistroStep3Form,
@@ -35,7 +36,34 @@ from .forms import (
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
+
+
+# ── Helpers de Suscripción ──────────────────────────────────────────────────────
+def _obtener_suscripcion(user):
+    """Obtiene o crea la suscripción del usuario con plan básico gratuito."""
+    from datetime import timedelta
+    try:
+        return user.suscripcion
+    except SuscripcionUsuario.DoesNotExist:
+        rol = user.profile.rol
+        plan_basico = PlanSuscripcion.objects.filter(rol=rol, tipo='basico', activo=True).first()
+        if plan_basico:
+            return SuscripcionUsuario.objects.create(
+                usuario=user, plan=plan_basico,
+                fecha_renovacion=timezone.now() + timedelta(days=30),
+                mes_actual=timezone.now().month
+            )
+        return None
+
+
 def ctx_base(request):
+    # Add subscription data to every context
+    suscripcion_ctx = None
+    if request.user.is_authenticated:
+        try:
+            suscripcion_ctx = _obtener_suscripcion(request.user)
+        except Exception:
+            pass
     ctx = {}
     if request.user.is_authenticated:
         ctx['notif_count'] = Notificacion.objects.filter(usuario=request.user, leida=False).count()
@@ -48,6 +76,7 @@ def ctx_base(request):
         if request.user.is_staff:
             from .models import ReporteUsuario
             ctx['reportes_pendientes_count'] = ReporteUsuario.objects.filter(estado__in=['pendiente', 'en_revision']).count()
+    ctx['suscripcion'] = suscripcion_ctx
     return ctx
 
 
@@ -438,19 +467,36 @@ def aplicar_trabajo(request, pk):
         return redirect('trabajo_detalle', pk=pk)
 
     match_score = request.user.profile.match_score(trabajo)
+    suscripcion = _obtener_suscripcion(request.user)
 
     if request.method == 'POST':
+        # Verificar cupo del plan
+        if not suscripcion or not suscripcion.tiene_cupo:
+            messages.warning(request, '⚡ Has alcanzado el límite de aplicaciones de tu plan. ¡Mejora tu plan para aplicar a más trabajos!')
+            return redirect('planes')
+        
         mensaje = request.POST.get('mensaje', '')
         tarifa = request.POST.get('tarifa_propuesta') or None
         solicitud = Solicitud.objects.create(
             trabajo=trabajo, trabajador=request.user, mensaje=mensaje,
             tarifa_propuesta=Decimal(tarifa) if tarifa else None,
-            pagado=False, total_a_pagar=Decimal('1.50')
+            pagado=True, total_a_pagar=Decimal('0.00'),
+            metodo_pago_id=f"PLAN-{suscripcion.plan.tipo.upper()}"
         )
-        return redirect('pagar_solicitud', pk=solicitud.pk)
+        
+        # Consumir cupo del plan
+        suscripcion.consumir_cupo()
+        
+        crear_notif(solicitud.trabajo.contratista, 'solicitud', f'Nueva solicitud — {solicitud.trabajo.titulo}',
+                    f'{request.user.get_full_name() or request.user.username} aplicó a tu vacante.',
+                    f'/contratista/trabajo/{solicitud.trabajo.pk}/candidatos/')
+        
+        messages.success(request, f'✅ ¡Solicitud enviada! Te quedan {suscripcion.cupo_restante} aplicaciones este mes.')
+        return redirect('solicitud_enviada', pk=trabajo.pk)
 
     ctx = ctx_base(request)
-    ctx.update({'trabajo': trabajo, 'match_score': match_score, 'active': 'buscar'})
+    ctx.update({'trabajo': trabajo, 'match_score': match_score, 'active': 'buscar',
+                'suscripcion': suscripcion})
     return render(request, 'core/aplicar_trabajo.html', ctx)
 
 @login_required
@@ -493,8 +539,17 @@ def aplicar_rapido(request, pk):
     if Solicitud.objects.filter(trabajo=trabajo, trabajador=request.user).exists():
         messages.warning(request, 'Ya aplicaste a este trabajo.')
         return redirect('trabajo_detalle', pk=pk)
-    solicitud = Solicitud.objects.create(trabajo=trabajo, trabajador=request.user, rapida=True, pagado=False, total_a_pagar=Decimal('1.50'))
-    return redirect('pagar_solicitud', pk=solicitud.pk)
+    suscripcion = _obtener_suscripcion(request.user)
+    if not suscripcion or not suscripcion.tiene_cupo:
+        messages.warning(request, '⚡ Sin cupo en tu plan. ¡Mejora tu plan para aplicar a más trabajos!')
+        return redirect('planes')
+    solicitud = Solicitud.objects.create(trabajo=trabajo, trabajador=request.user, rapida=True, pagado=True, total_a_pagar=Decimal('0.00'), metodo_pago_id=f"PLAN-{suscripcion.plan.tipo.upper()}")
+    suscripcion.consumir_cupo()
+    crear_notif(solicitud.trabajo.contratista, 'solicitud', f'Nueva solicitud rápida — {solicitud.trabajo.titulo}',
+                f'{request.user.get_full_name() or request.user.username} aplicó rápidamente a tu vacante.',
+                f'/contratista/trabajo/{solicitud.trabajo.pk}/candidatos/')
+    messages.success(request, f'✅ ¡Aplicación rápida enviada! Te quedan {suscripcion.cupo_restante} aplicaciones.')
+    return redirect('solicitud_enviada', pk=trabajo.pk)
 
 
 # ── Mis solicitudes (tabla) ─────────────────────────────────────────────────────
@@ -697,9 +752,18 @@ def panel_contratista(request):
 def publicar_trabajo(request):
     if request.user.profile.rol != 'contratista':
         return redirect('home_trabajador')
+    
+    # Verificar suscripción y cupo
+    suscripcion = _obtener_suscripcion(request.user)
+    
     if request.method == 'POST':
         form = TrabajoForm(request.POST)
         if form.is_valid():
+            # Verificar cupo antes de publicar
+            if not suscripcion or not suscripcion.tiene_cupo:
+                messages.warning(request, '⚡ Has alcanzado el límite de vacantes de tu plan. ¡Mejora tu plan para publicar más!')
+                return redirect('planes')
+            
             trabajo = form.save(commit=False)
             trabajo.contratista = request.user
             trabajo.habilidades_req = request.POST.getlist('habilidades_req')
@@ -710,14 +774,32 @@ def publicar_trabajo(request):
                 except ValueError:
                     pass
             trabajo.calcular_tarifas()
+            trabajo.pagado = True
+            trabajo.activo = True
+            trabajo.fecha_pago = timezone.now()
+            trabajo.metodo_pago_id = f"PLAN-{suscripcion.plan.tipo.upper()}"
             trabajo.save()
-            messages.info(request, 'Paso 2: Confirma el pago de la tarifa de publicación para activar tu vacante.')
-            return redirect('pagar_trabajo', pk=trabajo.pk)
+            
+            # Consumir cupo del plan
+            suscripcion.consumir_cupo()
+            
+            crear_notif(
+                request.user, 'sistema',
+                f'✅ Vacante publicada — {trabajo.titulo}',
+                f'Tu vacante está activa. Te quedan {suscripcion.cupo_restante} publicaciones este mes.',
+                f'/trabajo/{trabajo.pk}/'
+            )
+            from .email_utils import enviar_notif_trabajo_publicado
+            enviar_notif_trabajo_publicado(trabajo)
+            messages.success(request, f'🎉 ¡Vacante publicada con éxito! Te quedan {suscripcion.cupo_restante} publicaciones este mes.')
+            return redirect('candidatos', pk=trabajo.pk)
     else:
         form = TrabajoForm()
+    
     ctx = ctx_base(request)
     ctx.update({'form': form, 'skills': SKILL_CHOICES, 'titulo_pagina': 'Publicar trabajo',
-                'btn_label': 'Continuar al pago', 'active': 'publicar'})
+                'btn_label': 'Publicar vacante', 'active': 'publicar',
+                'suscripcion': suscripcion})
     return render(request, 'core/publicar_trabajo.html', ctx)
 
 
@@ -2081,3 +2163,107 @@ def reportar_resena(request, resena_pk):
         )
         messages.success(request, '🚩 Reseña reportada para revisión de moderación.')
     return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+# ══════════════════════════════════════════════════════════════════════════════════
+# ── Planes de Suscripción ────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def planes(request):
+    """Muestra la página de planes de suscripción según el rol del usuario."""
+    rol = request.user.profile.rol
+    planes_disponibles = PlanSuscripcion.objects.filter(rol=rol, activo=True)
+    suscripcion_actual = _obtener_suscripcion(request.user)
+
+    ctx = ctx_base(request)
+    ctx.update({
+        'planes': planes_disponibles,
+        'suscripcion_actual': suscripcion_actual,
+        'active': 'planes',
+        'titulo_pagina': 'Planes y Precios'
+    })
+    return render(request, 'core/planes.html', ctx)
+
+
+@login_required
+def suscribir_plan(request, plan_slug):
+    """Suscribe al usuario a un plan (gratis o de pago)."""
+    from datetime import timedelta
+    plan = get_object_or_404(PlanSuscripcion, slug=plan_slug, activo=True)
+
+    # Verificar que el plan sea del mismo rol
+    if plan.rol != request.user.profile.rol:
+        messages.error(request, 'Este plan no corresponde a tu tipo de cuenta.')
+        return redirect('planes')
+
+    if request.method == 'POST':
+        suscripcion = _obtener_suscripcion(request.user)
+
+        if suscripcion:
+            # Actualizar plan existente
+            suscripcion.plan = plan
+            suscripcion.usos_este_mes = 0
+            suscripcion.mes_actual = timezone.now().month
+            suscripcion.fecha_renovacion = timezone.now() + timedelta(days=30)
+            suscripcion.activa = True
+            if plan.precio_mensual > 0:
+                card_num = request.POST.get('numero_tarjeta', '').replace(' ', '')
+                last4 = card_num[-4:] if len(card_num) >= 4 else '0000'
+                suscripcion.metodo_pago_id = f"CHZ-SUB-*{last4}-{secrets.randbelow(9000) + 1000}"
+            suscripcion.save()
+        else:
+            # Crear nueva suscripción
+            metodo = ''
+            if plan.precio_mensual > 0:
+                card_num = request.POST.get('numero_tarjeta', '').replace(' ', '')
+                last4 = card_num[-4:] if len(card_num) >= 4 else '0000'
+                metodo = f"CHZ-SUB-*{last4}-{secrets.randbelow(9000) + 1000}"
+            suscripcion = SuscripcionUsuario.objects.create(
+                usuario=request.user, plan=plan,
+                fecha_renovacion=timezone.now() + timedelta(days=30),
+                mes_actual=timezone.now().month,
+                metodo_pago_id=metodo
+            )
+
+        crear_notif(
+            request.user, 'sistema',
+            f'{plan.icono} ¡Plan {plan.nombre} activado!',
+            f'Tu suscripción al plan {plan.nombre} está activa. '
+            f'{"Cupo ilimitado este mes." if plan.es_ilimitado else f"Tienes {plan.cupo_mensual} usos disponibles este mes."}',
+            '/planes/'
+        )
+
+        if plan.precio_mensual > 0:
+            messages.success(request, f'🎉 ¡Plan {plan.nombre} activado! Pago de ${plan.precio_mensual}/mes confirmado.')
+        else:
+            messages.success(request, f'🎉 ¡Plan {plan.nombre} activado! Es totalmente gratuito.')
+
+        if request.user.profile.rol == 'contratista':
+            return redirect('panel_contratista')
+        return redirect('home_trabajador')
+
+    ctx = ctx_base(request)
+    ctx.update({
+        'plan': plan,
+        'active': 'planes'
+    })
+    return render(request, 'core/suscribir_plan.html', ctx)
+
+
+@login_required
+def mi_plan(request):
+    """Vista rápida del plan actual del usuario (JSON para widgets)."""
+    from django.http import JsonResponse
+    sub = _obtener_suscripcion(request.user)
+    if not sub or not sub.plan:
+        return JsonResponse({'plan': None})
+    return JsonResponse({
+        'plan': sub.plan.nombre,
+        'tipo': sub.plan.tipo,
+        'icono': sub.plan.icono,
+        'cupo_total': sub.plan.cupo_mensual,
+        'usos': sub.usos_este_mes,
+        'restante': sub.cupo_restante,
+        'porcentaje': sub.porcentaje_uso,
+        'ilimitado': sub.plan.es_ilimitado,
+    })

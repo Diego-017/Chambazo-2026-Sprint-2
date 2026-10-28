@@ -106,6 +106,10 @@ urlpatterns = [
     path('preferencias/notificaciones/', views.preferencias_notificaciones, name='preferencias_notificaciones'),
     path('onboarding/completar/', views.completar_onboarding, name='completar_onboarding'),
     path('resena/<int:resena_pk>/reportar/', views.reportar_resena, name='reportar_resena'),
+    # Planes de Suscripción
+    path('planes/', views.planes, name='planes'),
+    path('planes/suscribir/<slug:plan_slug>/', views.suscribir_plan, name='suscribir_plan'),
+    path('api/mi-plan/', views.mi_plan, name='mi_plan'),
     # API RESTful v1
     path('api/v1/', include(router.urls)),
     path('api/v1/stats/', api_views.PlataformaStatsAPIView.as_view(), name='api_stats'),

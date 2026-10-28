@@ -45,8 +45,39 @@
         <i class="bi bi-patch-check-fill"></i><span class="link-text">Soporte: Validar KYC</span>
       </a>
     {% endif %}
+      <div class="sidebar-divider"></div>
+    <a href="{% url 'planes' %}" class="sidebar-link {% if active == 'planes' %}active{% endif %}" style="{% if active == 'planes' %}background:linear-gradient(135deg,#8b5cf6,#7c3aed);{% endif %}">
+      <i class="bi bi-gem"></i><span class="link-text">Mi Plan</span>
+      {% if user.suscripcion.plan.tipo != 'basico' %}
+        <span class="sidebar-badge" style="background:{% if user.suscripcion.plan.tipo == 'premium' %}#8b5cf6{% else %}#f59e0b{% endif %};">{{ user.suscripcion.plan.tipo|upper }}</span>
+      {% endif %}
+    </a>
   </nav>
   <div class="sidebar-divider"></div>
+  
+    <!-- Mini Widget de Plan Activo -->
+    <div class="sidebar-plan-widget anim-fade-up">
+      <div class="spw-header">
+        <span class="spw-title">
+          <span>{{ user.suscripcion.plan.icono|default:"🆓" }}</span>
+          <span>{{ user.suscripcion.plan.nombre|default:"Plan Básico" }}</span>
+        </span>
+        <span class="badge-plan {{ user.suscripcion.plan.tipo|default:"basico" }}">
+          {{ user.suscripcion.plan.tipo|default:"BÁSICO"|upper }}
+        </span>
+      </div>
+      <div class="spw-bar">
+        <div class="spw-bar-fill" style="width:{{ user.suscripcion.porcentaje_uso|default:0 }}%;"></div>
+      </div>
+      <div class="spw-text">
+        <span>Plazas usadas</span>
+        <span>{{ user.suscripcion.usos_este_mes|default:0 }}/{% if user.suscripcion.plan.es_ilimitado %}∞{% else %}{{ user.suscripcion.plan.cupo_mensual|default:2 }}{% endif %}</span>
+      </div>
+      <a href="{% url 'planes' %}" class="spw-upgrade-btn">
+        <i class="bi bi-arrow-up-circle-fill"></i> Gestionar Plan
+      </a>
+    </div>
+    
   <div class="sidebar-bottom">
     <a href="{% url 'notificaciones' %}" class="sidebar-link {% if active == 'notif' %}active yellow{% endif %}">
       <i class="bi bi-bell"></i><span class="link-text">Notificaciones</span>

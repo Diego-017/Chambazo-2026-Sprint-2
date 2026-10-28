@@ -1,0 +1,122 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Confirmar Plan: {{ plan.nombre }}{% endblock %}
+
+{% block body %}
+{% if user.profile.rol == 'contratista' %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% elif user.profile.rol == 'administrador' %}
+  {% include 'core/_sidebar_admin.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
+
+<main class="app-content page-enter">
+  <div style="max-width:540px;margin:30px auto;">
+    
+    <!-- Header del Plan -->
+    <div style="text-align:center;margin-bottom:32px;" class="anim-fade-up">
+      <div style="font-size:58px;margin-bottom:8px;" class="anim-float">{{ plan.icono }}</div>
+      <h1 style="font-size:26px;font-weight:900;color:#0f172a;margin-bottom:4px;">{{ plan.nombre }}</h1>
+      {% if plan.precio_mensual > 0 %}
+        <div style="font-size:42px;font-weight:900;color:#1FA35A;margin:10px 0;">
+          ${{ plan.precio_mensual }}<span style="font-size:16px;color:#8a94a3;font-weight:600;">/mes</span>
+        </div>
+      {% else %}
+        <div style="font-size:36px;font-weight:900;color:#4b5768;margin:10px 0;">$0.00 / Gratis</div>
+      {% endif %}
+      <p style="font-size:14px;color:#64748b;">
+        {% if plan.es_ilimitado %}
+          Acceso ilimitado por 30 días renovables
+        {% else %}
+          Incluye {{ plan.cupo_mensual }} {% if plan.rol == 'contratista' %}publicaciones{% else %}aplicaciones{% endif %} al mes
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Resumen de Beneficios -->
+    <div style="background:#f8fafc;border-radius:18px;padding:22px 26px;margin-bottom:28px;border:1px solid #e2e8f0;" class="anim-fade-up">
+      <h3 style="font-size:14px;font-weight:800;color:#0f172a;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+        <i class="bi bi-stars" style="color:#f59e0b;"></i> Beneficios incluidos:
+      </h3>
+      <ul style="list-style:none;padding:0;margin:0;">
+        {% for b in plan.beneficios %}
+        <li style="font-size:13.5px;color:#475569;padding:6px 0;display:flex;align-items:center;gap:10px;">
+          <span style="color:#1FA35A;font-weight:900;font-size:14px;">✓</span> {{ b }}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {% if plan.precio_mensual > 0 %}
+    <!-- Formulario de Pago de la Suscripción -->
+    <form method="post" class="anim-fade-up" style="animation-delay:.12s;" onsubmit="if(window.launchConfetti)launchConfetti();">
+      {% csrf_token %}
+      <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:18px;padding:26px;box-shadow:0 6px 24px rgba(15,23,42,.06);">
+        <h3 style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:18px;display:flex;align-items:center;gap:8px;">
+          <i class="bi bi-credit-card-2-front-fill" style="color:#1FA35A;font-size:18px;"></i> Método de Pago Seguro
+        </h3>
+        
+        <div style="margin-bottom:16px;">
+          <label style="font-size:12.5px;font-weight:700;color:#475569;display:block;margin-bottom:5px;">Nombre del titular en la tarjeta</label>
+          <input type="text" name="nombre_tarjeta" required placeholder="Ej: Mario René Fuentes"
+            style="width:100%;padding:12px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:14px;outline:none;transition:border .2s;"
+            onfocus="this.style.borderColor='#1FA35A'" onblur="this.style.borderColor='#cbd5e1'">
+        </div>
+        
+        <div style="margin-bottom:16px;">
+          <label style="font-size:12.5px;font-weight:700;color:#475569;display:block;margin-bottom:5px;">Número de tarjeta (Débito / Crédito)</label>
+          <input type="text" name="numero_tarjeta" required placeholder="4242 4242 4242 4242" maxlength="19"
+            style="width:100%;padding:12px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:14px;font-family:monospace;outline:none;transition:border .2s;letter-spacing:1.5px;"
+            onfocus="this.style.borderColor='#1FA35A'" onblur="this.style.borderColor='#cbd5e1'"
+            oninput="this.value=this.value.replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim()">
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div>
+            <label style="font-size:12.5px;font-weight:700;color:#475569;display:block;margin-bottom:5px;">Vencimiento</label>
+            <input type="text" name="vencimiento" required placeholder="MM/AA" maxlength="5"
+              style="width:100%;padding:12px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:14px;outline:none;transition:border .2s;text-align:center;"
+              onfocus="this.style.borderColor='#1FA35A'" onblur="this.style.borderColor='#cbd5e1'"
+              oninput="if(this.value.length===2&&!this.value.includes('/'))this.value+='/'">
+          </div>
+          <div>
+            <label style="font-size:12.5px;font-weight:700;color:#475569;display:block;margin-bottom:5px;">CVV / CVC</label>
+            <input type="password" name="cvv" required placeholder="123" maxlength="4"
+              style="width:100%;padding:12px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:14px;outline:none;transition:border .2s;text-align:center;"
+              onfocus="this.style.borderColor='#1FA35A'" onblur="this.style.borderColor='#cbd5e1'"
+              oninput="this.value=this.value.replace(/\D/g,'')">
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f0fdf4;border-radius:8px;margin-top:14px;">
+          <i class="bi bi-shield-lock-fill" style="color:#10b981;"></i>
+          <span style="font-size:11.5px;color:#065f46;font-weight:600;">Transacción simulada segura en ambiente educativo (sin cobro bancario real).</span>
+        </div>
+      </div>
+      
+      <button type="submit" class="plan-btn btn-pulse" style="margin-top:22px;padding:16px;font-size:16px;background:#1FA35A;color:#fff;border:none;width:100%;border-radius:12px;cursor:pointer;font-weight:800;">
+        🔒 Confirmar y Activar Plan por ${{ plan.precio_mensual }} USD/mes
+      </button>
+      <p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:10px;">
+        Podrás cambiar o cancelar tu plan en cualquier momento desde tu cuenta.
+      </p>
+    </form>
+    {% else %}
+    <!-- Plan Gratuito -->
+    <form method="post" class="anim-fade-up">
+      {% csrf_token %}
+      <button type="submit" class="plan-btn" style="padding:16px;font-size:16px;background:#1FA35A;color:#fff;border:none;width:100%;border-radius:12px;cursor:pointer;font-weight:800;">
+        🎉 Confirmar y Activar Plan Gratuito
+      </button>
+    </form>
+    {% endif %}
+
+    <a href="{% url 'planes' %}" style="display:inline-block;margin-top:20px;font-size:13.5px;color:#64748b;font-weight:700;text-decoration:none;">
+      ← Volver al catálogo de planes
+    </a>
+  </div>
+</main>
+{% include 'core/_sidebar_close.html' %}
+{% endblock %}

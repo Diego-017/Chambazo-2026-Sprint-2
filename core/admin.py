@@ -29,3 +29,15 @@ class NotificacionAdmin(admin.ModelAdmin):
 
 admin.site.register(GaleriaItem)
 admin.site.register(PasswordResetToken)
+
+from core.models import PlanSuscripcion, SuscripcionUsuario
+
+@admin.register(PlanSuscripcion)
+class PlanSuscripcionAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'rol', 'tipo', 'precio_mensual', 'cupo_mensual', 'activo']
+    list_filter = ['rol', 'tipo', 'activo']
+
+@admin.register(SuscripcionUsuario)
+class SuscripcionUsuarioAdmin(admin.ModelAdmin):
+    list_display = ['usuario', 'plan', 'usos_este_mes', 'activa']
+    list_filter = ['activa', 'plan']

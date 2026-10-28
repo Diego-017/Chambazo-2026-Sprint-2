@@ -699,3 +699,78 @@ class ReporteUsuario(models.Model):
     @property
     def motivo_label(self):
         return dict(self.MOTIVO_CHOICES).get(self.motivo, self.motivo)
+
+# ── Planes de Suscripción ───────────────────────────────────────────────────────
+class PlanSuscripcion(models.Model):
+    """Define los planes disponibles para empleadores y trabajadores."""
+    TIPO_ROL = [('trabajador', 'Trabajador'), ('contratista', 'Contratista')]
+    TIPO_PLAN = [('basico', 'Básico'), ('pro', 'Pro'), ('premium', 'Premium')]
+
+    nombre = models.CharField(max_length=50)
+    slug = models.SlugField(unique=True)
+    rol = models.CharField(max_length=20, choices=TIPO_ROL)
+    tipo = models.CharField(max_length=20, choices=TIPO_PLAN)
+    precio_mensual = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    cupo_mensual = models.IntegerField(default=0, help_text='0 = ilimitado')
+    destacado = models.BooleanField(default=False, help_text='Resalta visualmente este plan')
+    beneficios = models.JSONField(default=list, blank=True)
+    icono = models.CharField(max_length=10, default='🆓')
+    color = models.CharField(max_length=20, default='#1FA35A')
+    orden = models.PositiveIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['rol', 'orden']
+
+    def __str__(self):
+        return f"{self.nombre} ({self.get_rol_display()}) - ${self.precio_mensual}/mes"
+
+    @property
+    def es_ilimitado(self):
+        return self.cupo_mensual == 0 and self.tipo != 'basico'
+
+
+class SuscripcionUsuario(models.Model):
+    """Suscripción activa de un usuario a un plan."""
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name='suscripcion')
+    plan = models.ForeignKey(PlanSuscripcion, on_delete=models.SET_NULL, null=True, related_name='suscriptores')
+    fecha_inicio = models.DateTimeField(auto_now_add=True)
+    fecha_renovacion = models.DateTimeField(null=True, blank=True)
+    usos_este_mes = models.PositiveIntegerField(default=0)
+    mes_actual = models.PositiveIntegerField(default=1)
+    activa = models.BooleanField(default=True)
+    metodo_pago_id = models.CharField(max_length=100, blank=True)
+
+    def __str__(self):
+        return f"{self.usuario.username} → {self.plan.nombre if self.plan else 'Sin plan'}"
+
+    @property
+    def cupo_restante(self):
+        if not self.plan:
+            return 0
+        if self.plan.es_ilimitado:
+            return 999
+        return max(0, self.plan.cupo_mensual - self.usos_este_mes)
+
+    @property
+    def tiene_cupo(self):
+        if not self.plan:
+            return False
+        if self.plan.es_ilimitado:
+            return True
+        return self.usos_este_mes < self.plan.cupo_mensual
+
+    @property
+    def porcentaje_uso(self):
+        if not self.plan or self.plan.es_ilimitado or self.plan.cupo_mensual == 0:
+            return 0
+        return min(100, int(self.usos_este_mes / self.plan.cupo_mensual * 100))
+
+    def consumir_cupo(self):
+        from django.utils import timezone
+        now = timezone.now()
+        if now.month != self.mes_actual:
+            self.usos_este_mes = 0
+            self.mes_actual = now.month
+        self.usos_este_mes += 1
+        self.save(update_fields=['usos_este_mes', 'mes_actual'])

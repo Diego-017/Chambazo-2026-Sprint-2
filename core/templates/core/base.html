@@ -94,6 +94,41 @@ function showPushNotification(icon, title, message, delay) {
   });
 {% endif %}
 </script>
+<script>
+// ── Confetti burst para logros y suscripciones ──
+function launchConfetti() {
+  const colors = ['#1FA35A', '#F2B90D', '#3b82f6', '#8b5cf6', '#e5484d', '#34d399'];
+  for (let i = 0; i < 40; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'confetti-particle';
+    particle.style.left = Math.random() * 100 + 'vw';
+    particle.style.top = Math.random() * 40 + 60 + 'vh';
+    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+    particle.style.animationDelay = Math.random() * 0.3 + 's';
+    particle.style.animationDuration = 0.6 + Math.random() * 0.4 + 's';
+    document.body.appendChild(particle);
+    setTimeout(() => particle.remove(), 1200);
+  }
+}
+
+// ── Counter animation ──
+function animateCounters() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const target = parseInt(el.dataset.count);
+    const duration = 1200;
+    const start = performance.now();
+    const animate = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(eased * target);
+      if (progress < 1) requestAnimationFrame(animate);
+      else el.textContent = target;
+    };
+    requestAnimationFrame(animate);
+  });
+}
+window.addEventListener('load', animateCounters);
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>
