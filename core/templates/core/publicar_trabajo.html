@@ -154,19 +154,29 @@
           <label class="toggle-switch">{{ form.verificacion_requerida }}<span class="toggle-slider"></span></label>
         </div>
 
-        <!-- Desglose de Tarifas en Vivo -->
+        <!-- Desglose de Tarifas y Plan -->
         <div style="border-top:1px solid #f1f5f9;padding-top:12px;margin-top:12px;font-size:0.85rem;">
           <div class="flex-bc mb-4 text-muted">
-            <span>Comisión de publicación:</span>
-            <span id="feeBaseDisplay" class="fw-700 text-dark">$2.50 USD</span>
+            <span>Costo de publicación:</span>
+            <span class="fw-700" style="color:var(--green);"><i class="bi bi-check-circle-fill"></i> Cubierto por tu Plan</span>
+          </div>
+          <div class="flex-bc mb-4 text-muted">
+            <span>Cupo disponible:</span>
+            <span class="fw-700 text-dark">
+              {% if suscripcion.plan.es_ilimitado %}
+                ∞ Ilimitado
+              {% else %}
+                {{ suscripcion.cupo_restante|default:'2' }} vacante{{ suscripcion.cupo_restante|pluralize }}
+              {% endif %}
+            </span>
           </div>
           <div class="flex-bc mb-6 text-muted" id="rowUrgentFee" style="display:none;color:#dc2626;">
             <span>Recargo de urgencia:</span>
-            <span class="fw-700">+$3.00 USD</span>
+            <span class="fw-700">{% if suscripcion.plan.tipo == 'premium' %}<span style="color:var(--green);">$0.00 (Gratis en Premium)</span>{% else %}+$3.00 USD{% endif %}</span>
           </div>
           <div class="flex-bc pt-8" style="border-top:1px dashed #cbd5e1;font-weight:800;">
-            <span>Total tarifa a pagar:</span>
-            <span id="feeTotalDisplay" style="color:var(--green);font-size:1.05rem;">$2.50 USD</span>
+            <span>Total a pagar hoy:</span>
+            <span id="feeTotalDisplay" style="color:var(--green);font-size:1.05rem;">$0.00 USD</span>
           </div>
         </div>
       </div></div>
@@ -198,13 +208,15 @@
 
 {% include 'core/_sidebar_close.html' %}
 
+{{ form.instance.habilidades_req|default:'[]'|json_script:"habilidades-req-data" }}
+
 <script>
 function selectCat(val){
   document.querySelectorAll('.cat-icon-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('cat-'+val)?.classList.add('active');
   document.getElementById('id_categoria').value = val;
 }
-{{ form.instance.habilidades_req|default:'[]'|json_script:"habilidades-req-data" }}
+
 const habilidadesGuardadas = JSON.parse(document.getElementById('habilidades-req-data')?.textContent || '[]');
 document.querySelectorAll('.skill-chip-label').forEach(label=>{
   const input = label.querySelector('input');
@@ -212,25 +224,18 @@ document.querySelectorAll('.skill-chip-label').forEach(label=>{
   label.addEventListener('click', ()=> setTimeout(()=>label.classList.toggle('active', input.checked),0));
 });
 
-// Calculador dinámico de tarifas
+// Calculador dinámico de tarifas con membresía
 function actualizarCalculoTarifas() {
-  const presInput = document.getElementById('id_presupuesto_input');
   const urgenteChk = document.getElementById('id_es_urgente_chk');
-  const feeBase = document.getElementById('feeBaseDisplay');
   const rowUrgent = document.getElementById('rowUrgentFee');
   const feeTotal = document.getElementById('feeTotalDisplay');
+  const esPremium = {% if suscripcion.plan.tipo == 'premium' %}true{% else %}false{% endif %};
 
-  let pres = parseFloat(presInput?.value) || 100;
-  let baseComision = Math.max(2.00, +(pres * 0.025).toFixed(2));
-  let urgenteFee = urgenteChk?.checked ? 3.00 : 0.00;
-  let total = baseComision + urgenteFee;
-
-  if (feeBase) feeBase.textContent = `$${baseComision.toFixed(2)} USD`;
+  let urgenteFee = (urgenteChk && urgenteChk.checked && !esPremium) ? 3.00 : 0.00;
   if (rowUrgent) rowUrgent.style.display = urgenteChk?.checked ? 'flex' : 'none';
-  if (feeTotal) feeTotal.textContent = `$${total.toFixed(2)} USD`;
+  if (feeTotal) feeTotal.textContent = `$${urgenteFee.toFixed(2)} USD`;
 }
 
-document.getElementById('id_presupuesto_input')?.addEventListener('input', actualizarCalculoTarifas);
 document.getElementById('id_es_urgente_chk')?.addEventListener('change', actualizarCalculoTarifas);
 actualizarCalculoTarifas();
 
@@ -238,8 +243,10 @@ actualizarCalculoTarifas();
 let pickerMarker=null, pickerMap=null;
 
 function ponerPin(lat, lng, address){
-  document.getElementById('latInput').value = lat;
-  document.getElementById('lngInput').value = lng;
+  const latEl = document.getElementById('latInput');
+  const lngEl = document.getElementById('lngInput');
+  if (latEl) latEl.value = lat;
+  if (lngEl) lngEl.value = lng;
   const d = document.getElementById('coordsDisplay');
   if (d) d.style.display = 'flex';
   const t = document.getElementById('coordsText');
@@ -254,15 +261,21 @@ function initMapPicker() {
   const mapDiv = document.getElementById('mapPicker');
   if (!mapDiv) return;
 
-  const latStr = "{{ form.instance.lat|default:'13.6929'|escapejs }}".replace(',', '.');
-  const lngStr = "{{ form.instance.lng|default:'-89.2182'|escapejs }}".replace(',', '.');
-  const defaultLat = parseFloat(latStr);
-  const defaultLng = parseFloat(lngStr);
+  const latVal = document.getElementById('latInput')?.value;
+  const lngVal = document.getElementById('lngInput')?.value;
+  let defaultLat = parseFloat((latVal || "{{ form.instance.lat|default:'13.6929'|escapejs }}").replace(',', '.'));
+  let defaultLng = parseFloat((lngVal || "{{ form.instance.lng|default:'-89.2182'|escapejs }}").replace(',', '.'));
+  if (isNaN(defaultLat)) defaultLat = 13.6929;
+  if (isNaN(defaultLng)) defaultLng = -89.2182;
 
-  // Usar Esri World Street Map (100% libre, sin API key, sin bloqueos 403 ni marcas de agua)
-  pickerMap = L.map('mapPicker').setView([defaultLat, defaultLng], 12);
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri',
+  if (pickerMap) {
+    pickerMap.invalidateSize();
+    return;
+  }
+
+  pickerMap = L.map('mapPicker').setView([defaultLat, defaultLng], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19
   }).addTo(pickerMap);
 
@@ -275,7 +288,7 @@ function initMapPicker() {
     pickerMarker.setLatLng(e.latlng);
     ponerPin(e.latlng.lat, e.latlng.lng);
   });
-  
+
   // Buscador Nominatim
   const searchInput = document.getElementById('pickerSearch');
   if (searchInput) {
@@ -298,10 +311,14 @@ function initMapPicker() {
       }
     });
   }
+
+  setTimeout(() => {
+    if (pickerMap) pickerMap.invalidateSize();
+  }, 250);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(initMapPicker, 600);
+  setTimeout(initMapPicker, 300);
 });
 </script>
 {% endblock %}

@@ -1206,3 +1206,175 @@ textarea.form-control{resize:vertical;min-height:90px}
     padding: 24px 20px;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   CHAMBAZO — ANIMACIONES GLOBALES & MICRO-INTERACCIONES EN TODO EL SITIO
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Entrada fluida de vistas y encabezados ─────────────────── */
+.app-content, main, .page-hd, .layout-2col, .layout-2col-rev {
+  animation: pageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-hd h1, .page-hd .t-h1 {
+  animation: fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.page-hd p {
+  animation: fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+}
+
+/* ── 2. Tarjetas interactivas con hover lift en todo el sistema ─ */
+.card, .filter-card, .stat-card, .job-card, .trabajo-card {
+  transition: transform 0.24s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.24s ease, border-color 0.2s ease !important;
+  will-change: transform, box-shadow;
+}
+
+.card:hover, .stat-card:hover, .filter-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.10), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+}
+
+/* Tarjetas de ofertas de trabajo */
+.card a[href*="trabajo"]:hover, .card a[href*="postulante"]:hover {
+  text-decoration: none;
+}
+
+/* ── 3. Botones con feedback táctil y micro-interacción ───────── */
+.btn {
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+}
+
+.btn:active {
+  transform: scale(0.97) translateY(0) !important;
+  filter: brightness(0.95);
+}
+
+.btn-g, .btn-primary {
+  box-shadow: 0 4px 14px rgba(31, 163, 90, 0.25);
+}
+.btn-g:hover, .btn-primary:hover {
+  box-shadow: 0 8px 22px rgba(31, 163, 90, 0.38) !important;
+}
+
+.btn-y {
+  box-shadow: 0 4px 14px rgba(242, 185, 13, 0.28);
+}
+.btn-y:hover {
+  box-shadow: 0 8px 22px rgba(242, 185, 13, 0.42) !important;
+}
+
+/* ── 4. Chips de habilidades y categorías interactivas ─────────── */
+.cat-icon-btn, .skill-chip-label {
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  user-select: none;
+  cursor: pointer;
+}
+
+.cat-icon-btn:hover, .skill-chip-label:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.cat-icon-btn.active, .skill-chip-label.active {
+  animation: chipSelect 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes chipSelect {
+  0%   { transform: scale(0.92); }
+  60%  { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+
+/* ── 5. Badges con animación (urgentes y estados) ─────────────── */
+.pill-red, [class*="urgente"], .badge-urgente {
+  animation: pulseUrgentBadge 2.2s ease-in-out infinite !important;
+}
+
+@keyframes pulseUrgentBadge {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(229, 72, 77, 0.45);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(229, 72, 77, 0);
+    transform: scale(1.02);
+  }
+}
+
+.pill-green {
+  transition: transform 0.2s ease;
+}
+.pill-green:hover {
+  transform: scale(1.05);
+}
+
+/* ── 6. Inputs y Formularios con foco fluido ──────────────────── */
+.form-control, input[type="text"], input[type="number"], input[type="password"],
+input[type="email"], select, textarea {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease !important;
+}
+
+.form-control:focus, input:focus, select:focus, textarea:focus {
+  border-color: #1FA35A !important;
+  box-shadow: 0 0 0 3.5px rgba(31, 163, 90, 0.16) !important;
+  transform: translateY(-1px);
+}
+
+/* ── 7. Navegación lateral (Sidebar) reactiva ─────────────────── */
+.sb-nav-item, .sidebar a {
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.sb-nav-item:hover, .sidebar a:hover {
+  transform: translateX(4px);
+}
+
+.sidebar-plan-widget {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.sidebar-plan-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* ── 8. Tablas con resaltado suave ────────────────────────────── */
+table tbody tr {
+  transition: background-color 0.18s ease, transform 0.15s ease;
+}
+
+table tbody tr:hover {
+  background-color: rgba(31, 163, 90, 0.04) !important;
+}
+
+/* ── 9. Notificaciones y Toasts con animación de rebote ────────── */
+.toast {
+  animation: toastBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both !important;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+@keyframes toastBounce {
+  from { opacity: 0; transform: translateX(50px) scale(0.9); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* ── 10. Mapa interactivo: borde y efecto al enfocar ──────────── */
+#mapPicker, #mapaTrabajos {
+  transition: box-shadow 0.3s ease;
+}
+#mapPicker:hover, #mapaTrabajos:hover {
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.12);
+}
