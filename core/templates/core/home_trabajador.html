@@ -209,6 +209,7 @@ function toggleMap(){
   wrap.style.display = vis?'none':'block';
   btn.innerHTML = vis?'<i class="bi bi-map"></i> Ver mapa de empleos':'<i class="bi bi-map-fill"></i> Ocultar mapa';
   if(!vis && !mapInited){ setTimeout(initMapaTrabajo,100); mapInited=true; }
+  else if(!vis && mapObj){ setTimeout(()=>mapObj.invalidateSize(), 150); }
 }
 function initMapaTrabajo(){
   mapObj = L.map('mapaTrabajos').setView([13.6929, -89.2182], 9);

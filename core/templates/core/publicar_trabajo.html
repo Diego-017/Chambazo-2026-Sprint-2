@@ -274,8 +274,8 @@ function initMapPicker() {
   }
 
   pickerMap = L.map('mapPicker').setView([defaultLat, defaultLng], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
     maxZoom: 19
   }).addTo(pickerMap);
 
