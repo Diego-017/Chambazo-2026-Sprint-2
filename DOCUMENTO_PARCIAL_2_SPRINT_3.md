@@ -177,7 +177,7 @@ Destroying test database for alias 'default'...
 ```
 ---
 
-## Guía de Preparación para la Defensa Breve en Clase (7 Minutos - 3.0 ptos)
+## Guía de preguntas propuestas por el equipo
 
 ### Pregunta 1 (Enfoque: Cumplimiento del Sprint Goal y Alcance)
   *«¿De qué manera el incremento de este Sprint 3 aporta directamente a los objetivos del negocio y cómo comprobaron que se cumplió el Sprint Goal?»*
