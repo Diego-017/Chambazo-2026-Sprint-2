@@ -7,7 +7,7 @@
 | **Repositorio Oficial** | [GitHub: Diego-017/Chambazo-2026-Sprint-2](https://github.com/Diego-017/Chambazo-2026-Sprint-2) | Rama `main`. Permiso de lectura/colaboración otorgado a la docente. |
 | **Identificador de Versión** | Commit `61e9f78` / Tag `v3.0.0-sprint3-final` | Versión congelada para evaluación del Parcial II con el Sprint 3 completo. |
 | **Video de Demostración** | [Enlace al Video de Demostración (8 min)](https://ugbedu-my.sharepoint.com/:w:/g/personal/smss097824_ugb_edu_sv/cQrJ7s18Pm6oT6PykLP1VrKvEgUCr0ggPAwgF2_-VBkpVdI3Xg) | Video con audio claro y demostración del sistema en ejecución. |
-| **Carpeta de Evidencias (Drive / OneDrive)** | [OneDrive Oficial UGB - Sprint 3](https://ugbedu-my.sharepoint.com/:w:/g/personal/smss097824_ugb_edu_sv/cQrJ7s18Pm6oT6PykLP1VrKvEgUCr0ggPAwgF2_-VBkpVdI3Xg) | Permisos de edición a `beatrizzuniga@ugb.edu.sv` y `sandrabzuniga@gmail.com`. |
+| **Carpeta de Evidencias (Drive / OneDrive)** | [OneDrive Oficial UGB - Sprint 3](https://ugbedu-my.sharepoint.com/:w:/g/personal/smss097824_ugb_edu_sv/cQrJ7s18Pm6oT6PykLP1VrKvEgUCr0ggPAwgF2_-VBkpVdI3Xg) | Permisos de edición |
 | **Tablero de Gestión (Jira / Trello)** | Tablero Sprint 3 — Chambazo SV | Estado de historias de usuario: *To Do*, *In Progress*, *Testing*, *Done*. |
 | **Suite de Pruebas** | `django.test.runner` (`20/20 PASA`) | Archivo [`core/tests.py`](file:///C:/Users/Admin/Desktop/version%2011/Chambazo-2026-Sprint-2-main/core/tests.py) con ejecución en $31.7\,\text{s}$. |
 
@@ -179,101 +179,25 @@ Destroying test database for alias 'default'...
 Para asegurar el cumplimiento exacto del tiempo y la rúbrica del Parcial II, el video debe seguir esta pauta cronometrada:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ GUION DEL VIDEO — SPRINT 3 (DURACIÓN MÁXIMA: 8:00 MIN)                      │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-[0:00 - 0:45] INTRODUCCIÓN Y SPRINT GOAL (45 seg.)
-• Quién habla: Diego López (Product Owner).
-• Pantalla: Diapositiva inicial o portada con nombre del proyecto "Chambazo SV",
-  integrantes, sección y docente.
-• Mensaje clave:
-  "Buenas tardes docente y compañeros. Somos el equipo de Chambazo SV. Para este
-  Sprint 3 nos comprometimos con el Sprint Goal de entregar un flujo completo de
-  selección y comparación de candidatos, trazabilidad en vivo de postulaciones,
-  calificaciones de confianza, y el nuevo modelo de planes de membresía con una
-  experiencia de usuario fluida y animada."
-
-[0:45 - 5:15] DEMOSTRACIÓN DEL INCREMENTO EN SOFTWARE EN VIVO (4:30 min.)
-• Quién habla: Diego López / Franklin Portillo / Juan Espinal.
-• Pantalla: Navegador en http://127.0.0.1:8000/ compartiendo pantalla continua.
-
-  1. Publicación de Vacante y Membresías (0:45 - 1:45):
-     - Mostrar el panel del contratista: se aprecia el widget lateral de "Plan Pro Empleador"
-       con sus publicaciones disponibles.
-     - Crear una vacante: notar que el costo es $0.00 porque está cubierto por el plan.
-     - Mostrar el mapa interactivo con Esri ArcGIS: búsqueda de zona en El Salvador y fijar pin.
-     - Publicar la vacante y comprobar que el cupo se descuenta automáticamente.
-
-  2. Postulación del Trabajador y Trazabilidad (1:45 - 2:45):
-     - Iniciar sesión como trabajador: explorar la vacante recién creada.
-     - Mostrar la postulación en 1 clic consumiendo cupo mensual.
-     - Abrir la sección "Mis Solicitudes": mostrar la barra de seguimiento o Stepper
-       (HU039) en tiempo real con sus fases cronológicas.
-
-  3. Comparador, Descarga de CV y Selección (2:45 - 4:00):
-     - Regresar a la vista del contratista: abrir la vacante y entrar a "Comparar Candidatos" (HU046).
-     - Mostrar la tabla lado a lado contrastando match, tarifa y experiencia.
-     - Hacer clic en "Descargar CV en PDF" (HU033): abrir el PDF generado al instante con ReportLab.
-     - Demostrar el botón de "Descartar Candidato" (HU034) eligiendo un motivo en el modal.
-     - Demostrar la "Selección de Candidato" (HU032) con confirmación exitosa.
-
-  4. Calificaciones, Moderación y Planes (4:00 - 5:15):
-     - Mostrar el sistema de estrellas (HU043/HU044) y la opción de reportar reseña ofensiva (HU048).
-     - Ir a la pantalla de "/planes/": mostrar la cuadrícula animada de precios (Básico, Pro, Premium)
-       y simular el cambio o mejora de membresía.
-
-[5:15 - 6:30] RESULTADOS DE CALIDAD Y PRUEBAS EN VIVO (1:15 min.)
-• Quién habla: Walter Ramírez (QA Lead).
-• Pantalla: Terminal de PowerShell y documento de calidad.
-• Mensaje clave:
-  "Para garantizar la calidad según ISO/IEC 25010 y 25012, automatizamos la suite completa
-  de pruebas en Django. Ejecutamos en vivo 'py manage.py test core' demostrando 20 pruebas
-  unitarias e integración en estado OK. Destacamos la resolución del defecto DEF-001, donde
-  el envío de correos bloqueaba las peticiones por más de 5 segundos; al desacoplarlo con
-  hilos asíncronos en email_utils.py, la selección responde ahora en apenas 0.12 segundos."
-
-[6:30 - 8:00] BALANCE DEL SPRINT Y PRIORIDADES HACIA LA FERIA (1:30 min.)
-• Quién habla: Brandom Sánchez / Diego López.
-• Pantalla: Tablero de Sprint y resumen de conclusiones.
-• Mensaje clave:
-  "En balance, cerramos el 100% de las 17 historias de usuario del Sprint 3 más las
-  extensiones de membresías y seguridad. Como limitación parcial, los pagos operan en modo
-  simulado sin pasarela bancaria local activa. Nuestras prioridades directas hacia la feria
-  del 1 de diciembre son: conectar la pasarela oficial Wompi El Salvador, empaquetar la app
-  como Progressive Web App (PWA) e incorporar el panel de analíticas avanzadas. Muchas gracias."
-```
-
 ---
 
-## 7. Guía de Preparación para la Defensa Breve en Clase (7 Minutos - 3.0 ptos)
-
-Durante la defensa presencial/sincrónica de 7 minutos, la docente formulará 3 preguntas clave a integrantes seleccionados:
+## Guía de Preparación para la Defensa Breve en Clase (7 Minutos - 3.0 ptos)
 
 ### Pregunta 1 (Enfoque: Cumplimiento del Sprint Goal y Alcance)
-* **Pregunta probable de la docente:**  
   *«¿De qué manera el incremento de este Sprint 3 aporta directamente a los objetivos del negocio y cómo comprobaron que se cumplió el Sprint Goal?»*
-* **Respuesta modelo (Recomendada para Diego López o Franklin Portillo):**  
+
   > *"El Sprint Goal se centró en dos pilares: efectividad en la contratación y sostenibilidad del marketplace. Antes, el empleador no tenía herramientas para comparar postulantes ni descargar su hoja de vida estructurada, y las postulaciones no tenían trazabilidad. Con las HU032 a HU046, el empleador ahora compara candidatos lado a lado, descarga su CV en PDF en menos de un segundo y descarta con motivos claros. Además, sustituimos el cobro repetitivo por tarjeta por un modelo de membresías por cuotas mensuales, eliminando la fricción y asegurando un flujo de negocio comprobado al 100% con nuestras 20 pruebas automatizadas."*
 
 ### Pregunta 2 (Enfoque: Calidad, Arquitectura y Defectos Técnicos)
-* **Pregunta probable de la docente:**  
+
   *«Durante sus pruebas identificaron el defecto DEF-001 y problemas de inyecciones o librerías de mapas; expliquen técnicamente cuál fue la causa raíz y cómo lo remediaron en el código.»*
-* **Respuesta modelo (Recomendada para Walter Ramírez o Brandom Sánchez):**  
+
   > *"En el defecto DEF-001, la vista de selección de candidatos tardaba más de 5 segundos porque se comunicaba síncronamente con el servidor SMTP de Gmail en el mismo hilo de la petición HTTP. Lo solucionamos en `core/email_utils.py` desacoplando el despacho mediante hilos en segundo plano con `threading.Thread`, lo que redujo el tiempo de respuesta a 0.12 segundos, satisfaciendo el requisito RNF-01 de ISO 25010. Asimismo, en seguridad eliminamos la directiva insegura `|safe` reemplazándola por `json_script` de Django para evitar XSS, migramos la generación de tokens al módulo criptográfico estándar `secrets`, y para los mapas sustituimos los tiles bloqueados de OSM por Esri ArcGIS, garantizando alta disponibilidad sin cobros ni bloqueos 403."*
 
 ### Pregunta 3 (Enfoque: Decisiones de Producto y Prioridades hacia la Feria)
-* **Pregunta probable de la docente:**  
   *«¿Qué limitaciones persisten en esta versión entregada y qué decisiones de priorización tomaron para asegurar el éxito en la feria del 1 de diciembre?»*
-* **Respuesta modelo (Recomendada para Juan Espinal o Diego López):**  
+
   > *"La principal limitación identificada es que la pasarela de pagos opera actualmente con tarjetas de prueba simuladas en entorno local, y no disponemos todavía de notificaciones push nativas móviles. Hacia la feria del 1 de diciembre, priorizamos en nuestro Product Backlog tres elementos con base en el valor para el usuario final: primero, la integración del webhook de Wompi El Salvador para transacciones financieras reales; segundo, la conversión a PWA para que los trabajadores de oficios instalen la aplicación en sus teléfonos como app nativa; y tercero, un dashboard con analíticas para contratistas sobre el rendimiento de sus contrataciones."*
 
+CHAMBAZO SPRINT 3 2026 CON MUCHO ESFUERZO, CAFÉ Y COMMITS :´)
 ---
-
-## 8. Lista de Comprobación Final antes de la Defensa (Checklist Oficial)
-
-* [x] **Video:** Duración cronometrada en $\le 8:00$ minutos, audio nítido y software en ejecución continua.
-* [x] **Repositorio:** Tag `v3.0.0-sprint3-final` / Commit `61e9f78` disponible en GitHub y accesible para la docente.
-* [x] **Evidencias en la Nube:** Documento compartido en OneDrive/Google Drive con permisos de edición para `beatrizzuniga@ugb.edu.sv` y `sandrabzuniga@gmail.com`.
-* [x] **Trazabilidad:** Historias de Usuario (HU032 a HU048), Casos de Prueba (TC-001 al TC-020) y Defectos (DEF-001 al DEF-003) correlacionados con exactitud.
-* [x] **Dominio del Equipo:** Todos los integrantes del equipo conocen el incremento, las decisiones técnicas y están listos para responder las preguntas de la defensa.
