@@ -13,7 +13,7 @@
 
 ---
 
-## 2. Cumplimiento del Sprint Goal y Alcance Comprometido (2.0 ptos)
+## 2. Cumplimiento del Sprint Goal y Alcance Comprometido 
 
 ### 2.1. Declaración del Sprint Goal
 > **Sprint Goal:**  
@@ -44,7 +44,7 @@
 
 ---
 
-## 3. Demostración del Incremento Funcional (3.0 ptos)
+## 3. Demostración del Incremento Funcional 
 
 El incremento entregado en el Sprint 3 cuenta con los siguientes flujos principales probados con datos de prueba realistas:
 
@@ -89,7 +89,7 @@ flowchart TD
 
 ---
 
-## 4. Evidencias de Calidad, Pruebas y Decisiones Técnicas (2.0 ptos)
+## 4. Evidencias de Calidad, Pruebas y Decisiones Técnicas 
 
 ### 4.1. Modelo de Calidad y Requisitos Medibles (ISO/IEC 25010 y 25012)
 
@@ -173,10 +173,6 @@ Destroying test database for alias 'default'...
 3. **Módulo de Reportes y Analíticas Avanzadas:** Dashboard con gráficos interactivos (ApexCharts/Chart.js) para que los contratistas analicen el rendimiento de sus vacantes y tiempos de contratación.
 
 ---
-
-## 6. Guion del Video de Demostración (Estructura de 8 Minutos)
-
-Para asegurar el cumplimiento exacto del tiempo y la rúbrica del Parcial II, el video debe seguir esta pauta cronometrada:
 
 ```
 ---
