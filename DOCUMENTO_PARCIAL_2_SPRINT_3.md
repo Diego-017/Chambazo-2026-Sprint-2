@@ -1,21 +1,4 @@
-# EXAMEN PARCIAL II — PRESENTACIÓN SPRINT 3 (C2 - 40%)
-## Proyecto: Chambazo SV — Marketplace Laboral y Formalización de Oficios
 
-**Universidad Gerardo Barrios (UGB)**  
-**Facultad de Ciencia y Tecnología** | Sede Central San Miguel  
-**Carrera:** Ingeniería en Sistemas y Redes Informáticas  
-**Asignatura:** Ingeniería de Software II  
-**Ciclo / Ciclo de Evaluación:** Ciclo II-2026 — Semana 13  
-**Docente:** Ing. Sandra Beatriz Zúniga Escamilla  
-
-### Equipo de Desarrollo y QA:
-* **Diego Martín López Moreno** (SMSS097824) — *Product Owner & Full Stack Lead*
-* **Walter Alexander Ramírez Benítez** (SMSS082124) — *QA Engineer & Security Lead*
-* **Juan Ramón Espinal Coto** (SMSS102323) — *Frontend & UX/UI Developer*
-* **Franklin Aldahir Portillo Flores** (SMSS011624) — *Backend Developer & Database Admin*
-* **Brandom Gamaliel Sánchez Guevara** (SMSS017424) — *DevOps & Software Quality Analyst*
-
----
 
 ## 1. Identificación del Proyecto, Versión y Enlaces de Respaldo
 
