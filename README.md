@@ -1,5 +1,5 @@
 
-# Chambazo Version 3 Sprint 14 sept- 21 Oct 2026 #
+# Chambazo Version FN Sprint 4 22 Oct - 2 Dic 2026 #
 
 
 ## Historias de Usuario implementadas (15 HUs del Sprint 1)
