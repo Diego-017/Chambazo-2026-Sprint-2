@@ -1,0 +1,228 @@
+{
+  "info": {
+    "_postman_id": "c71a34a1-0982-4217-bc45-e4d0b13498a1",
+    "name": "Chambazo SV - Pruebas Funcionales Sprint 4 (Postman)",
+    "description": "Colección de pruebas automatizadas para la verificación funcional de las APIs de Calidad y Seguridad de Chambazo SV.\n\nFlujo seleccionado: Autenticación de Doble Factor (HU059) y Centro de Ayuda/FAQ (HU050-HU056).\nAsignatura: Ingeniería de Software II - Semana 16.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "generated_code",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Generación de Código 2FA - Éxito (TC-059-F01)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code es 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene estado 'ok' y mensaje de envío\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql(\"ok\");",
+              "    pm.expect(jsonData.mensaje).to.include(\"Código de verificación enviado\");",
+              "});",
+              "",
+              "pm.test(\"En entorno DEBUG devuelve el código para pruebas automatizadas\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.code_debug) {",
+              "        pm.collectionVariables.set(\"generated_code\", jsonData.code_debug);",
+              "        console.log(\"Código 2FA capturado:\", jsonData.code_debug);",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"user_id\": {{user_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/2fa/generate/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "2fa",
+            "generate",
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Validación de Código 2FA Correcto (TC-059-F02)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code es 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Token de sesión devuelto y verificado exitosamente\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql(\"ok\");",
+              "    pm.expect(jsonData.verified).to.eql(true);",
+              "    pm.expect(jsonData).to.have.property(\"token\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"user_id\": {{user_id}},\n    \"code\": \"{{generated_code}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/2fa/verify/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "2fa",
+            "verify",
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Validación de Código 2FA Inválido / Error (TC-059-F03)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code es 400 Bad Request por código incorrecto\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Respuesta contiene indicador de error\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql(\"error\");",
+              "    pm.expect(jsonData.mensaje).to.include(\"inválido\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"user_id\": {{user_id}},\n    \"code\": \"000000\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/2fa/verify/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "2fa",
+            "verify",
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. Búsqueda en Centro de Ayuda FAQ (TC-051-F01)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code es 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Devuelve listado estructurado de FAQs coincidentes\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql(\"ok\");",
+              "    pm.expect(jsonData.resultados).to.be.an(\"array\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/ayuda/buscar/?q=seguridad",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "ayuda",
+            "buscar",
+            ""
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "seguridad"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
