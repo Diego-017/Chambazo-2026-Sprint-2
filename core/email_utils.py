@@ -53,6 +53,35 @@ def enviar_codigo_verificacion(user, codigo):
     return _enviar_html(asunto, html, [user.email])
 
 
+def enviar_codigo_2fa(user, codigo):
+    """HU059: Envía código de autenticación de dos factores (2FA) con validez de 5 min."""
+    asunto = '🔐 Código de Acceso 2FA — Chambazo SV'
+    html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;background:#f8fafc;padding:32px;border-radius:16px;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <h1 style="color:#064e3b;font-size:2rem;margin:0;">🔧 Chambazo SV</h1>
+        <p style="color:#6b7280;margin:4px 0 0;">Verificación de Seguridad en Dos Pasos</p>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:28px;border:1px solid #e2e8f0;">
+        <h2 style="color:#0f172a;font-size:1.3rem;margin:0 0 12px;">Hola, {user.first_name or user.username} 🛡️</h2>
+        <p style="color:#475569;line-height:1.6;">Se solicitó un inicio de sesión seguro con doble factor en tu cuenta de Chambazo. Tu código de verificación es:</p>
+        <div style="text-align:center;margin:28px 0;">
+          <div style="font-size:2.8rem;font-weight:900;letter-spacing:10px;color:#047857;
+                      background:#ecfdf5;border:2px solid #059669;border-radius:12px;
+                      padding:18px 28px;display:inline-block;">{codigo}</div>
+        </div>
+        <p style="color:#64748b;font-size:0.88rem;text-align:center;margin:0;">
+          ⏱️ Este código es de un solo uso y expira en <strong>5 minutos</strong>.
+        </p>
+      </div>
+      <p style="color:#94a3b8;font-size:0.8rem;text-align:center;margin-top:20px;">
+        Si no intentaste iniciar sesión, cambia tu contraseña inmediatamente.
+      </p>
+    </div>
+    """
+    return _enviar_html(asunto, html, [user.email])
+
+
 def enviar_bienvenida(user):
     """Correo de bienvenida una vez verificada la cuenta."""
     asunto = '🎉 ¡Bienvenido a Chambazo SV!'

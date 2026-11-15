@@ -1,12 +1,18 @@
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Count, Avg, Sum
-from .models import UserProfile, Trabajo, Solicitud, Resena, GaleriaItem
+from django.db.models import Count, Avg, Sum, Q
+from django.contrib.auth.models import User
+from django.utils import timezone
+from django.conf import settings
+from datetime import timedelta
+import secrets
+from .models import UserProfile, Trabajo, Solicitud, Resena, GaleriaItem, PreguntaFrecuente
 from .serializers import (
     UserProfileSerializer, TrabajoSerializer, SolicitudSerializer,
     ResenaSerializer, GaleriaItemSerializer
 )
+from .email_utils import enviar_codigo_2fa
 
 
 class TrabajoViewSet(viewsets.ModelViewSet):
@@ -171,3 +177,164 @@ class CalendarioEventosAPIView(APIView):
                 eventos.append(evento)
 
         return Response(eventos, status=status.HTTP_200_OK)
+
+
+# ── Sprint 4 API Views ────────────────────────────────────────────────────────
+
+class Generate2FAAPIView(APIView):
+    """HU059 API: Genera código OTP de 6 dígitos para un usuario."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return Response({'error': 'user_id es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        profile = getattr(user, 'profile', None)
+        if not profile:
+            return Response({'error': 'Perfil no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        codigo_otp = f"{secrets.randbelow(900000) + 100000}"
+        profile.two_factor_code = codigo_otp
+        profile.two_factor_expires = timezone.now() + timedelta(minutes=5)
+        profile.two_factor_intentos = 0
+        profile.save(update_fields=['two_factor_code', 'two_factor_expires', 'two_factor_intentos'])
+
+        enviar_codigo_2fa(user, codigo_otp)
+
+        return Response({
+            'status': 'ok',
+            'message': f'Código de 6 dígitos generado y enviado a {user.email}.',
+            'expires_in': 300,
+            # Se expone código para facilitar testing automatizado con JMeter/Postman en entorno QA
+            'test_otp': codigo_otp if settings.DEBUG else None
+        }, status=status.HTTP_200_OK)
+
+
+class Verify2FAAPIView(APIView):
+    """HU059 API: Valida código OTP de 6 dígitos para autenticación de dos factores.
+    Endpoint evaluado en Postman y Apache JMeter para pruebas de carga.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        user_id = request.data.get('user_id')
+        otp_code = request.data.get('otp_code', '').strip()
+        device_id = request.data.get('device_fingerprint', 'default-device')
+
+        if not user_id or not otp_code:
+            return Response({
+                'error': 'user_id y otp_code son requeridos.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({
+                'error': 'Usuario no encontrado.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        profile = getattr(user, 'profile', None)
+        if not profile:
+            return Response({
+                'error': 'Perfil no encontrado.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Control de intentos fallidos (Rate Limiting)
+        if profile.two_factor_intentos >= 3:
+            return Response({
+                'error': 'Has excedido el número máximo de intentos permitidos (3). Espera 5 minutos.'
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        now = timezone.now()
+        # Validación de código y expiración
+        if not profile.two_factor_expires or now > profile.two_factor_expires or profile.two_factor_code != otp_code:
+            profile.two_factor_intentos += 1
+            profile.save(update_fields=['two_factor_intentos'])
+            intentos_restantes = max(0, 3 - profile.two_factor_intentos)
+            return Response({
+                'error': f'Código incorrecto o expirado. Intentos restantes: {intentos_restantes}.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Código válido: resetear estado
+        profile.two_factor_code = ''
+        profile.two_factor_intentos = 0
+        profile.save(update_fields=['two_factor_code', 'two_factor_intentos'])
+
+        # Generar tokens de sesión simulados/JWT para el cliente
+        access_token = f"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.chambazo_{user.id}_{secrets.token_hex(16)}"
+        refresh_token = f"ref_{secrets.token_hex(24)}"
+
+        return Response({
+            'status': 'success',
+            'message': 'Autenticación de dos factores exitosa.',
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'rol': profile.rol,
+                'is_2fa_verified': True
+            }
+        }, status=status.HTTP_200_OK)
+
+
+class AyudaBuscarAPIView(APIView):
+    """HU055 API: Búsqueda interactiva en tiempo real en Centro de Ayuda."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        q = request.query_params.get('q', '').strip()
+        if not q:
+            return Response({'resultados': [], 'total': 0}, status=status.HTTP_200_OK)
+
+        items = PreguntaFrecuente.objects.filter(
+            activo=True
+        ).filter(
+            Q(pregunta__icontains=q) | Q(respuesta__icontains=q)
+        )[:10]
+
+        data = [
+            {
+                'id': item.id,
+                'categoria': item.get_categoria_display(),
+                'pregunta': item.pregunta,
+                'respuesta': item.respuesta,
+                'votos_util': item.votos_util,
+                'votos_no_util': item.votos_no_util
+            }
+            for item in items
+        ]
+        return Response({'resultados': data, 'total': len(data), 'query': q}, status=status.HTTP_200_OK)
+
+
+class FAQVotarAPIView(APIView):
+    """HU056 API: Registrar voto útil / no útil sin recargar."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        try:
+            faq = PreguntaFrecuente.objects.get(pk=pk, activo=True)
+        except PreguntaFrecuente.DoesNotExist:
+            return Response({'error': 'Artículo no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        tipo = request.data.get('tipo', 'util')
+        if tipo == 'util':
+            faq.votos_util += 1
+        else:
+            faq.votos_no_util += 1
+        faq.save(update_fields=['votos_util', 'votos_no_util'])
+
+        return Response({
+            'status': 'ok',
+            'id': faq.id,
+            'votos_util': faq.votos_util,
+            'votos_no_util': faq.votos_no_util
+        }, status=status.HTTP_200_OK)
+

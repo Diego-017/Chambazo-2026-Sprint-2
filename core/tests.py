@@ -5,7 +5,8 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 from core.models import (
-    UserProfile, Trabajo, Solicitud, Resena, GaleriaItem, Mensaje, Logro, LogroObtenido, TrabajoGuardado
+    UserProfile, Trabajo, Solicitud, Resena, GaleriaItem, Mensaje, Logro, LogroObtenido, TrabajoGuardado,
+    PreguntaFrecuente, TicketSoporte, SolicitudBajaCuenta
 )
 
 
@@ -442,3 +443,158 @@ class ChambazoSubscriptionTests(TestCase):
         self.sub.refresh_from_db()
         self.assertEqual(self.sub.plan.slug, 'pro-test')
         self.assertEqual(self.sub.plan.tipo, 'pro')
+
+
+class Sprint4QualityAndSecurityTests(TestCase):
+    """Casos de prueba automatizados para el incremento del Sprint 4 (HU049 a HU062)."""
+
+    def setUp(self):
+        self.api_client = APIClient()
+        self.user_emp = User.objects.create_user(
+            username='empleador_s4', email='emp4@chambazo.com', password='Password123!', first_name='Mario'
+        )
+        self.profile_emp = UserProfile.objects.create(
+            user=self.user_emp, rol='contratista', empresa='Servicios S4 S.A.'
+        )
+
+        self.user_trab = User.objects.create_user(
+            username='trabajador_s4', email='trab4@chambazo.com', password='Password123!', first_name='Luis'
+        )
+        self.profile_trab = UserProfile.objects.create(
+            user=self.user_trab, rol='trabajador', telefono='7123-4567', ubicacion='San Salvador',
+            two_factor_enabled=True
+        )
+
+        self.resena = Resena.objects.create(
+            autor=self.user_emp,
+            destinatario=self.user_trab,
+            calificacion=5,
+            comentario='Excelente trabajo en plomería residencial.'
+        )
+
+        self.faq = PreguntaFrecuente.objects.create(
+            categoria='seguridad',
+            pregunta='¿Cómo funciona la autenticación 2FA?',
+            respuesta='Envía un código de 6 dígitos que expira en 5 minutos.',
+            orden=1
+        )
+
+    def test_hu049_responder_resena_receptor_valido(self):
+        """HU049 Positivo: El receptor de la reseña puede responder con máx 500 caracteres."""
+        self.client.login(username='trabajador_s4', password='Password123!')
+        url = reverse('responder_resena', args=[self.resena.id])
+        resp = self.client.post(url, {'respuesta': 'Muchas gracias por la confianza, quedo a las órdenes.'})
+        self.assertEqual(resp.status_code, 302)
+        self.resena.refresh_from_db()
+        self.assertEqual(self.resena.respuesta, 'Muchas gracias por la confianza, quedo a las órdenes.')
+        self.assertIsNotNone(self.resena.fecha_respuesta)
+
+    def test_hu049_responder_resena_no_autorizado(self):
+        """HU049 Negativo: Un usuario distinto al receptor no puede responder."""
+        otro_user = User.objects.create_user(username='hacker', password='Password123!')
+        self.client.login(username='hacker', password='Password123!')
+        url = reverse('responder_resena', args=[self.resena.id])
+        resp = self.client.post(url, {'respuesta': 'Respuesta no autorizada.'})
+        self.assertEqual(resp.status_code, 403)
+
+    def test_hu051_hu055_centro_ayuda_y_buscador(self):
+        """HU051 y HU055: Centro de Ayuda carga correctamente y el buscador retorna resultados."""
+        resp = self.client.get(reverse('centro_ayuda'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'autenticación 2FA')
+
+        # Buscador interactivo
+        search_resp = self.client.get(reverse('ayuda_buscar') + '?q=2FA')
+        self.assertEqual(search_resp.status_code, 200)
+        data = search_resp.json()
+        self.assertGreaterEqual(data['total'], 1)
+        self.assertIn('2FA', data['resultados'][0]['pregunta'])
+
+    def test_hu056_votar_utilidad_articulo(self):
+        """HU056: Votación de utilidad registra el voto dinámico."""
+        url = reverse('faq_votar', args=[self.faq.id])
+        resp = self.client.post(url, {'tipo': 'util'})
+        self.assertEqual(resp.status_code, 200)
+        self.faq.refresh_from_db()
+        self.assertEqual(self.faq.votos_util, 1)
+
+    def test_hu052_soporte_contacto(self):
+        """HU052: Enviar ticket de soporte genera el registro."""
+        url = reverse('soporte_contacto')
+        resp = self.client.post(url, {
+            'nombre': 'Luis Trabajador',
+            'email': 'trab4@chambazo.com',
+            'asunto': 'Duda sobre el cobro de membresía',
+            'mensaje': 'Quisiera saber cuándo se realiza el cobro.',
+            'prioridad': 'media'
+        })
+        self.assertEqual(resp.status_code, 302)
+        ticket = TicketSoporte.objects.filter(asunto='Duda sobre el cobro de membresía').first()
+        self.assertIsNotNone(ticket)
+        self.assertEqual(ticket.estado, 'abierto')
+
+    def test_hu059_2fa_api_generate_y_verify_exitoso(self):
+        """HU059 Positivo: Generación y verificación exitosa de código 2FA via API (Postman / JMeter)."""
+        # 1. Generar OTP
+        gen_resp = self.api_client.post(reverse('api_2fa_generate'), {'user_id': self.user_trab.id})
+        self.assertEqual(gen_resp.status_code, status.HTTP_200_OK)
+        self.profile_trab.refresh_from_db()
+        self.assertTrue(bool(self.profile_trab.two_factor_code))
+
+        # 2. Validar OTP correcto
+        otp = self.profile_trab.two_factor_code
+        ver_resp = self.api_client.post(reverse('api_2fa_verify'), {
+            'user_id': self.user_trab.id,
+            'otp_code': otp,
+            'device_fingerprint': 'test-runner'
+        })
+        self.assertEqual(ver_resp.status_code, status.HTTP_200_OK)
+        self.assertIn('access_token', ver_resp.data)
+        self.assertTrue(ver_resp.data['user']['is_2fa_verified'])
+
+    def test_hu059_2fa_api_negativo_codigo_invalido_y_rate_limit(self):
+        """HU059 Negativo: Código erróneo y bloqueo tras 3 intentos (Rate Limiting)."""
+        self.api_client.post(reverse('api_2fa_generate'), {'user_id': self.user_trab.id})
+
+        # Intentos 1 y 2 con código incorrecto
+        for _ in range(2):
+            resp = self.api_client.post(reverse('api_2fa_verify'), {
+                'user_id': self.user_trab.id,
+                'otp_code': '000000'
+            })
+            self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Intento 3
+        resp3 = self.api_client.post(reverse('api_2fa_verify'), {
+            'user_id': self.user_trab.id,
+            'otp_code': '000000'
+        })
+        self.assertEqual(resp3.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Intento 4: Debe disparar HTTP 429 Too Many Requests
+        resp4 = self.api_client.post(reverse('api_2fa_verify'), {
+            'user_id': self.user_trab.id,
+            'otp_code': '000000'
+        })
+        self.assertEqual(resp4.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_hu061_cierre_sesion_seguro(self):
+        """HU061: Logout seguro invalida la sesión y previene almacenamiento en caché."""
+        self.client.login(username='trabajador_s4', password='Password123!')
+        resp = self.client.get(reverse('logout'))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('no-cache', resp.headers.get('Cache-Control', ''))
+
+    def test_hu060_solicitud_baja_cuenta(self):
+        """HU060: Solicitud de baja programa eliminación con 30 días de gracia."""
+        self.client.login(username='trabajador_s4', password='Password123!')
+        url = reverse('solicitar_baja_cuenta')
+        resp = self.client.post(url, {
+            'password': 'Password123!',
+            'motivo': 'Prueba de baja'
+        })
+        self.assertEqual(resp.status_code, 302)
+        baja = SolicitudBajaCuenta.objects.filter(usuario=self.user_trab).first()
+        self.assertIsNotNone(baja)
+        self.assertFalse(baja.cancelada)
+

@@ -89,6 +89,12 @@
     <a href="{% url 'mi_empresa' %}" class="sidebar-link {% if active == 'empresa' %}active yellow{% endif %}">
       <i class="bi bi-briefcase"></i><span class="link-text">Mi empresa</span>
     </a>
+    <a href="{% url 'ajustes_privacidad' %}" class="sidebar-link {% if active == 'privacidad' %}active yellow{% endif %}">
+      <i class="bi bi-shield-lock"></i><span class="link-text">Privacidad y 2FA</span>
+    </a>
+    <a href="{% url 'centro_ayuda' %}" class="sidebar-link {% if active == 'ayuda' %}active yellow{% endif %}">
+      <i class="bi bi-question-circle"></i><span class="link-text">Centro de Ayuda</span>
+    </a>
     <a href="{% url 'logout' %}" class="sidebar-link"><i class="bi bi-box-arrow-right"></i><span class="link-text">Salir</span></a>
   </div>
 </aside>

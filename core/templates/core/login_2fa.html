@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+{% block title %}Verificación de Dos Pasos (2FA) — Chambazo{% endblock %}
+{% block body %}
+<div class="auth-shell">
+  <aside class="auth-side">
+    <div class="auth-side-logo">
+      <div class="brand-icon"><i class="bi bi-shield-lock-fill"></i></div>
+      <span>Chambazo SV</span>
+    </div>
+    <h1>Protegemos tu cuenta con doble factor.</h1>
+    <p class="lead">Hemos implementado autenticación en dos pasos (HU059) para garantizar la máxima seguridad en tus operaciones laborales y pagos.</p>
+    <div class="auth-side-stats">
+      <div class="auth-stat-box"><div class="n"><i class="bi bi-shield-check"></i></div><div class="l">2FA Seguro</div></div>
+      <div class="auth-stat-box"><div class="n">5 min</div><div class="l">Vigencia OTP</div></div>
+      <div class="auth-stat-box"><div class="n">3</div><div class="l">Intentos Máx.</div></div>
+    </div>
+    <div class="auth-side-footer">Universidad Gerardo Barrios · Sprint 4 · Seguridad y Calidad</div>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-form-wrap">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;background:#ecfdf5;color:#047857;border-radius:50%;font-size:2rem;margin-bottom:12px;">
+          <i class="bi bi-shield-check"></i>
+        </div>
+        <h2>Verificación de Seguridad</h2>
+        <p class="sub">Ingresa el código de 6 dígitos que enviamos a <strong>{{ user.email }}</strong></p>
+      </div>
+
+      {% if error %}
+      <div style="background:var(--red-light, #fee2e2);color:#a3282c;border-radius:10px;padding:12px 14px;font-size:13px;font-weight:600;margin-bottom:18px;display:flex;align-items:center;gap:8px;">
+        <i class="bi bi-exclamation-triangle-fill"></i> {{ error }}
+      </div>
+      {% endif %}
+
+      {% if not bloqueado %}
+      <form method="post" id="form-2fa">
+        {% csrf_token %}
+        <div class="form-group" style="text-align:center;">
+          <label class="form-label" style="font-weight:700;margin-bottom:8px;">Código OTP de 6 dígitos</label>
+          <input type="text" name="codigo_otp" maxlength="6" pattern="[0-9]{6}" required autofocus
+                 style="font-size:2rem;letter-spacing:10px;text-align:center;font-weight:800;padding:12px;border:2px solid #10b981;border-radius:12px;width:100%;max-width:280px;margin:0 auto;display:block;"
+                 placeholder="000000" autocomplete="one-time-code">
+          <small style="display:block;margin-top:8px;color:#64748b;">El código expira en 5 minutos.</small>
+        </div>
+        <button type="submit" class="btn btn-g btn-full btn-lg" style="margin-top:14px;">
+          <i class="bi bi-check2-circle"></i> Verificar y Acceder
+        </button>
+      </form>
+      {% else %}
+      <div style="text-align:center;margin-top:15px;">
+        <a href="{% url 'login' %}" class="btn btn-g btn-full btn-lg">Volver a Iniciar Sesión</a>
+      </div>
+      {% endif %}
+
+      <div class="text-center mt-8" style="margin-top:20px;">
+        <a href="{% url 'login' %}" class="t-xs t-green fw-600">
+          <i class="bi bi-arrow-left"></i> Cancelar e iniciar con otra cuenta
+        </a>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

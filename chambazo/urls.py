@@ -110,6 +110,23 @@ urlpatterns = [
     path('planes/', views.planes, name='planes'),
     path('planes/suscribir/<slug:plan_slug>/', views.suscribir_plan, name='suscribir_plan'),
     path('api/mi-plan/', views.mi_plan, name='mi_plan'),
+    # Sprint 4: Seguridad, Privacidad y Centro de Ayuda
+    path('login/2fa/', views.login_2fa_view, name='login_2fa'),
+    path('seguridad/2fa/toggle/', views.seguridad_2fa_toggle, name='seguridad_2fa_toggle'),
+    path('resena/<int:pk>/responder/', views.responder_resena, name='responder_resena'),
+    path('ayuda/', views.centro_ayuda, name='centro_ayuda'),
+    path('ayuda/buscar/', views.ayuda_buscar, name='ayuda_buscar'),
+    path('ayuda/faq/<int:pk>/votar/', views.faq_votar, name='faq_votar'),
+    path('ayuda/soporte/', views.soporte_contacto, name='soporte_contacto'),
+    path('tutorial/completar/', views.completar_tutorial, name='completar_tutorial'),
+    path('ajustes/privacidad/', views.ajustes_privacidad, name='ajustes_privacidad'),
+    path('cuenta/eliminar/', views.solicitar_baja_cuenta, name='solicitar_baja_cuenta'),
+    path('cuenta/cancelar-baja/', views.cancelar_baja_cuenta, name='cancelar_baja_cuenta'),
+    # Sprint 4: Endpoints API para Postman y JMeter
+    path('api/v1/auth/2fa/generate/', api_views.Generate2FAAPIView.as_view(), name='api_2fa_generate'),
+    path('api/v1/auth/2fa/verify/', api_views.Verify2FAAPIView.as_view(), name='api_2fa_verify'),
+    path('api/v1/ayuda/buscar/', api_views.AyudaBuscarAPIView.as_view(), name='api_ayuda_buscar'),
+    path('api/v1/ayuda/faq/<int:pk>/votar/', api_views.FAQVotarAPIView.as_view(), name='api_faq_votar'),
     # API RESTful v1
     path('api/v1/', include(router.urls)),
     path('api/v1/stats/', api_views.PlataformaStatsAPIView.as_view(), name='api_stats'),

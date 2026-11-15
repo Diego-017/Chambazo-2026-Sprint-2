@@ -1,0 +1,169 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Privacidad y Seguridad — Chambazo{% endblock %}
+
+{% block body %}
+{% if user.profile.rol == 'contratista' %}
+  {% include 'core/_sidebar_contratista.html' %}
+{% elif user.profile.rol == 'administrador' %}
+  {% include 'core/_sidebar_admin.html' %}
+{% else %}
+  {% include 'core/_sidebar_trabajador.html' %}
+{% endif %}
+
+<main class="app-content page-enter" style="max-width:880px;margin:0 auto;padding:24px 16px;">
+  <!-- Encabezado -->
+  <div style="margin-bottom:28px;">
+    <h1 style="font-size:1.8rem;font-weight:900;color:#0f172a;margin:0 0 6px;">Privacidad y Seguridad de la Cuenta</h1>
+    <p style="color:#64748b;font-size:0.95rem;margin:0;">Controla la visibilidad de tus datos personales, tu ubicación y la seguridad de inicio de sesión.</p>
+  </div>
+
+  <!-- HU059: Autenticación de Dos Factores (2FA) -->
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:28px;box-shadow:0 4px 14px rgba(15,23,42,.04);margin-bottom:28px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="width:50px;height:50px;background:#ecfdf5;color:#047857;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;">
+          <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <div>
+          <h2 style="font-size:1.15rem;font-weight:800;color:#0f172a;margin:0;">Autenticación de Dos Factores (2FA - HU059)</h2>
+          <p style="color:#64748b;font-size:0.88rem;margin:3px 0 0;">
+            {% if profile.two_factor_enabled %}
+              <span style="color:#047857;font-weight:700;"><i class="bi bi-check-circle-fill"></i> Activada:</span> Se te pedirá un código OTP de 6 dígitos enviado a tu correo al iniciar sesión.
+            {% else %}
+              <span style="color:#b91c1c;font-weight:700;"><i class="bi bi-x-circle-fill"></i> Desactivada:</span> Protege tu cuenta activando un segundo paso de confirmación por correo.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <form method="post" action="{% url 'seguridad_2fa_toggle' %}">
+        {% csrf_token %}
+        {% if profile.two_factor_enabled %}
+          <input type="hidden" name="activar" value="0">
+          <button type="submit" class="btn btn-outline-danger" style="border-radius:10px;padding:9px 18px;font-weight:700;border:1px solid #ef4444;color:#ef4444;background:#fff;">
+            Desactivar 2FA
+          </button>
+        {% else %}
+          <input type="hidden" name="activar" value="1">
+          <button type="submit" class="btn btn-g" style="border-radius:10px;padding:9px 20px;font-weight:700;">
+            <i class="bi bi-shield-check"></i> Activar 2FA
+          </button>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- HU057 y HU062: Visibilidad de Información Personal y Ubicación -->
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:28px;box-shadow:0 4px 14px rgba(15,23,42,.04);margin-bottom:28px;">
+    <h2 style="font-size:1.15rem;font-weight:800;color:#0f172a;margin:0 0 16px;display:flex;align-items:center;gap:8px;">
+      <i class="bi bi-eye-slash" style="color:#047857;"></i> Control de Información Personal y Ubicación (HU057 / HU062)
+    </h2>
+    <form method="post">
+      {% csrf_token %}
+      <div style="display:flex;flex-direction:column;gap:18px;">
+        <!-- Ubicación -->
+        <label style="display:flex;align-items:flex-start;gap:14px;cursor:pointer;padding:12px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+          <input type="checkbox" name="privacidad_ubicacion_exacta" value="1" {% if profile.privacidad_ubicacion_exacta %}checked{% endif %} style="margin-top:4px;width:18px;height:18px;accent-color:#047857;">
+          <div>
+            <strong style="color:#0f172a;display:block;font-size:0.95rem;">Ocultar mi dirección exacta (HU057)</strong>
+            <span style="color:#64748b;font-size:0.85rem;">Muestra únicamente tu municipio o zona geográfica en el mapa. La dirección exacta solo se desbloqueará una vez que una postulación sea formalmente aceptada.</span>
+          </div>
+        </label>
+
+        <!-- Teléfono -->
+        <label style="display:flex;align-items:flex-start;gap:14px;cursor:pointer;padding:12px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+          <input type="checkbox" name="privacidad_telefono" value="1" {% if profile.privacidad_telefono %}checked{% endif %} style="margin-top:4px;width:18px;height:18px;accent-color:#047857;">
+          <div>
+            <strong style="color:#0f172a;display:block;font-size:0.95rem;">Ocultar número de teléfono a visitantes (HU062)</strong>
+            <span style="color:#64748b;font-size:0.85rem;">Tu número de WhatsApp o teléfono solo será visible para contratistas o trabajadores con los que mantengas un contrato activo.</span>
+          </div>
+        </label>
+
+        <!-- Email -->
+        <label style="display:flex;align-items:flex-start;gap:14px;cursor:pointer;padding:12px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+          <input type="checkbox" name="privacidad_email" value="1" {% if profile.privacidad_email %}checked{% endif %} style="margin-top:4px;width:18px;height:18px;accent-color:#047857;">
+          <div>
+            <strong style="color:#0f172a;display:block;font-size:0.95rem;">Ocultar correo electrónico en el perfil público (HU062)</strong>
+            <span style="color:#64748b;font-size:0.85rem;">Evita que terceros no registrados puedan ver tu dirección de correo en la vista pública de tu perfil.</span>
+          </div>
+        </label>
+
+        <!-- CV -->
+        <label style="display:flex;align-items:flex-start;gap:14px;cursor:pointer;padding:12px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+          <input type="checkbox" name="privacidad_cv" value="1" {% if profile.privacidad_cv %}checked{% endif %} style="margin-top:4px;width:18px;height:18px;accent-color:#047857;">
+          <div>
+            <strong style="color:#0f172a;display:block;font-size:0.95rem;">Proteger descarga de Currículum Vitae (CV)</strong>
+            <span style="color:#64748b;font-size:0.85rem;">Solo los contratistas a cuyas ofertas hayas aplicado podrán descargar tu currículo en PDF.</span>
+          </div>
+        </label>
+      </div>
+
+      <div style="margin-top:20px;text-align:right;">
+        <button type="submit" class="btn btn-g" style="border-radius:10px;padding:10px 24px;font-weight:700;">
+          <i class="bi bi-save"></i> Guardar Cambios de Privacidad
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- HU060: Zona de Peligro - Solicitud de Eliminación de Cuenta -->
+  <div style="background:#fff;border:1px solid #fecaca;border-radius:18px;padding:28px;box-shadow:0 4px 14px rgba(239,68,68,.06);">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+      <i class="bi bi-exclamation-octagon-fill" style="color:#dc2626;font-size:1.5rem;"></i>
+      <h2 style="font-size:1.15rem;font-weight:800;color:#991b1b;margin:0;">Eliminación de Cuenta y Datos Personales (HU060)</h2>
+    </div>
+
+    {% if solicitud_baja %}
+    <div style="background:#fef2f2;border:1px solid #f87171;border-radius:12px;padding:16px;margin-bottom:18px;">
+      <strong style="color:#991b1b;display:block;margin-bottom:4px;">⚠️ Tu cuenta está programada para eliminarse</strong>
+      <p style="color:#7f1d1d;font-size:0.9rem;margin:0 0 12px;line-height:1.5;">
+        La baja definitiva y el borrado de tus datos ocurrirán el <strong>{{ solicitud_baja.fecha_efectiva|date:"d/m/Y" }}</strong> (periodo de gracia de 30 días). Si deseas continuar usando Chambazo, puedes cancelar la baja ahora.
+      </p>
+      <form method="post" action="{% url 'cancelar_baja_cuenta' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-g" style="border-radius:8px;font-weight:700;">
+          <i class="bi bi-arrow-counterclockwise"></i> Cancelar Solicitud y Conservar mi Cuenta
+        </button>
+      </form>
+    </div>
+    {% else %}
+    <p style="color:#64748b;font-size:0.9rem;line-height:1.6;margin-bottom:18px;">
+      De acuerdo con tu derecho al olvido y privacidad, puedes solicitar la eliminación permanente de tu cuenta. Contarás con un <strong>periodo de gracia de 30 días</strong> para cancelar la baja simplemente iniciando sesión.
+    </p>
+
+    <button type="button" class="btn btn-outline-danger" onclick="document.getElementById('modal-baja-cuenta').style.display='flex';"
+            style="border-radius:10px;padding:10px 20px;font-weight:700;border:1px solid #dc2626;color:#dc2626;background:#fff;">
+      <i class="bi bi-trash3"></i> Solicitar Eliminación de mi Cuenta
+    </button>
+    {% endif %}
+  </div>
+
+  <!-- Modal Confirmación Eliminación -->
+  <div id="modal-baja-cuenta" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.6);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:20px;padding:32px;max-width:480px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,.25);">
+      <h3 style="font-size:1.25rem;font-weight:900;color:#991b1b;margin:0 0 10px;">¿Confirmar solicitud de baja?</h3>
+      <p style="color:#475569;font-size:0.9rem;line-height:1.5;margin-bottom:18px;">
+        Para confirmar que eres el titular de la cuenta, ingresa tu contraseña actual. Tus datos se conservarán durante 30 días antes del borrado irrevocable.
+      </p>
+      <form method="post" action="{% url 'solicitar_baja_cuenta' %}">
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label" style="font-weight:700;">Contraseña Actual *</label>
+          <input type="password" name="password" class="form-control" required placeholder="Ingresa tu contraseña"
+                 style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;">
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="form-label" style="font-weight:700;">Motivo de tu salida (opcional)</label>
+          <textarea name="motivo" rows="2" class="form-control" placeholder="¿En qué podemos mejorar?"
+                    style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-baja-cuenta').style.display='none';" style="border-radius:8px;">Cancelar</button>
+          <button type="submit" class="btn btn-danger" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-weight:700;">Confirmar Baja</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Centro de Ayuda y Preguntas Frecuentes — Chambazo{% endblock %}
+
+{% block body %}
+{% if user.is_authenticated %}
+  {% if user.profile.rol == 'contratista' %}
+    {% include 'core/_sidebar_contratista.html' %}
+  {% elif user.profile.rol == 'administrador' %}
+    {% include 'core/_sidebar_admin.html' %}
+  {% else %}
+    {% include 'core/_sidebar_trabajador.html' %}
+  {% endif %}
+{% endif %}
+
+<main class="app-content page-enter" style="max-width:1100px;margin:0 auto;padding:24px 16px;">
+  <!-- Header / Hero de Ayuda -->
+  <div style="background:linear-gradient(135deg, #064e3b 0%, #047857 100%);color:#fff;border-radius:20px;padding:48px 32px;text-align:center;box-shadow:0 10px 25px -5px rgba(6,78,59,.3);margin-bottom:36px;position:relative;overflow:hidden;">
+    <div style="font-size:3rem;margin-bottom:12px;">💡</div>
+    <h1 style="font-size:2rem;font-weight:900;margin:0 0 10px;color:#fff;">¿En qué podemos ayudarte hoy?</h1>
+    <p style="font-size:1.05rem;opacity:.9;max-width:650px;margin:0 auto 28px;line-height:1.6;">
+      Encuentra guías rápidas, preguntas frecuentes (FAQ) y resuelve cualquier duda sobre el uso de Chambazo SV.
+    </p>
+
+    <!-- HU055: Barra de Búsqueda Interactiva en Tiempo Real -->
+    <div style="max-width:620px;margin:0 auto;position:relative;">
+      <div style="display:flex;align-items:center;background:#fff;border-radius:99px;padding:6px 10px 6px 20px;box-shadow:0 8px 24px rgba(0,0,0,.15);">
+        <i class="bi bi-search" style="color:#047857;font-size:1.2rem;margin-right:10px;"></i>
+        <input type="text" id="input-buscador-ayuda" placeholder="Escribe palabras clave (ej: 2FA, postularse, reseñas, ubicación)..." 
+               style="border:none;outline:none;width:100%;font-size:0.95rem;color:#0f172a;" autocomplete="off">
+        <button type="button" id="btn-limpiar-busqueda" style="border:none;background:none;color:#94a3b8;cursor:pointer;display:none;padding:6px 10px;">
+          <i class="bi bi-x-circle-fill"></i>
+        </button>
+      </div>
+
+      <!-- Resultados desplegables en tiempo real -->
+      <div id="resultados-busqueda" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.2);margin-top:10px;z-index:50;text-align:left;max-height:360px;overflow-y:auto;border:1px solid #e2e8f0;">
+      </div>
+    </div>
+  </div>
+
+  <!-- HU050: Guía Rápida por Rol -->
+  <div style="margin-bottom:40px;">
+    <h2 style="font-size:1.3rem;font-weight:800;color:#0f172a;margin-bottom:18px;display:flex;align-items:center;gap:8px;">
+      <i class="bi bi-book-half" style="color:#047857;"></i> Guía Rápida según tu Rol (HU050)
+    </h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:20px;">
+      <!-- Tarjeta Trabajador -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(15,23,42,.04);border-top:4px solid #10b981;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div style="width:44px;height:44px;background:#ecfdf5;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#047857;font-size:1.4rem;">
+            <i class="bi bi-person-workspace"></i>
+          </div>
+          <div>
+            <h3 style="font-size:1.1rem;font-weight:700;margin:0;color:#0f172a;">Soy Trabajador</h3>
+            <span style="font-size:0.8rem;color:#64748b;">Aprende a buscar chambas y ganar ingresos</span>
+          </div>
+        </div>
+        <ol style="margin:0;padding-left:20px;color:#475569;font-size:0.9rem;line-height:1.7;">
+          <li><strong>Crea tu perfil:</strong> Sube tu foto, habilidades y documento para verificar tu cuenta.</li>
+          <li><strong>Explora vacantes:</strong> Filtra por categoría y distancia en tu departamento.</li>
+          <li><strong>Aplica con propuesta:</strong> Envía tu tarifa estimada y chatea con el contratista.</li>
+          <li><strong>Seguridad y cobros:</strong> Tu pago queda en custodia segura hasta completar la labor.</li>
+        </ol>
+      </div>
+
+      <!-- Tarjeta Contratista -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;box-shadow:0 4px 12px rgba(15,23,42,.04);border-top:4px solid #3b82f6;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div style="width:44px;height:44px;background:#eff6ff;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#2563eb;font-size:1.4rem;">
+            <i class="bi bi-building"></i>
+          </div>
+          <div>
+            <h3 style="font-size:1.1rem;font-weight:700;margin:0;color:#0f172a;">Soy Empleador / Contratista</h3>
+            <span style="font-size:0.8rem;color:#64748b;">Publica ofertas y contrata talento local</span>
+          </div>
+        </div>
+        <ol style="margin:0;padding-left:20px;color:#475569;font-size:0.9rem;line-height:1.7;">
+          <li><strong>Publica una vacante:</strong> Describe el trabajo requerido, presupuesto y ubicación aproximada.</li>
+          <li><strong>Revisa postulantes:</strong> Compara perfiles, calificaciones y experiencia laboral.</li>
+          <li><strong>Selecciona y contrata:</strong> Al confirmar la contratación se revela la dirección exacta.</li>
+          <li><strong>Califica el trabajo:</strong> Deja tu reseña con estrellas para fortalecer la reputación.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- HU051: Preguntas Frecuentes por Categorías -->
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:28px;box-shadow:0 4px 14px rgba(15,23,42,.04);margin-bottom:36px;">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;border-bottom:1px solid #f1f5f9;padding-bottom:16px;">
+      <h2 style="font-size:1.3rem;font-weight:800;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
+        <i class="bi bi-question-circle" style="color:#047857;"></i> Preguntas Frecuentes (FAQ)
+      </h2>
+      <!-- Filtro de Categorías -->
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <a href="{% url 'centro_ayuda' %}?cat=todas" class="btn btn-sm {% if categoria_filtro == 'todas' %}btn-g{% else %}btn-secondary{% endif %}" style="border-radius:99px;padding:5px 14px;font-size:0.82rem;">Todas</a>
+        {% for cat_val, cat_nom in categorias %}
+        <a href="{% url 'centro_ayuda' %}?cat={{ cat_val }}" class="btn btn-sm {% if categoria_filtro == cat_val %}btn-g{% else %}btn-secondary{% endif %}" style="border-radius:99px;padding:5px 14px;font-size:0.82rem;">{{ cat_nom }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Lista de Preguntas -->
+    <div id="faq-accordion" style="display:flex;flex-direction:column;gap:14px;">
+      {% for faq in faqs %}
+      <div class="faq-item" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#f8fafc;">
+        <button type="button" class="faq-toggle" style="width:100%;text-align:left;background:none;border:none;padding:16px 20px;font-weight:700;color:#0f172a;font-size:1rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+          <span>{{ faq.pregunta }}</span>
+          <span style="font-size:0.8rem;background:#e2e8f0;color:#475569;padding:3px 10px;border-radius:99px;margin-left:10px;">{{ faq.get_categoria_display }}</span>
+        </button>
+        <div class="faq-content" style="padding:0 20px 18px 20px;color:#334155;font-size:0.92rem;line-height:1.6;border-top:1px solid #e2e8f0;background:#fff;display:block;">
+          <p style="margin:12px 0;">{{ faq.respuesta }}</p>
+
+          <!-- HU056: Votación de Utilidad de Artículo -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px dashed #e2e8f0;font-size:0.84rem;color:#64748b;">
+            <span>¿Te resultó útil esta respuesta?</span>
+            <div style="display:flex;gap:10px;" id="votos-container-{{ faq.id }}">
+              <button type="button" onclick="votarFAQ({{ faq.id }}, 'util')" class="btn-voto" style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.82rem;">
+                👍 Sí (<span id="count-util-{{ faq.id }}">{{ faq.votos_util }}</span>)
+              </button>
+              <button type="button" onclick="votarFAQ({{ faq.id }}, 'no_util')" class="btn-voto" style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.82rem;">
+                👎 No (<span id="count-noutil-{{ faq.id }}">{{ faq.votos_no_util }}</span>)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:32px;color:#64748b;">
+        <i class="bi bi-info-circle" style="font-size:1.8rem;display:block;margin-bottom:8px;"></i>
+        No hay preguntas frecuentes registradas en esta categoría.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- HU052: Banner Contactar Soporte -->
+  <div style="background:#f0fdf4;border:2px dashed #10b981;border-radius:16px;padding:28px;text-align:center;">
+    <h3 style="font-size:1.2rem;font-weight:800;color:#064e3b;margin:0 0 8px;">¿No encontraste lo que buscabas?</h3>
+    <p style="color:#047857;font-size:0.92rem;margin:0 0 18px;">Nuestro equipo de soporte técnico y mediación está listo para asistirte.</p>
+    <a href="{% url 'soporte_contacto' %}" class="btn btn-g" style="padding:10px 24px;border-radius:10px;font-weight:700;">
+      <i class="bi bi-envelope-paper"></i> Contactar a Soporte (HU052)
+    </a>
+  </div>
+</main>
+
+<script>
+// HU055: Búsqueda dinámica con debounce
+const searchInput = document.getElementById('input-buscador-ayuda');
+const resultsBox = document.getElementById('resultados-busqueda');
+const clearBtn = document.getElementById('btn-limpiar-busqueda');
+let searchTimeout;
+
+searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const q = this.value.trim();
+    if (q.length > 0) {
+        clearBtn.style.display = 'block';
+    } else {
+        clearBtn.style.display = 'none';
+        resultsBox.style.display = 'none';
+        return;
+    }
+
+    if (q.length < 2) return;
+
+    searchTimeout = setTimeout(() => {
+        fetch(`/ayuda/buscar/?q=${encodeURIComponent(q)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.resultados && data.resultados.length > 0) {
+                    let html = '<div style="padding:12px 16px;font-size:0.8rem;font-weight:700;color:#64748b;border-bottom:1px solid #f1f5f9;">RESULTADOS ENCONTRADOS (' + data.total + ')</div>';
+                    data.resultados.forEach(item => {
+                        html += `
+                        <div style="padding:14px 18px;border-bottom:1px solid #f8fafc;cursor:pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                            <span style="font-size:0.75rem;background:#ecfdf5;color:#047857;padding:2px 8px;border-radius:99px;font-weight:700;">${item.categoria}</span>
+                            <div style="font-weight:700;color:#0f172a;margin-top:4px;">${item.pregunta}</div>
+                            <div style="color:#475569;font-size:0.85rem;margin-top:4px;">${item.respuesta}</div>
+                        </div>`;
+                    });
+                    resultsBox.innerHTML = html;
+                    resultsBox.style.display = 'block';
+                } else {
+                    resultsBox.innerHTML = `
+                    <div style="padding:20px;text-align:center;color:#64748b;">
+                        <i class="bi bi-emoji-neutral" style="font-size:1.5rem;"></i>
+                        <p style="margin:6px 0 0;font-size:0.9rem;">No encontramos coincidencias para "<strong>${q}</strong>".</p>
+                        <a href="{% url 'soporte_contacto' %}" style="display:inline-block;margin-top:8px;font-size:0.85rem;color:#047857;font-weight:700;">Contactar a Soporte →</a>
+                    </div>`;
+                    resultsBox.style.display = 'block';
+                }
+            })
+            .catch(() => {
+                resultsBox.style.display = 'none';
+            });
+    }, 250);
+});
+
+clearBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    resultsBox.style.display = 'none';
+    this.style.display = 'none';
+});
+
+// HU056: Votación de utilidad
+function votarFAQ(id, tipo) {
+    const formData = new FormData();
+    formData.append('tipo', tipo);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch(`/ayuda/faq/${id}/votar/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            document.getElementById(`count-util-${id}`).textContent = data.votos_util;
+            document.getElementById(`count-noutil-${id}`).textContent = data.votos_no_util;
+            const container = document.getElementById(`votos-container-${id}`);
+            container.innerHTML = `<span style="color:#047857;font-weight:700;">✅ ${data.mensaje}</span>`;
+        }
+    });
+}
+</script>
+{% endblock %}

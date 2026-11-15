@@ -4,6 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Avg
 from django.conf import settings
+from django.utils import timezone
 
 SKILL_CHOICES = [
     ('electricidad', 'Electricidad'),
@@ -97,6 +98,21 @@ class UserProfile(models.Model):
     # Sprint 2
     disponible  = models.BooleanField(default=True)   # activo para contratar
     portfolio_url = models.URLField(blank=True)
+
+    # Sprint 4 - HU059: Autenticación de Dos Factores (2FA)
+    two_factor_enabled = models.BooleanField(default=False, help_text='2FA activo en cuenta')
+    two_factor_code = models.CharField(max_length=6, blank=True, help_text='Código OTP temporal')
+    two_factor_expires = models.DateTimeField(null=True, blank=True, help_text='Expiración del OTP (5 min)')
+    two_factor_intentos = models.PositiveIntegerField(default=0, help_text='Intentos fallidos de 2FA')
+
+    # Sprint 4 - HU062 y HU057: Control de Privacidad y Ubicación
+    privacidad_telefono = models.BooleanField(default=False, help_text='Ocultar teléfono a usuarios no contratados')
+    privacidad_email = models.BooleanField(default=False, help_text='Ocultar correo electrónico públicamente')
+    privacidad_cv = models.BooleanField(default=False, help_text='Ocultar currículum vitae a visitantes')
+    privacidad_ubicacion_exacta = models.BooleanField(default=True, help_text='Mostrar solo zona aproximada hasta contratación')
+
+    # Sprint 4 - HU053: Onboarding y Tutorial Inicial
+    tutorial_inicial_visto = models.BooleanField(default=False, help_text='Indica si vio el tutorial de bienvenida')
     
     # Nuevos campos para Trabajador
     dui         = models.CharField(max_length=20, blank=True, help_text='Documento Único de Identidad')
@@ -393,6 +409,9 @@ class Resena(models.Model):
     etiquetas   = models.CharField(max_length=255, blank=True, help_text="Etiquetas separadas por comas")
     reportada   = models.BooleanField(default=False, help_text='Indica si la reseña fue reportada por inapropiada')
     motivo_reporte = models.TextField(blank=True, help_text='Motivo del reporte')
+    # Sprint 4 - HU049: Responder a una reseña recibida (máximo 500 caracteres)
+    respuesta   = models.TextField(max_length=500, blank=True, help_text='Respuesta pública del receptor a la reseña')
+    fecha_respuesta = models.DateTimeField(null=True, blank=True, help_text='Fecha y hora en que se respondió la reseña')
     creado      = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -774,3 +793,75 @@ class SuscripcionUsuario(models.Model):
             self.mes_actual = now.month
         self.usos_este_mes += 1
         self.save(update_fields=['usos_este_mes', 'mes_actual'])
+
+
+# ── Sprint 4: Centro de Ayuda, FAQ, Soporte y Baja de Cuenta ───────────────────
+class PreguntaFrecuente(models.Model):
+    """HU051 y HU056: Preguntas Frecuentes con categorías y votos de utilidad."""
+    CATEGORIAS = [
+        ('cuenta', 'Cuenta y Perfil'),
+        ('seguridad', 'Seguridad y 2FA'),
+        ('empleos', 'Ofertas y Postulaciones'),
+        ('pagos', 'Tarifas y Membresías'),
+        ('soporte', 'Ayuda y Soporte General'),
+    ]
+    categoria   = models.CharField(max_length=50, choices=CATEGORIAS, default='empleos')
+    pregunta    = models.CharField(max_length=255)
+    respuesta   = models.TextField()
+    orden       = models.PositiveIntegerField(default=0)
+    votos_util  = models.PositiveIntegerField(default=0)
+    votos_no_util = models.PositiveIntegerField(default=0)
+    activo      = models.BooleanField(default=True)
+    creado      = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['categoria', 'orden', '-creado']
+        verbose_name = 'Pregunta Frecuente'
+        verbose_name_plural = 'Preguntas Frecuentes'
+
+    def __str__(self):
+        return f"[{self.get_categoria_display()}] {self.pregunta}"
+
+
+class TicketSoporte(models.Model):
+    """HU052: Contactar a soporte con confirmación."""
+    PRIORIDAD_CHOICES = [('baja', 'Baja'), ('media', 'Media'), ('alta', 'Alta')]
+    ESTADO_CHOICES = [('abierto', 'Abierto'), ('en_proceso', 'En Proceso'), ('resuelto', 'Resuelto')]
+
+    usuario     = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets_soporte')
+    nombre      = models.CharField(max_length=150)
+    email       = models.EmailField()
+    asunto      = models.CharField(max_length=200)
+    mensaje     = models.TextField()
+    prioridad   = models.CharField(max_length=20, choices=PRIORIDAD_CHOICES, default='media')
+    estado      = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='abierto')
+    respuesta_soporte = models.TextField(blank=True)
+    creado      = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-creado']
+        verbose_name = 'Ticket de Soporte'
+        verbose_name_plural = 'Tickets de Soporte'
+
+    def __str__(self):
+        return f"Ticket #{self.id}: {self.asunto} ({self.get_estado_display()})"
+
+
+class SolicitudBajaCuenta(models.Model):
+    """HU060: Solicitud de baja de cuenta con 30 días de gracia."""
+    usuario         = models.ForeignKey(User, on_delete=models.CASCADE, related_name='solicitudes_baja')
+    motivo          = models.TextField(blank=True)
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    fecha_efectiva  = models.DateTimeField(help_text='Fecha de borrado permanente (30 días después)')
+    cancelada       = models.BooleanField(default=False)
+    completada      = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-fecha_solicitud']
+        verbose_name = 'Solicitud de Baja'
+        verbose_name_plural = 'Solicitudes de Baja de Cuenta'
+
+    def __str__(self):
+        return f"Baja de {self.usuario.username} - Efectiva: {self.fecha_efectiva.strftime('%d/%m/%Y') if self.fecha_efectiva else 'Pendiente'}"
+

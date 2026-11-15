@@ -19,6 +19,8 @@ from django.db import transaction
 from django.db.models import Q, Count, Avg, Sum
 from django.utils import timezone
 from django.conf import settings
+from django.http import JsonResponse, HttpResponseForbidden
+from datetime import timedelta
 
 from .models import (
     UserProfile, Trabajo, Solicitud, Notificacion,
@@ -26,8 +28,10 @@ from .models import (
     TrabajoGuardado, Logro, LogroObtenido, AceptacionTerminos,
     EmailVerificationToken,
     SKILL_CHOICES, SKILL_ICONS, SKILL_COLORS,
-    PlanSuscripcion, SuscripcionUsuario
+    PlanSuscripcion, SuscripcionUsuario,
+    PreguntaFrecuente, TicketSoporte, SolicitudBajaCuenta
 )
+from .email_utils import enviar_codigo_2fa, generar_codigo_6
 from .forms import (
     LoginForm, RegistroStep2Form, RegistroStep3Form,
     TrabajoForm, EditarPerfilForm, ResenaForm, GaleriaItemForm,
@@ -135,6 +139,28 @@ def login_view(request):
                 user_obj = User.objects.get(email=email)
                 user = authenticate(request, username=user_obj.username, password=password)
                 if user:
+                    # HU060: Si tenía solicitud de baja pendiente, avisarle o cancelarla
+                    baja_activa = SolicitudBajaCuenta.objects.filter(usuario=user, cancelada=False, completada=False).first()
+                    if baja_activa:
+                        messages.info(request, "Tu cuenta estaba en periodo de eliminación (30 días). Al iniciar sesión, se ha reactivado automáticamente.")
+                        baja_activa.cancelada = True
+                        baja_activa.save()
+
+                    # HU059: Autenticación de Dos Factores (2FA)
+                    profile = getattr(user, 'profile', None)
+                    if profile and profile.two_factor_enabled:
+                        codigo_otp = generar_codigo_6()
+                        profile.two_factor_code = codigo_otp
+                        profile.two_factor_expires = timezone.now() + timedelta(minutes=5)
+                        profile.two_factor_intentos = 0
+                        profile.save(update_fields=['two_factor_code', 'two_factor_expires', 'two_factor_intentos'])
+                        
+                        enviar_codigo_2fa(user, codigo_otp)
+                        request.session['pre_2fa_user_id'] = user.id
+                        messages.info(request, f"Se ha enviado un código de seguridad de 6 dígitos a {user.email}.")
+                        return redirect('login_2fa')
+
+                    # Login directo si no tiene 2FA
                     login(request, user)
                     rol = getattr(user.profile, 'rol', 'trabajador')
                     if rol == 'administrador':
@@ -154,9 +180,63 @@ def login_view(request):
     return render(request, 'core/login.html', {'form': form, 'error': error, 'stats_landing': stats_landing})
 
 
+def login_2fa_view(request):
+    """HU059: Pantalla de validación de código de 6 dígitos para 2FA."""
+    user_id = request.session.get('pre_2fa_user_id')
+    if not user_id:
+        messages.error(request, "No hay una sesión pendiente de verificación.")
+        return redirect('login')
+
+    user = get_object_or_404(User, id=user_id)
+    profile = user.profile
+    error = None
+
+    if request.method == 'POST':
+        codigo = request.POST.get('codigo_otp', '').strip()
+        now = timezone.now()
+
+        # Control de tasa de intentos (Rate Limiting)
+        if profile.two_factor_intentos >= 3:
+            error = "Has excedido el número máximo de intentos (3). Por seguridad, vuelve a iniciar sesión."
+            if 'pre_2fa_user_id' in request.session:
+                del request.session['pre_2fa_user_id']
+            return render(request, 'core/login_2fa.html', {'user': user, 'error': error, 'bloqueado': True})
+
+        if not profile.two_factor_expires or now > profile.two_factor_expires:
+            error = "El código de seguridad ha expirado. Por favor, solicita uno nuevo o vuelve a iniciar sesión."
+        elif profile.two_factor_code and codigo == profile.two_factor_code:
+            # Código correcto
+            profile.two_factor_code = ''
+            profile.two_factor_intentos = 0
+            profile.save(update_fields=['two_factor_code', 'two_factor_intentos'])
+            if 'pre_2fa_user_id' in request.session:
+                del request.session['pre_2fa_user_id']
+
+            login(request, user)
+            messages.success(request, f"¡Bienvenido, {user.first_name or user.username}! Verificación 2FA exitosa.")
+            rol = profile.rol
+            if rol == 'administrador':
+                return redirect('panel_admin')
+            return redirect('panel_contratista' if rol == 'contratista' else 'home_trabajador')
+        else:
+            profile.two_factor_intentos += 1
+            profile.save(update_fields=['two_factor_intentos'])
+            restantes = max(0, 3 - profile.two_factor_intentos)
+            error = f"Código incorrecto. Intentos restantes: {restantes}."
+
+    return render(request, 'core/login_2fa.html', {'user': user, 'error': error, 'bloqueado': False})
+
+
 def logout_view(request):
+    """HU061: Cierre de sesión seguro con invalidación de sesión y cabeceras anticaché."""
+    request.session.flush()
     logout(request)
-    return redirect('home')
+    messages.success(request, 'Has cerrado sesión de forma segura.')
+    response = redirect('home')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 
 def recuperar_password(request):
@@ -2267,3 +2347,216 @@ def mi_plan(request):
         'porcentaje': sub.porcentaje_uso,
         'ilimitado': sub.plan.es_ilimitado,
     })
+
+
+# ── Sprint 4 Views ────────────────────────────────────────────────────────────
+
+@login_required
+def seguridad_2fa_toggle(request):
+    """HU059: Habilita o deshabilita la autenticación de dos factores (2FA)."""
+    if request.method == 'POST':
+        profile = request.user.profile
+        activar = request.POST.get('activar') == '1'
+        profile.two_factor_enabled = activar
+        if not activar:
+            profile.two_factor_code = ''
+            profile.two_factor_expires = None
+            profile.two_factor_intentos = 0
+        profile.save(update_fields=['two_factor_enabled', 'two_factor_code', 'two_factor_expires', 'two_factor_intentos'])
+        msg = "Autenticación de Dos Factores (2FA) activada correctamente." if activar else "Autenticación de Dos Factores (2FA) desactivada."
+        messages.success(request, msg)
+        return redirect(request.META.get('HTTP_REFERER', 'editar_perfil'))
+    return redirect('editar_perfil')
+
+
+@login_required
+def responder_resena(request, pk):
+    """HU049: Permite al receptor de una reseña publicar una respuesta de hasta 500 caracteres."""
+    resena = get_object_or_404(Resena, pk=pk)
+    if resena.destinatario != request.user:
+        return HttpResponseForbidden("Solo el usuario que recibió la reseña puede responderla.")
+
+    if request.method == 'POST':
+        texto = request.POST.get('respuesta', '').strip()
+        if not texto:
+            messages.error(request, "La respuesta no puede estar vacía.")
+        elif len(texto) > 500:
+            messages.error(request, f"La respuesta excede el límite de 500 caracteres (tiene {len(texto)}).")
+        else:
+            resena.respuesta = texto
+            resena.fecha_respuesta = timezone.now()
+            resena.save(update_fields=['respuesta', 'fecha_respuesta'])
+            crear_notif(
+                resena.autor,
+                'sistema',
+                '💬 Respondieron a tu reseña',
+                f'{request.user.get_full_name() or request.user.username} ha respondido a tu reseña.',
+                f'/perfil/{request.user.id}/'
+            )
+            messages.success(request, "Tu respuesta ha sido publicada exitosamente.")
+
+    return redirect(request.META.get('HTTP_REFERER') or 'home_trabajador')
+
+
+def centro_ayuda(request):
+    """HU050 y HU051: Centro de Ayuda con Guía por rol y FAQ organizadas por categoría."""
+    categoria_filtro = request.GET.get('cat', 'todas')
+    faqs = PreguntaFrecuente.objects.filter(activo=True)
+    if categoria_filtro != 'todas':
+        faqs = faqs.filter(categoria=categoria_filtro)
+
+    ctx = ctx_base(request) if request.user.is_authenticated else {}
+    ctx.update({
+        'faqs': faqs,
+        'categoria_filtro': categoria_filtro,
+        'categorias': PreguntaFrecuente.CATEGORIAS,
+        'active': 'ayuda'
+    })
+    return render(request, 'core/centro_ayuda.html', ctx)
+
+
+def ayuda_buscar(request):
+    """HU055: Buscador interactivo en tiempo real con sugerencias y autocompletado."""
+    q = request.GET.get('q', '').strip()
+    if not q:
+        return JsonResponse({'resultados': [], 'total': 0})
+
+    coincidencias = PreguntaFrecuente.objects.filter(
+        activo=True
+    ).filter(
+        Q(pregunta__icontains=q) | Q(respuesta__icontains=q)
+    )[:8]
+
+    data = [
+        {
+            'id': f.id,
+            'categoria': f.get_categoria_display(),
+            'pregunta': f.pregunta,
+            'respuesta': f.respuesta[:180] + '...' if len(f.respuesta) > 180 else f.respuesta,
+            'votos_util': f.votos_util,
+        }
+        for f in coincidencias
+    ]
+    return JsonResponse({'resultados': data, 'total': len(data), 'query': q})
+
+
+def faq_votar(request, pk):
+    """HU056: Registra voto de utilidad de un artículo o FAQ sin recargar página."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    faq = get_object_or_404(PreguntaFrecuente, pk=pk)
+    tipo = request.POST.get('tipo', 'util')
+    if tipo == 'util':
+        faq.votos_util += 1
+    else:
+        faq.votos_no_util += 1
+    faq.save(update_fields=['votos_util', 'votos_no_util'])
+
+    return JsonResponse({
+        'status': 'ok',
+        'votos_util': faq.votos_util,
+        'votos_no_util': faq.votos_no_util,
+        'mensaje': '¡Gracias por tu retroalimentación!'
+    })
+
+
+def soporte_contacto(request):
+    """HU052: Formulario de contacto con soporte técnico con confirmación."""
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        email = request.POST.get('email', '').strip()
+        asunto = request.POST.get('asunto', '').strip()
+        mensaje = request.POST.get('mensaje', '').strip()
+        prioridad = request.POST.get('prioridad', 'media')
+
+        if not (nombre and email and asunto and mensaje):
+            messages.error(request, 'Por favor completa todos los campos requeridos.')
+        else:
+            ticket = TicketSoporte.objects.create(
+                usuario=request.user if request.user.is_authenticated else None,
+                nombre=nombre,
+                email=email,
+                asunto=asunto,
+                mensaje=mensaje,
+                prioridad=prioridad
+            )
+            messages.success(request, f'✅ ¡Ticket #{ticket.id} creado con éxito! Nuestro equipo de soporte te responderá pronto a {email}.')
+            return redirect('centro_ayuda')
+
+    ctx = ctx_base(request) if request.user.is_authenticated else {}
+    return render(request, 'core/soporte_contacto.html', ctx)
+
+
+@login_required
+def completar_tutorial(request):
+    """HU053: Marca el tutorial de bienvenida como completado u omitido."""
+    if request.method == 'POST':
+        profile = request.user.profile
+        profile.tutorial_inicial_visto = True
+        profile.onboarding_completado = True
+        profile.save(update_fields=['tutorial_inicial_visto', 'onboarding_completado'])
+        return JsonResponse({'status': 'ok', 'mensaje': 'Tutorial completado.'})
+    return JsonResponse({'error': 'POST requerido'}, status=400)
+
+
+@login_required
+def ajustes_privacidad(request):
+    """HU057 y HU062: Configuración de visibilidad de datos personales y ubicación."""
+    profile = request.user.profile
+    if request.method == 'POST':
+        profile.privacidad_telefono = request.POST.get('privacidad_telefono') == '1'
+        profile.privacidad_email = request.POST.get('privacidad_email') == '1'
+        profile.privacidad_cv = request.POST.get('privacidad_cv') == '1'
+        profile.privacidad_ubicacion_exacta = request.POST.get('privacidad_ubicacion_exacta') == '1'
+        profile.save(update_fields=[
+            'privacidad_telefono', 'privacidad_email',
+            'privacidad_cv', 'privacidad_ubicacion_exacta'
+        ])
+        messages.success(request, 'Preferencias de privacidad actualizadas correctamente.')
+        return redirect('ajustes_privacidad')
+
+    ctx = ctx_base(request)
+    ctx.update({
+        'profile': profile,
+        'solicitud_baja': SolicitudBajaCuenta.objects.filter(usuario=request.user, cancelada=False, completada=False).first()
+    })
+    return render(request, 'core/ajustes_privacidad.html', ctx)
+
+
+@login_required
+def solicitar_baja_cuenta(request):
+    """HU060: Solicitud de baja con reingreso de contraseña y periodo de gracia de 30 días."""
+    if request.method == 'POST':
+        password = request.POST.get('password', '')
+        motivo = request.POST.get('motivo', '').strip()
+        if not request.user.check_password(password):
+            messages.error(request, 'La contraseña ingresada es incorrecta.')
+            return redirect('ajustes_privacidad')
+
+        fecha_efectiva = timezone.now() + timedelta(days=30)
+        SolicitudBajaCuenta.objects.create(
+            usuario=request.user,
+            motivo=motivo,
+            fecha_efectiva=fecha_efectiva
+        )
+        logout(request)
+        messages.warning(
+            request,
+            f'Se ha programado la eliminación de tu cuenta para el {fecha_efectiva.strftime("%d/%m/%Y")}. '
+            'Si inicias sesión antes de esa fecha, podrás cancelar la solicitud.'
+        )
+        return redirect('home')
+    return redirect('ajustes_privacidad')
+
+
+@login_required
+def cancelar_baja_cuenta(request):
+    """HU060: Cancela una solicitud de eliminación pendiente."""
+    baja = SolicitudBajaCuenta.objects.filter(usuario=request.user, cancelada=False, completada=False).first()
+    if baja:
+        baja.cancelada = True
+        baja.save()
+        messages.success(request, 'La solicitud de eliminación de tu cuenta ha sido cancelada.')
+    return redirect('ajustes_privacidad')
+

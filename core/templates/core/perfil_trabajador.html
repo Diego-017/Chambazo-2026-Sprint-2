@@ -79,7 +79,33 @@
       {% for r in resenas %}
       <div style="padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border);">
         <div class="flex-bc mb-4"><span class="fw-700 t-sm">{{ r.autor.get_full_name|default:r.autor.username }}</span><span class="stars" style="font-size:12px;">{{ r.estrellas }}</span></div>
-        <p class="t-sm t-mid">{{ r.comentario }}</p>
+        <p class="t-sm t-mid" style="margin:0 0 6px 0;">{{ r.comentario }}</p>
+        <span style="font-size:0.7rem;color:var(--muted);">{{ r.creado|date:"d M Y" }}</span>
+
+        <!-- HU049: Respuesta a reseña -->
+        {% if r.respuesta %}
+        <div style="margin-top:10px;margin-left:14px;padding:8px 12px;background:#f0fdf4;border-left:3px solid #10b981;border-radius:6px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+            <strong style="font-size:0.78rem;color:#064e3b;"><i class="bi bi-reply-fill"></i> Tu respuesta</strong>
+            <span style="font-size:0.68rem;color:#64748b;">{{ r.fecha_respuesta|date:"d M Y" }}</span>
+          </div>
+          <p style="margin:0;font-size:0.82rem;color:#1e293b;">{{ r.respuesta }}</p>
+        </div>
+        {% elif user.is_authenticated and user == r.destinatario %}
+        <div style="margin-top:6px;">
+          <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('form-resp-{{ r.id }}').style.display='block';this.style.display='none';" style="font-size:0.75rem;padding:3px 10px;">
+            <i class="bi bi-reply"></i> Responder reseña (HU049)
+          </button>
+          <form id="form-resp-{{ r.id }}" method="post" action="{% url 'responder_resena' r.id %}" style="display:none;margin-top:6px;">
+            {% csrf_token %}
+            <textarea name="respuesta" maxlength="500" class="form-control" rows="2" placeholder="Escribe tu respuesta pública (máx. 500 caracteres)..." required style="font-size:0.85rem;margin-bottom:6px;width:100%;border-radius:8px;padding:6px 10px;"></textarea>
+            <div style="display:flex;justify-content:flex-end;gap:6px;">
+              <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('form-resp-{{ r.id }}').style.display='none';" style="font-size:0.75rem;">Cancelar</button>
+              <button type="submit" class="btn btn-sm btn-g" style="font-size:0.75rem;">Publicar Respuesta</button>
+            </div>
+          </form>
+        </div>
+        {% endif %}
       </div>
       {% empty %}
       <p class="t-sm t-muted">Aún no tienes calificaciones.</p>
