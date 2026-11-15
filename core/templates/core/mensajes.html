@@ -211,7 +211,7 @@
         <div class="whatsapp-bubble {% if m.autor == request.user %}bubble-me-wa{% else %}bubble-them-wa{% endif %}">
           <!-- Botones de acción flotantes en el globo (Responder / Eliminar) -->
           <div style="position: absolute; top: 4px; right: 6px; display: flex; gap: 2px;">
-            <button type="button" class="msg-action-btn" onclick="responderMensaje('{{ m.autor.profile.nombre_display|escapejs }}', '{{ m.texto|default:\"[Multimedia]\"|escapejs }}')" title="Citar y responder">
+            <button type="button" class="msg-action-btn" onclick="responderMensaje('{{ m.autor.profile.nombre_display|escapejs }}', '{% if m.texto %}{{ m.texto|escapejs }}{% else %}[Multimedia]{% endif %}')" title="Citar y responder">
               <i class="bi bi-reply-fill"></i>
             </button>
             {% if m.autor == request.user %}
