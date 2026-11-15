@@ -749,6 +749,17 @@ def mensajes(request, sol_pk=None):
     return render(request, template, ctx)
 
 
+@login_required
+def eliminar_mensaje(request, msg_pk):
+    """Permite al autor eliminar un mensaje propio del chat."""
+    msg = get_object_or_404(Mensaje, pk=msg_pk, autor=request.user)
+    sol_pk = msg.solicitud.pk
+    msg.delete()
+    messages.info(request, 'Mensaje eliminado.')
+    return redirect('mensajes_chat', sol_pk=sol_pk)
+
+
+
 
 # ── Ganancias (solo trabajador) ─────────────────────────────────────────────────
 @login_required
@@ -2151,6 +2162,9 @@ def descartar_candidato(request, sol_pk):
                 pass
 
         messages.info(request, f'Candidato descartado. Motivo registrado: {motivo}')
+        next_url = request.POST.get('next') or request.META.get('HTTP_REFERER')
+        if next_url:
+            return redirect(next_url)
         return redirect('candidatos', pk=sol.trabajo.pk)
 
     return redirect('candidatos', pk=sol.trabajo.pk)

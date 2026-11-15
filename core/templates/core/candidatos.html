@@ -1,5 +1,40 @@
 {% extends 'core/base.html' %}
 {% block title %}Candidatos{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Modal Descartar Candidato (HU034) */
+  .event-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .event-modal-overlay.open {
+    display: flex;
+    animation: fadeInModal 0.2s ease-out;
+  }
+  .event-modal {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 460px;
+    width: 100%;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid #f1f5f9;
+  }
+  @keyframes fadeInModal {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+</style>
+{% endblock %}
+
 {% block body %}
 {% include 'core/_sidebar_contratista.html' %}
 
@@ -167,6 +202,7 @@
     </p>
     <form id="formDescarte" method="post" action="">
       {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
       <div class="form-group mb-12">
         <label class="form-label">Motivo principal *</label>
         <select name="motivo" class="form-control" required>

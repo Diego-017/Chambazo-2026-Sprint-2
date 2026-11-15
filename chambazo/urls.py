@@ -63,6 +63,7 @@ urlpatterns = [
     # Mensajes (compartido)
     path('mensajes/', views.mensajes, name='mensajes'),
     path('mensajes/<int:sol_pk>/', views.mensajes, name='mensajes_chat'),
+    path('mensajes/eliminar/<int:msg_pk>/', views.eliminar_mensaje, name='eliminar_mensaje'),
     # Perfil trabajador
     path('perfil/', views.perfil_trabajador, name='perfil_trabajador'),
     path('perfil/editar/', views.editar_perfil, name='editar_perfil'),

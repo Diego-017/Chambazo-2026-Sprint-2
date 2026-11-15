@@ -5,38 +5,75 @@
 <style>
   .whatsapp-bubble {
     padding: 10px 14px;
-    border-radius: 12px;
+    border-radius: 14px;
     max-width: 82%;
     word-break: break-word;
     font-size: 0.9rem;
     line-height: 1.4;
     position: relative;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: all 0.2s;
   }
   .bubble-me-wa {
     background: #dcf8c6;
     color: #111827;
     margin-left: auto;
-    border-top-right-radius: 2px;
+    border-top-right-radius: 3px;
   }
   .bubble-them-wa {
     background: #ffffff;
     color: #111827;
     margin-right: auto;
-    border-top-left-radius: 2px;
+    border-top-left-radius: 3px;
   }
   .emoji-btn {
     background: none;
     border: none;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     cursor: pointer;
-    padding: 4px;
+    padding: 4px 6px;
     border-radius: 6px;
-    transition: transform 0.1s;
+    transition: transform 0.15s, background 0.15s;
+    user-select: none;
   }
   .emoji-btn:hover {
     transform: scale(1.25);
-    background: #f1f5f9;
+    background: #e2e8f0;
+  }
+  .msg-action-btn {
+    opacity: 0;
+    transition: opacity 0.15s;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    color: #64748b;
+    border-radius: 4px;
+  }
+  .whatsapp-bubble:hover .msg-action-btn {
+    opacity: 1;
+  }
+  .msg-action-btn:hover {
+    color: #ef4444;
+    background: rgba(0,0,0,0.05);
+  }
+  .lightbox-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+  }
+  .lightbox-modal.open {
+    display: flex;
+  }
+  .lightbox-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   }
 </style>
 {% endblock %}
@@ -48,43 +85,70 @@
   {% include 'core/_sidebar_trabajador.html' %}
 {% endif %}
 
-<div class="page-hd"><div><h1>💬 Mensajes & Chat Directo</h1><p>Comunicación en tiempo real con confirmación de lectura</p></div></div>
+<div class="page-hd">
+  <div>
+    <h1>💬 Mensajes & Chat Directo</h1>
+    <p>Comunicación segura en tiempo real con confirmación de lectura y multimedia</p>
+  </div>
+  {% if sol_activa %}
+  <div style="display:flex; gap:8px;">
+    <button onclick="buscarEnChat()" class="btn btn-outline btn-sm" title="Buscar en este chat">
+      <i class="bi bi-search"></i> Buscar mensajes
+    </button>
+  </div>
+  {% endif %}
+</div>
 
-<div class="msg-shell" style="height: calc(100vh - 180px); min-height: 520px; display: flex; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-  <!-- Lista de conversaciones -->
-  <div class="msg-list {% if sol_activa %}mobile-hide{% else %}mobile-show{% endif %}" style="width: 320px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; background: #fafafa;">
-    <div class="msg-list-hd" style="padding: 16px; border-bottom: 1px solid #e2e8f0; background: #fff;">
-      <span class="fw-700 t-sm">{{ conversaciones|length }} conversación{{ conversaciones|length|pluralize:"es" }}</span>
+<div class="msg-shell" style="height: calc(100vh - 190px); min-height: 540px; display: flex; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+  <!-- Lista lateral de conversaciones -->
+  <div class="msg-list {% if sol_activa %}mobile-hide{% else %}mobile-show{% endif %}" style="width: 330px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; background: #f8fafc;">
+    <!-- Barra superior de búsqueda de chats -->
+    <div style="padding: 12px 14px; border-bottom: 1px solid #e2e8f0; background: #fff;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <span class="fw-700 t-sm" style="color: #0f172a;">Conversaciones ({{ conversaciones|length }})</span>
+        <button onclick="window.location.reload()" title="Actualizar chats" style="background: none; border: none; cursor: pointer; color: #64748b; font-size: 0.95rem;">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+      <div style="position: relative;">
+        <i class="bi bi-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: #94a3b8;"></i>
+        <input type="text" id="filtroContactos" onkeyup="filtrarConversaciones()" placeholder="Buscar por contacto o chamba..." style="width: 100%; padding: 7px 10px 7px 30px; font-size: 0.82rem; border-radius: 20px; border: 1px solid #cbd5e1; outline: none; background: #f1f5f9; box-sizing: border-box;">
+      </div>
     </div>
-    <div style="flex: 1; overflow-y: auto;">
+
+    <!-- Lista scrolleable de chats -->
+    <div style="flex: 1; overflow-y: auto;" id="listaConversaciones">
       {% for c in conversaciones %}
-      <a href="{% url 'mensajes_chat' c.sol.pk %}" class="conv-item {% if sol_activa.pk == c.sol.pk %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-decoration: none; color: inherit; transition: background 0.2s;">
-        <div style="position: relative;">
-          <div class="conv-av" style="width: 44px; height: 44px; border-radius: 50%; background: #e2e8f0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+      <a href="{% url 'mensajes_chat' c.sol.pk %}" class="conv-item {% if sol_activa.pk == c.sol.pk %}active{% endif %}" data-contact="{{ c.otro.profile.nombre_display|lower }} {{ c.sol.trabajo.titulo|lower }}" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #f1f5f9; text-decoration: none; color: inherit; transition: background 0.15s; position: relative;">
+        <div style="position: relative; flex-shrink: 0;">
+          <div class="conv-av" style="width: 44px; height: 44px; border-radius: 50%; background: #e2e8f0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #475569;">
             {% if c.otro.profile.foto %}
               <img src="{{ c.otro.profile.foto.url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
             {% else %}
               {{ c.otro.first_name|default:c.otro.username|slice:":1"|upper }}
             {% endif %}
           </div>
-          <div class="conv-online-dot" style="position: absolute; bottom: 2px; right: 2px; width: 10px; height: 10px; background: #10b981; border: 2px solid #fff; border-radius: 50%;"></div>
+          <div class="conv-online-dot" style="position: absolute; bottom: 2px; right: 2px; width: 10px; height: 10px; background: #10b981; border: 2px solid #fff; border-radius: 50%;" title="Activo"></div>
         </div>
         <div style="flex: 1; min-width: 0;">
           <div class="flex-bc mb-2">
-            <span class="conv-name" style="font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.otro.profile.nombre_display }}</span>
-            <span class="conv-time" style="font-size: 0.75rem; color: #94a3b8;">{{ c.ultimo_fecha|date:"H:i" }}</span>
+            <span class="conv-name" style="font-weight: 700; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1e293b;">{{ c.otro.profile.nombre_display }}</span>
+            <span class="conv-time" style="font-size: 0.72rem; color: #94a3b8;">{{ c.ultimo_fecha|date:"H:i" }}</span>
           </div>
-          <div class="conv-preview" style="font-size: 0.8rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.ultimo_msg }}</div>
+          <div style="font-size: 0.75rem; color: #1FA35A; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;">
+            <i class="bi bi-briefcase-fill" style="font-size: 0.7rem;"></i> {{ c.sol.trabajo.titulo }}
+          </div>
+          <div class="conv-preview" style="font-size: 0.78rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.ultimo_msg }}</div>
         </div>
         {% if c.no_leidos > 0 %}
-          <span class="sidebar-badge" style="background: #1FA35A; color: #fff; border-radius: 12px; padding: 2px 7px; font-size: 0.75rem; font-weight: 700;">{{ c.no_leidos }}</span>
+          <span style="background: #1FA35A; color: #fff; border-radius: 12px; padding: 2px 7px; font-size: 0.72rem; font-weight: 700; flex-shrink: 0;">{{ c.no_leidos }}</span>
         {% endif %}
       </a>
       {% empty %}
       <div class="empty-state" style="padding: 40px 16px; text-align: center;">
         <div class="empty-icon" style="font-size: 2.5rem; margin-bottom: 8px;">💬</div>
         <div class="empty-title" style="font-weight: 700; font-size: 0.95rem; color: #334155;">Sin conversaciones</div>
-        <div class="empty-sub" style="font-size: 0.8rem; color: #94a3b8;">Se activan cuando postulas o aceptas una oferta.</div>
+        <div class="empty-sub" style="font-size: 0.8rem; color: #94a3b8;">Se activan cuando postulas o aceptas una oferta de trabajo.</div>
       </div>
       {% endfor %}
     </div>
@@ -97,7 +161,7 @@
     <div class="chat-area-hd" style="padding: 12px 18px; background: #f0f2f5; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
       <div style="display: flex; align-items: center; gap: 12px;">
         <a href="{% url 'mensajes' %}" class="btn btn-ghost btn-icon-circle" style="display:none;" id="backBtn"><i class="bi bi-arrow-left"></i></a>
-        <div class="conv-av" style="width: 40px; height: 40px; border-radius: 50%; background: #cbd5e1; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+        <div class="conv-av" style="width: 42px; height: 42px; border-radius: 50%; background: #cbd5e1; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 700;">
           {% if otro_user.profile.foto %}
             <img src="{{ otro_user.profile.foto.url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
           {% else %}
@@ -105,39 +169,68 @@
           {% endif %}
         </div>
         <div>
-          <div class="fw-700 t-sm" style="color: #0f172a;">{{ otro_user.profile.nombre_display }}</div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="fw-700 t-sm" style="color: #0f172a;">{{ otro_user.profile.nombre_display }}</span>
+            {% if otro_user.profile.verificado %}
+              <i class="bi bi-patch-check-fill t-green" title="Identidad Verificada (KYC)" style="font-size: 13px;"></i>
+            {% endif %}
+          </div>
           <div class="t-xxs t-muted" style="color: #1FA35A; font-weight: 600;">
-            <i class="bi bi-briefcase"></i> {{ sol_activa.trabajo.titulo }} ({{ sol_activa.get_estado_display }})
+            <i class="bi bi-briefcase"></i> {{ sol_activa.trabajo.titulo }} • <span style="text-transform: capitalize;">{{ sol_activa.get_estado_display }}</span>
           </div>
         </div>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <a href="{% url 'trabajo_detalle' sol_activa.trabajo.pk %}" class="btn btn-outline btn-xs" style="background:#fff;border-radius:8px;font-weight:600;">
-          <i class="bi bi-eye"></i> Ver oferta
+      
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <div id="busquedaEnChatBar" style="display:none; align-items:center; background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:3px 10px;">
+          <input type="text" id="filtroChatInput" onkeyup="filtrarMensajesInternos()" placeholder="Buscar en conversación..." style="border:none; outline:none; font-size:0.8rem; width:150px;">
+          <button onclick="cerrarBusquedaEnChat()" style="background:none; border:none; cursor:pointer; color:#94a3b8; font-size:0.9rem;">✕</button>
+        </div>
+        <a href="{% url 'trabajo_detalle' sol_activa.trabajo.pk %}" class="btn btn-outline btn-xs" style="background:#fff;border-radius:8px;font-weight:600;" title="Ver detalles de la vacante">
+          <i class="bi bi-eye"></i> Vacante
         </a>
-        <a href="{% url 'comprobante_contrato' sol_activa.pk %}" class="btn btn-outline btn-xs" style="background:#fff;border-radius:8px;font-weight:600;color:#10b981;">
+        <a href="{% url 'comprobante_contrato' sol_activa.pk %}" class="btn btn-outline btn-xs" style="background:#fff;border-radius:8px;font-weight:600;color:#10b981;" title="Ver contrato formal">
           <i class="bi bi-file-text"></i> Contrato
         </a>
       </div>
     </div>
 
+    <!-- Barra de mensaje fijado / Responder a (Quote reply) -->
+    <div id="replyBar" style="display:none; background:#e2e8f0; border-left:4px solid #1FA35A; padding:6px 14px; font-size:0.8rem; display:none; align-items:center; justify-content:space-between;">
+      <div>
+        <strong id="replyAutor" style="color:#0f172a; font-size:0.75rem;"></strong>
+        <div id="replyText" style="color:#475569; font-size:0.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:400px;"></div>
+      </div>
+      <button type="button" onclick="cancelarRespuesta()" style="background:none; border:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
+    </div>
+
     <!-- Lista de mensajes con scroll -->
-    <div class="chat-msgs" id="chatMsgs" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+    <div class="chat-msgs" id="chatMsgs" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
       {% for m in mensajes_list %}
-      <div style="display: flex; flex-direction: column; align-items: {% if m.autor == request.user %}flex-end{% else %}flex-start{% endif %};">
+      <div class="msg-row" data-msg-id="{{ m.pk }}" data-msg-text="{{ m.texto|default:''|lower }}" style="display: flex; flex-direction: column; align-items: {% if m.autor == request.user %}flex-end{% else %}flex-start{% endif %}; position: relative;">
         <div class="whatsapp-bubble {% if m.autor == request.user %}bubble-me-wa{% else %}bubble-them-wa{% endif %}">
+          <!-- Botones de acción flotantes en el globo (Responder / Eliminar) -->
+          <div style="position: absolute; top: 4px; right: 6px; display: flex; gap: 2px;">
+            <button type="button" class="msg-action-btn" onclick="responderMensaje('{{ m.autor.profile.nombre_display|escapejs }}', '{{ m.texto|default:\"[Multimedia]\"|escapejs }}')" title="Citar y responder">
+              <i class="bi bi-reply-fill"></i>
+            </button>
+            {% if m.autor == request.user %}
+              <a href="{% url 'eliminar_mensaje' m.pk %}" onclick="return confirm('¿Seguro que deseas eliminar este mensaje?')" class="msg-action-btn" title="Eliminar para mí">
+                <i class="bi bi-trash-fill"></i>
+              </a>
+            {% endif %}
+          </div>
+
           <!-- Texto del mensaje -->
           {% if m.texto %}
-            <div style="margin-bottom: 4px;">{{ m.texto }}</div>
+            <div style="margin-bottom: 4px; padding-right: 30px; white-space: pre-wrap;">{{ m.texto }}</div>
           {% endif %}
 
           <!-- Imagen o archivo adjunto -->
           {% if m.adjunto %}
             <div style="margin-top: 6px; margin-bottom: 4px;">
               {% if m.adjunto.url|slice:"-4:" == '.jpg' or m.adjunto.url|slice:"-4:" == '.png' or m.adjunto.url|slice:"-5:" == '.jpeg' or m.adjunto.url|slice:"-5:" == '.webp' %}
-                <a href="{{ m.adjunto.url }}" target="_blank">
-                  <img src="{{ m.adjunto.url }}" alt="Adjunto" style="max-width: 240px; max-height: 200px; border-radius: 8px; display: block;">
-                </a>
+                <img src="{{ m.adjunto.url }}" alt="Adjunto" onclick="abrirLightbox('{{ m.adjunto.url }}')" style="max-width: 260px; max-height: 220px; border-radius: 8px; display: block; cursor: pointer; transition: opacity 0.2s;" title="Clic para ampliar en pantalla completa">
               {% else %}
                 <a href="{{ m.adjunto.url }}" target="_blank" style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.06); padding: 8px 12px; border-radius: 8px; text-decoration: none; color: inherit; font-size: 0.85rem; font-weight: 600;">
                   <i class="bi bi-file-earmark-arrow-down-fill" style="font-size: 1.4rem; color: #1FA35A;"></i>
@@ -154,7 +247,7 @@
                 <source src="{{ m.audio.url }}" type="audio/mpeg">
                 <source src="{{ m.audio.url }}" type="audio/wav">
                 <source src="{{ m.audio.url }}" type="audio/webm">
-                Tu navegador no soporta reproducción de audio.
+                Tu navegador no soporta audio.
               </audio>
             </div>
           {% endif %}
@@ -166,9 +259,9 @@
                 <i class="bi bi-geo-alt-fill" style="color: #ef4444;"></i> Ubicación compartida
               </div>
               <div style="padding: 8px 10px; font-size: 0.8rem;">
-                <div>{{ m.ubicacion_nombre|default:"Punto de ubicación fijado" }}</div>
+                <div>{{ m.ubicacion_nombre|default:"Punto geográfico fijado" }}</div>
                 <a href="https://www.openstreetmap.org/?mlat={{ m.lat|stringformat:'f' }}&mlon={{ m.lng|stringformat:'f' }}#map=16/{{ m.lat|stringformat:'f' }}/{{ m.lng|stringformat:'f' }}" target="_blank" style="color: #0284c7; font-weight: 700; text-decoration: none; display: inline-block; margin-top: 4px; font-size: 0.75rem;">
-                  <i class="bi bi-box-arrow-up-right"></i> Abrir en OSM
+                  <i class="bi bi-box-arrow-up-right"></i> Abrir en mapa
                 </a>
               </div>
             </div>
@@ -186,28 +279,31 @@
         </div>
       </div>
       {% empty %}
-      <div class="empty-state" style="margin: auto; text-align: center; background: rgba(255,255,255,0.8); padding: 24px; border-radius: 12px; border: 1px dashed #cbd5e1;">
+      <div class="empty-state" style="margin: auto; text-align: center; background: rgba(255,255,255,0.85); padding: 24px; border-radius: 12px; border: 1px dashed #cbd5e1;">
         <div class="empty-icon" style="font-size: 2.2rem; margin-bottom: 6px;">💬</div>
         <div class="empty-title" style="font-weight: 700; color: #334155;">Inicia la conversación directa</div>
-        <div class="empty-sub" style="font-size: 0.8rem; color: #64748b;">Coordina detalles, envía fotos de avance o comparte tu ubicación.</div>
+        <div class="empty-sub" style="font-size: 0.8rem; color: #64748b;">Coordina detalles del proyecto, envía fotos de avance o comparte tu ubicación.</div>
       </div>
       {% endfor %}
     </div>
 
-    <!-- Barra de emojis rápida -->
-    <div id="quickEmojiBar" style="background: #f0f2f5; padding: 4px 14px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px; overflow-x: auto;">
-      <button type="button" class="emoji-btn" onclick="addEmoji('👍')">👍</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('😊')">😊</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('👋')">👋</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('🛠️')">🛠️</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('📍')">📍</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('🤝')">🤝</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('💰')">💰</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('⏰')">⏰</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('🚗')">🚗</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('⚡')">⚡</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('🏠')">🏠</button>
-      <button type="button" class="emoji-btn" onclick="addEmoji('📞')">📞</button>
+    <!-- Barra de emojis expandida y organizada -->
+    <div id="quickEmojiBar" style="background: #f0f2f5; padding: 4px 14px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px; overflow-x: auto;">
+      <button type="button" class="emoji-btn" onclick="addEmoji('👍')" title="Pulgar arriba">👍</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('🤝')" title="Trato hecho">🤝</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('✅')" title="Aprobado">✅</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('😊')" title="Sonrisa">😊</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('👋')" title="Hola">👋</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('🛠️')" title="Herramientas">🛠️</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('📍')" title="Ubicación">📍</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('💰')" title="Presupuesto">💰</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('⏰')" title="Horario">⏰</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('🚗')" title="En camino">🚗</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('⚡')" title="Urgente">⚡</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('📦')" title="Material">📦</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('🏠')" title="Domicilio">🏠</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('📞')" title="Llamada">📞</button>
+      <button type="button" class="emoji-btn" onclick="addEmoji('🙏')" title="Gracias">🙏</button>
     </div>
 
     <!-- Formulario de envío multimedia tipo WhatsApp -->
@@ -222,12 +318,12 @@
       <input type="hidden" name="ubicacion_nombre" id="ubicacionNombreInputChat">
 
       <!-- Botón de Adjuntar Archivo -->
-      <button type="button" onclick="document.getElementById('fileInput').click()" title="Adjuntar documento o imagen" style="background: none; border: none; font-size: 1.3rem; color: #64748b; cursor: pointer; padding: 4px;">
+      <button type="button" onclick="document.getElementById('fileInput').click()" title="Adjuntar documento o imagen" style="background: none; border: none; font-size: 1.3rem; color: #64748b; cursor: pointer; padding: 4px; transition: color 0.15s;">
         <i class="bi bi-paperclip"></i>
       </button>
 
       <!-- Botón de Compartir Ubicación Actual -->
-      <button type="button" onclick="compartirUbicacionActual()" title="Enviar mi ubicación actual" style="background: none; border: none; font-size: 1.2rem; color: #ef4444; cursor: pointer; padding: 4px;">
+      <button type="button" onclick="compartirUbicacionActual()" title="Enviar mi ubicación actual" style="background: none; border: none; font-size: 1.2rem; color: #ef4444; cursor: pointer; padding: 4px; transition: transform 0.15s;">
         <i class="bi bi-geo-alt-fill"></i>
       </button>
 
@@ -240,7 +336,7 @@
       <input type="text" name="texto" id="chatTextInput" class="chat-input" placeholder="Escribe un mensaje..." autocomplete="off" style="flex: 1; padding: 10px 16px; border-radius: 24px; border: 1px solid #cbd5e1; outline: none; background: #fff; font-size: 0.9rem;">
 
       <!-- Botón de Enviar -->
-      <button type="submit" class="btn btn-g btn-icon-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #1FA35A; color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(31,163,90,0.3);">
+      <button type="submit" class="btn btn-g btn-icon-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #1FA35A; color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(31,163,90,0.3); flex-shrink: 0;">
         <i class="bi bi-send-fill"></i>
       </button>
     </form>
@@ -261,12 +357,92 @@
   </div>
 </div>
 
+<!-- Modal Lightbox para visualización de fotos en pantalla completa -->
+<div id="imageLightbox" class="lightbox-modal" onclick="cerrarLightbox()">
+  <img id="lightboxImg" class="lightbox-img" src="" alt="Vista previa">
+</div>
+
 {% include 'core/_sidebar_close.html' %}
 
 <script>
   const msgsDiv = document.getElementById('chatMsgs');
   if (msgsDiv) { msgsDiv.scrollTop = msgsDiv.scrollHeight; }
 
+  // 1. Filtrado de conversaciones en lista lateral
+  function filtrarConversaciones() {
+    const query = document.getElementById('filtroContactos').value.toLowerCase();
+    const items = document.querySelectorAll('#listaConversaciones .conv-item');
+    items.forEach(it => {
+      const contactInfo = it.getAttribute('data-contact') || '';
+      if (contactInfo.includes(query)) {
+        it.style.display = 'flex';
+      } else {
+        it.style.display = 'none';
+      }
+    });
+  }
+
+  // 2. Búsqueda dentro del chat activo
+  function buscarEnChat() {
+    const bar = document.getElementById('busquedaEnChatBar');
+    if (bar) {
+      bar.style.display = 'flex';
+      document.getElementById('filtroChatInput').focus();
+    }
+  }
+
+  function cerrarBusquedaEnChat() {
+    const bar = document.getElementById('busquedaEnChatBar');
+    if (bar) bar.style.display = 'none';
+    const rows = document.querySelectorAll('#chatMsgs .msg-row');
+    rows.forEach(r => r.style.display = 'flex');
+  }
+
+  function filtrarMensajesInternos() {
+    const q = document.getElementById('filtroChatInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#chatMsgs .msg-row');
+    rows.forEach(r => {
+      const txt = r.getAttribute('data-msg-text') || '';
+      if (txt.includes(q)) {
+        r.style.display = 'flex';
+      } else {
+        r.style.display = 'none';
+      }
+    });
+  }
+
+  // 3. Responder a un mensaje específico (Quote reply)
+  function responderMensaje(autor, texto) {
+    const replyBar = document.getElementById('replyBar');
+    if (replyBar) {
+      document.getElementById('replyAutor').innerText = 'Respondiendo a ' + autor;
+      document.getElementById('replyText').innerText = texto;
+      replyBar.style.display = 'flex';
+      const input = document.getElementById('chatTextInput');
+      input.value = `> "${texto.substring(0, 40)}..."\n`;
+      input.focus();
+    }
+  }
+
+  function cancelarRespuesta() {
+    const replyBar = document.getElementById('replyBar');
+    if (replyBar) replyBar.style.display = 'none';
+    const input = document.getElementById('chatTextInput');
+    if (input.value.startsWith('> ')) {
+      input.value = '';
+    }
+  }
+
+  // 4. Modal Lightbox de fotos
+  function abrirLightbox(url) {
+    document.getElementById('lightboxImg').src = url;
+    document.getElementById('imageLightbox').classList.add('open');
+  }
+  function cerrarLightbox() {
+    document.getElementById('imageLightbox').classList.remove('open');
+  }
+
+  // 5. Agregar Emojis
   function addEmoji(emoji) {
     const input = document.getElementById('chatTextInput');
     if (input) {
@@ -275,6 +451,7 @@
     }
   }
 
+  // 6. Manejo de adjuntos
   function handleFileSelected(input) {
     if (input.files && input.files[0]) {
       const name = input.files[0].name;
@@ -299,6 +476,7 @@
     document.getElementById('attachmentIndicator').style.display = 'none';
   }
 
+  // 7. Ubicación con GPS del dispositivo
   function compartirUbicacionActual() {
     if (!navigator.geolocation) {
       alert("Tu navegador no soporta geolocalización.");
@@ -317,12 +495,10 @@
     });
   }
 
-  // Audio Recording (WhatsApp style)
+  // 8. Grabación de voz tipo WhatsApp con contador
   let mediaRecorder;
   let audioChunks = [];
   let isRecording = false;
-  let recordingInterval;
-  let startTime;
 
   const btnRecord = document.getElementById('btnRecordAudio');
   const chatForm = document.getElementById('chatForm');
@@ -345,14 +521,14 @@
         const container = new DataTransfer();
         container.items.add(file);
         document.getElementById('audioInput').files = container.files;
-        chatForm.submit(); // Send immediately like WhatsApp
+        chatForm.submit();
       };
       
       mediaRecorder.start();
       isRecording = true;
-      btnRecord.style.color = '#ef4444'; // turn red
-      btnRecord.style.transform = 'scale(1.2)';
-      txtInput.placeholder = '🎙️ Grabando... (suelta para enviar)';
+      btnRecord.style.color = '#ef4444';
+      btnRecord.style.transform = 'scale(1.25)';
+      txtInput.placeholder = '🎙️ Grabando nota de voz... (suelta para enviar)';
       txtInput.disabled = true;
       
     } catch (err) {
