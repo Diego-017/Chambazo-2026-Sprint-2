@@ -2495,7 +2495,15 @@ def soporte_contacto(request):
                 mensaje=mensaje,
                 prioridad=prioridad
             )
-            messages.success(request, f'✅ ¡Ticket #{ticket.id} creado con éxito! Nuestro equipo de soporte te responderá pronto a {email}.')
+            # Enviar correo al equipo de Chambazo SV + confirmación al usuario
+            try:
+                from .email_utils import enviar_notif_ticket_soporte
+                enviar_notif_ticket_soporte(ticket)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"[Soporte] Error al enviar correo de ticket #{ticket.id}: {e}")
+
+            messages.success(request, f'✅ ¡Ticket #{ticket.id} enviado! Recibirás una confirmación en {email} y nuestro equipo te responderá pronto.')
             return redirect('centro_ayuda')
 
     ctx = ctx_base(request) if request.user.is_authenticated else {}
@@ -2545,7 +2553,15 @@ def solicitar_baja_cuenta(request):
         password = request.POST.get('password', '')
         motivo = request.POST.get('motivo', '').strip()
         if not request.user.check_password(password):
-            messages.error(request, 'La contraseña ingresada es incorrecta.')
+            messages.error(request, 'La contraseña ingresada es incorrecta. Vuelve a intentarlo.')
+            return redirect('ajustes_privacidad')
+
+        # Verificar si ya existe una solicitud pendiente
+        baja_existente = SolicitudBajaCuenta.objects.filter(
+            usuario=request.user, cancelada=False, completada=False
+        ).first()
+        if baja_existente:
+            messages.warning(request, f'Ya tienes una solicitud de eliminación programada para el {baja_existente.fecha_efectiva.strftime("%d/%m/%Y")}.')
             return redirect('ajustes_privacidad')
 
         fecha_efectiva = timezone.now() + timedelta(days=30)
@@ -2554,11 +2570,40 @@ def solicitar_baja_cuenta(request):
             motivo=motivo,
             fecha_efectiva=fecha_efectiva
         )
+
+        # Enviar correo de confirmación de baja al usuario
+        try:
+            user_baja = request.user
+            asunto_baja = '⚠️ Solicitud de eliminación de cuenta recibida — Chambazo SV'
+            html_baja = f"""
+            <div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;background:#f8fafc;padding:32px;border-radius:16px;">
+              <div style="text-align:center;margin-bottom:24px;">
+                <h1 style="color:#064e3b;font-size:1.8rem;margin:0;">🔧 Chambazo SV</h1>
+              </div>
+              <div style="background:#fff;border-radius:12px;padding:24px;border:1px solid #fecaca;">
+                <h2 style="color:#991b1b;margin:0 0 12px;">Solicitud de baja registrada, {user_baja.first_name or user_baja.username}</h2>
+                <p style="color:#475569;line-height:1.6;">
+                  Recibimos tu solicitud de eliminación de cuenta. Tus datos se conservarán durante un
+                  <strong>periodo de gracia de 30 días</strong> (hasta el <strong>{fecha_efectiva.strftime("%d/%m/%Y")}</strong>).
+                </p>
+                <div style="margin:16px 0;padding:12px 16px;background:#fef2f2;border-radius:8px;border:1px solid #fca5a5;">
+                  <p style="margin:0;color:#991b1b;font-size:0.9rem;">
+                    💡 Si cambias de opinión, simplemente inicia sesión antes de esa fecha y tu cuenta se reactivará automáticamente.
+                  </p>
+                </div>
+              </div>
+            </div>
+            """
+            from .email_utils import _enviar_html
+            _enviar_html(asunto_baja, html_baja, [user_baja.email])
+        except Exception:
+            pass
+
         logout(request)
         messages.warning(
             request,
             f'Se ha programado la eliminación de tu cuenta para el {fecha_efectiva.strftime("%d/%m/%Y")}. '
-            'Si inicias sesión antes de esa fecha, podrás cancelar la solicitud.'
+            'Si inicias sesión antes de esa fecha, tu cuenta se reactivará automáticamente.'
         )
         return redirect('home')
     return redirect('ajustes_privacidad')

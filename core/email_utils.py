@@ -82,6 +82,66 @@ def enviar_codigo_2fa(user, codigo):
     return _enviar_html(asunto, html, [user.email])
 
 
+def enviar_notif_ticket_soporte(ticket):
+    """HU052: Notifica al equipo de Chambazo SV y envía confirmación al usuario que contactó soporte."""
+    correo_chambazo = getattr(settings, 'EMAIL_HOST_USER', '') or 'pointsgreen4@gmail.com'
+
+    # 1. Correo interno que recibe el equipo Chambazo SV
+    asunto_admin = f'🚨 [Ticket #{ticket.id}] {ticket.asunto} — Prioridad: {ticket.prioridad.upper()}'
+    html_admin = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f8fafc;padding:32px;border-radius:16px;">
+      <div style="text-align:center;margin-bottom:20px;">
+        <h1 style="color:#064e3b;font-size:1.8rem;margin:0;">🔧 Chambazo SV — Soporte</h1>
+        <p style="color:#6b7280;margin:4px 0 0;">Nueva solicitud de asistencia recibida</p>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:24px;border:1px solid #e2e8f0;margin-bottom:20px;">
+        <div style="border-bottom:1px solid #f1f5f9;padding-bottom:12px;margin-bottom:14px;">
+          <h2 style="color:#0f172a;font-size:1.1rem;margin:0 0 8px;">Ticket #{ticket.id}: {ticket.asunto}</h2>
+          <span style="background:#ecfdf5;color:#047857;font-weight:700;padding:4px 10px;border-radius:20px;font-size:0.78rem;">
+            PRIORIDAD: {ticket.prioridad.upper()}
+          </span>
+        </div>
+        <p style="margin:6px 0;color:#334155;font-size:0.9rem;"><strong>Nombre:</strong> {ticket.nombre}</p>
+        <p style="margin:6px 0;color:#334155;font-size:0.9rem;"><strong>Correo:</strong> <a href="mailto:{ticket.email}" style="color:#047857;">{ticket.email}</a></p>
+        <p style="margin:6px 0;color:#334155;font-size:0.9rem;"><strong>Usuario en plataforma:</strong> {ticket.usuario.username if ticket.usuario else 'Sin cuenta / Visitante'}</p>
+        <div style="margin-top:16px;background:#f1f5f9;border-left:4px solid #047857;padding:14px;border-radius:6px;">
+          <strong style="color:#0f172a;display:block;margin-bottom:6px;">Mensaje del usuario:</strong>
+          <p style="color:#334155;white-space:pre-wrap;line-height:1.6;margin:0;">{ticket.mensaje}</p>
+        </div>
+      </div>
+      <p style="color:#94a3b8;font-size:0.78rem;text-align:center;">
+        Responde directamente a: <a href="mailto:{ticket.email}" style="color:#047857;">{ticket.email}</a>
+      </p>
+    </div>
+    """
+    _enviar_html(asunto_admin, html_admin, [correo_chambazo])
+
+    # 2. Confirmación al usuario que envió el ticket
+    asunto_usuario = f'📨 Recibimos tu mensaje — Ticket #{ticket.id} | Chambazo SV'
+    html_usuario = f"""
+    <div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;background:#f8fafc;padding:32px;border-radius:16px;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <h1 style="color:#064e3b;font-size:2rem;margin:0;">🔧 Chambazo SV</h1>
+        <p style="color:#6b7280;margin:4px 0 0;">Confirmación de recepción</p>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:24px;border:1px solid #e2e8f0;">
+        <h2 style="color:#0f172a;font-size:1.2rem;margin:0 0 10px;">Hola, {ticket.nombre} 👋</h2>
+        <p style="color:#475569;line-height:1.6;">
+          Recibimos tu consulta sobre <strong>"{ticket.asunto}"</strong>. Nuestro equipo de soporte revisará tu caso y te responderá a la brevedad posible.
+        </p>
+        <div style="margin:18px 0;padding:12px 16px;background:#ecfdf5;border-radius:8px;border:1px solid #a7f3d0;text-align:center;">
+          <p style="margin:0;color:#065f46;font-size:1rem;font-weight:700;">Número de Ticket: #{ticket.id}</p>
+          <p style="margin:4px 0 0;color:#065f46;font-size:0.85rem;">Estado: Recibido — En revisión</p>
+        </div>
+        <p style="color:#64748b;font-size:0.85rem;margin:0;">
+          Si tienes información adicional, responde directamente a este correo.
+        </p>
+      </div>
+    </div>
+    """
+    return _enviar_html(asunto_usuario, html_usuario, [ticket.email])
+
+
 def enviar_bienvenida(user):
     """Correo de bienvenida una vez verificada la cuenta."""
     asunto = '🎉 ¡Bienvenido a Chambazo SV!'
